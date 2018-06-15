@@ -4,7 +4,8 @@
   "description": "LogViewer Service (Data Provider)",
   "main": "service.js",
   "scripts": {
-    "dist": "npm install --production"
+    "dist": "npm install --production",
+    "test": "./node_modules/.bin/jasmine"
   },
   "author": "Dmitry Astafyev (E.S.R.Labs)",
   "license": "ISC",
@@ -16,6 +17,7 @@
   },
   "devDependencies": {
     "eslint": "^4.19.1",
+    "jasmine": "^3.1.0",
     "jshint": "^2.9.5"
   }
 }

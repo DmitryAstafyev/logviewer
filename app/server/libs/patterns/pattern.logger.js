@@ -1,4 +1,3 @@
-'use strict';
 
 const Logger = require('../tools/tools.logger');
 

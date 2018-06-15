@@ -3,14 +3,14 @@ const SourceImplementationMethods = {
 	close: 'close',
 	send: 'send',
 	subscribe: 'subscribe',
-	unsubscribe: 'unsubscribe',
-	getInfo: 'getInfo'
+	unsubscribe: 'unsubscribe'
 };
 
 const SourceImplementationEvents = {
 	opened: 'opened',
 	closed: 'closed',
-	data: 'data'
+	data: 'data',
+	error: 'error'
 };
 
 module.exports = {

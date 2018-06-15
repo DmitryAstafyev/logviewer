@@ -63,7 +63,7 @@ module.exports = class Port extends ServiceClass {
 		if (this._writer.isBusy()) {
 			this._bufferWhileWriting += str;
 		} else {
-			this.emit(PORT_EVENTS, this._bufferWhileWriting + str);
+			this.emit(PORT_EVENTS.data, this._port, this._bufferWhileWriting + str);
 			this._bufferWhileWriting = '';
 		}
 	}
@@ -132,7 +132,7 @@ module.exports = class Port extends ServiceClass {
 		this._ready  = true;
 		this._writer = new SetialPortWriter(this.instance, this.settings);
 		this._logger.debug('port is opened');
-		this.emit(PORT_EVENTS.open);
+		this.emit(PORT_EVENTS.open, this._port);
 		return resolve();
 	}
 
@@ -142,7 +142,7 @@ module.exports = class Port extends ServiceClass {
 			return reject(error);
 		}
 		this._logger.debug(`port returns an error: ${error.message}`);
-		this.emit(PORT_EVENTS.error, error);
+		this.emit(PORT_EVENTS.error, this._port, error);
 	}
 
 	['_on' + PORT_EVENTS.data](data){
@@ -153,11 +153,11 @@ module.exports = class Port extends ServiceClass {
 		this._logger.debug('port closed.');
 		if (this._ready) {
 			this.destroy().then(()=>{
-				this.emit(PORT_EVENTS.close);
+				this.emit(PORT_EVENTS.close, this._port);
 			});
 		} else {
 			this._destroyPortInstance();
-			this.emit(PORT_EVENTS.close);
+			this.emit(PORT_EVENTS.close, this._port);
 		}
 	}
 

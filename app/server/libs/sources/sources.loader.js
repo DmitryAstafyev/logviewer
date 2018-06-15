@@ -1,5 +1,3 @@
-'use strict';
-
 const FileSystem = require('../tools/tools.fs');
 const SourceImplementationMethods = require('./source.interface.desc').SourceImplementationMethods;
 const ServiceClass = require('../patterns/pattern.service');
@@ -20,11 +18,15 @@ module.exports = class SourcesLoader extends ServiceClass {
 					const sources = [];
 					try {
 						list.forEach((module) => {
+							// eslint-disable-next-line global-require
 							const Implementation = require(Path.join(this._path, module));
-							if (!this._isImplementationValid(Implementation)) {
+							if (Implementation.Source === void 0) {
+								throw new Error(`Module ${module} doesn't have reference to source implementation.`);
+							}
+							if (!this._isImplementationValid(Implementation.Source)) {
 								throw new Error(`Module ${module} doesn't return constructor as it's expected.`);
 							}
-							const instance = new (Implementation)();
+							const instance = new (Implementation.Source)();
 							const error = this._getValidationErrors(instance);
 							if (error instanceof Error) {
 								throw new Error(`Module ${module} error: ${error.message}.`);

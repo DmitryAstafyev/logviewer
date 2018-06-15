@@ -1,6 +1,8 @@
 const ServiceClass = require('../../../patterns/pattern.service');
 const PromiseTasks = require('../../../tools/tools.promisetasks');
 
+const DEFAULT_VTRANSMIT = 50;
+
 module.exports = class PortWriter extends ServiceClass {
 
 	constructor(instance, settings = {}, symbolsPerPackage = 1){
@@ -8,7 +10,7 @@ module.exports = class PortWriter extends ServiceClass {
 		this._instance	= instance;
 		this._size    	= symbolsPerPackage;
 		this._settings	= {
-			vtransmit: typeof settings === 'object' ? (settings !== null ? (typeof settings.vtransmit === 'number' ? settings.vtransmit : 50) : 50) : 50
+			vtransmit: typeof settings === 'object' ? (settings !== null ? (typeof settings.vtransmit === 'number' ? settings.vtransmit : DEFAULT_VTRANSMIT) : DEFAULT_VTRANSMIT) : DEFAULT_VTRANSMIT
 		};
 		this._tasks		= new PromiseTasks();
 	}
