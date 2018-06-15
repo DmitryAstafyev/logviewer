@@ -1,4 +1,4 @@
-const logger            = new (require('./tools.logger'))('ServiceTelnetStream');
+const logger            = new (require('./tools/tools.logger'))('ServiceTelnetStream');
 
 const
     Telnet              = require('telnet-client'),

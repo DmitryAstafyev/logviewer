@@ -1,12 +1,15 @@
+'use strict';
 
 const util          = require('util');
-const EventEmitter  = require('events').EventEmitter;
+const ServiceClass  = require('../patterns/pattern.service');
 
-class StringTimerBuffer extends EventEmitter{
+const DEFAULT_TIMEOUT = 500; //ms
+const DEFAULT_SIZE = 300000;//bytes
 
-	constructor(length, timeout){
-		super();
-		this._logger    = new (require('./tools/tools.logger'))('StringTimerBuffer');
+class StringTimerBuffer extends ServiceClass{
+
+	constructor(length = DEFAULT_SIZE, timeout = DEFAULT_TIMEOUT){
+		super({ signature: 'StringTimerBuffer'});
 		this._length    = length;
 		this._timeout   = timeout;
 		this._timer     = -1;
@@ -28,7 +31,9 @@ class StringTimerBuffer extends EventEmitter{
 	}
 
 	_drop(){
-		this._timer !== -1 && clearTimeout(this._timer);
+		if (this._timer !== -1) {
+			clearTimeout(this._timer);
+		}
 	}
 
 	_tick(){
@@ -59,6 +64,4 @@ class StringTimerBuffer extends EventEmitter{
 	}
 }
 
-module.exports = {
-	StringTimerBuffer: StringTimerBuffer
-};
+module.exports = StringTimerBuffer;

@@ -1,4 +1,4 @@
-const logger        = new (require('./tools.logger'))('ServiceDownloadManager');
+const logger        = new (require('./tools/tools.logger'))('ServiceDownloadManager');
 const Events        = require('events');
 const Path          = require('path');
 const util          = require('util');

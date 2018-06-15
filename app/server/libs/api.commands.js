@@ -1,4 +1,4 @@
-const logger = new (require('./tools.logger'))('APICommands');
+const logger = new (require('./tools/tools.logger'))('APICommands');
 
 class APICommands{
 

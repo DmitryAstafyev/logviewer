@@ -1,4 +1,4 @@
-const logger        = new (require('./tools.logger'))('ServiceProcessStream');
+const logger        = new (require('./tools/tools.logger'))('ServiceProcessStream');
 const
     spawn           = require('child_process').spawn,
     ServerEmitter   = require('./server.events'),

@@ -1,4 +1,4 @@
-const logger            = new (require('./tools.logger'))('WebSocketProcessor');
+const logger            = new (require('./tools/tools.logger'))('WebSocketProcessor');
 
 const WebSocketEvents   = require('./websocket.events.js'),
       ServerEmitter     = require('./server.events.js');

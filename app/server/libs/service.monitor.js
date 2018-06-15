@@ -1,4 +1,4 @@
-const logger        = new (require('./tools.logger'))('ServiceMonitor');
+const logger        = new (require('./tools/tools.logger'))('ServiceMonitor');
 const Events        = require('events');
 const Path          = require('path');
 const SerialPort    = require('serialport');

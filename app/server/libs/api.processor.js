@@ -1,4 +1,4 @@
-const logger                = new (require('./tools.logger'))('APIProcessor');
+const logger                = new (require('./tools/tools.logger'))('APIProcessor');
 const APICommandInterface   = require('./api.command.interface.js');
 const APICommands           = require('./api.commands.js');
 

@@ -1,4 +1,4 @@
-const logger            = new (require('./tools.logger'))('WebSocketServer');
+const logger            = new (require('./tools/tools.logger'))('WebSocketServer');
 
 const
     CommandProcessor  = require('./websocket.commands.processor'),

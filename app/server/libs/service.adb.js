@@ -1,4 +1,4 @@
-const logger        = new (require('./tools.logger'))('ServiceADBStream');
+const logger        = new (require('./tools/tools.logger'))('ServiceADBStream');
 const
     ServerEmitter       = require('./server.events'),
     StringDecoder       = require('string_decoder').StringDecoder,

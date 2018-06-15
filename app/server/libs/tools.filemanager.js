@@ -3,7 +3,7 @@ class FileManager{
     constructor(noLogs = false){
         this._fs        = require('fs');
         if (noLogs !== true) {
-            this._logger = new (require('./tools.logger'))('FileManager', true);
+            this._logger = new (require('./tools/tools.logger'))('FileManager', true);
         } else {
             this._logger = null;
         }

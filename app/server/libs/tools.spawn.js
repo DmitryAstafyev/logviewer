@@ -17,7 +17,7 @@ const WRAPPER_EVENTS = {
 };
 
 
-const logger        = new (require('./tools.logger'))('SpawnWrapper');
+const logger        = new (require('./tools/tools.logger'))('SpawnWrapper');
 const StringDecoder = require('string_decoder').StringDecoder;
 const util          = require('util');
 const spawn         = require('child_process').spawn;

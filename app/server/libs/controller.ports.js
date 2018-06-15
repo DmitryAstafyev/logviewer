@@ -1,4 +1,4 @@
-const logger        = new (require('./tools.logger'))('ControllerPorts');
+const logger        = new (require('./tools/tools.logger'))('ControllerPorts');
 const Events        = require('events');
 const SerialPort    = require('serialport');
 const util          = require('util');

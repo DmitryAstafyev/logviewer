@@ -1,4 +1,4 @@
-const logger            = new (require('./tools.logger'))('Server');
+const logger            = new (require('./tools/tools.logger'))('Server');
 
 const SETTINGS          = require('../config.js'),
       Errors            = require('./errors'),
