@@ -7,7 +7,7 @@ const DEFAULT_PATH = PathsSettings.getInternalPathTo('libs/sources/implementatio
 module.exports = class Sources extends ServiceClass {
 
 	constructor(path){
-		super('SourcesController');
+		super({ signature: 'SourcesController' });
 		this._path = typeof path === 'string' ? path : DEFAULT_PATH;
 		this._sources = [];
 	}
@@ -17,13 +17,17 @@ module.exports = class Sources extends ServiceClass {
 	}
 
 	_load(){
-		const loader = new SourcesLoader(this._path);
-		return loader.getAll()
-			.then((sources) => {
-				this._sources = sources;
-			})
-			.catch((error) => {
-				this._logger.error(`Cannot initialize sources due error: ${error.message}.`);
-			});
+		return new Promise((resolve, reject) => {
+			const loader = new SourcesLoader(this._path);
+			loader.getAll()
+				.then((sources) => {
+					this._sources = sources;
+					resolve(sources);
+				})
+				.catch((error) => {
+					this._logger.error(`Cannot initialize sources due error: ${error.message}.`);
+					reject(error);
+				});
+		});
 	}
 };

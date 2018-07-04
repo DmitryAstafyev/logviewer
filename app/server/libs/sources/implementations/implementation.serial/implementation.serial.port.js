@@ -31,16 +31,20 @@ module.exports = class Port extends ServiceClass {
 	}
 
 	destroy(){
-		return new Promise((resolve) => {
+		return new Promise((resolve, reject) => {
 			this._unbindBuffer();
 			if (!this._ready || this._instance === null) {
 				return resolve;
 			}
 			if (this._writer !== null) {
-				this._writer.stop(() => {
-					this._destroyPortInstance();
-					resolve();
-				});
+				this._writer.destroy()
+					.then(() => {
+						this._destroyPortInstance();
+						resolve();
+					})
+					.catch((e)=>{
+						reject(e);
+					});
 			} else {
 				this._destroyPortInstance();
 				resolve();
@@ -96,7 +100,6 @@ module.exports = class Port extends ServiceClass {
 				return reject(new Error('port is opened, but not initialized.'));
 			}
 			this._instance.close((error) => {
-				this._destroyPortInstance();
 				if (error) {
 					this._logger.debug(`Port returns an error during closing: ${error.message}`);
 					return reject(error);
@@ -131,9 +134,9 @@ module.exports = class Port extends ServiceClass {
 	['_on' + PORT_EVENTS.open](resolve){
 		this._ready  = true;
 		this._writer = new SetialPortWriter(this.instance, this.settings);
-		this._logger.debug('port is opened');
+		this._logger.debug(`Port ${this._port} is opened.`);
+		resolve();
 		this.emit(PORT_EVENTS.open, this._port);
-		return resolve();
 	}
 
 	['_on' + PORT_EVENTS.error](reject, error){
@@ -150,7 +153,7 @@ module.exports = class Port extends ServiceClass {
 	}
 
 	['_on' + PORT_EVENTS.close](){
-		this._logger.debug('port closed.');
+		this._logger.debug(`Port ${this._port} closed.`);
 		if (this._ready) {
 			this.destroy().then(()=>{
 				this.emit(PORT_EVENTS.close, this._port);

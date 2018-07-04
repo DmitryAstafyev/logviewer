@@ -9,7 +9,8 @@ const SourceImplementationEvents = require('../source.interface.desc').SourceImp
 
 const SourceExtraMethods = {
 	getPortsList: 'getPortsList',
-	scanPorts: 'scanPorts'
+	scanPorts: 'scanPorts',
+	stopScanPorts: 'stopScanPorts'
 };
 
 const Port = require('./implementation.serial/implementation.serial.port');
@@ -23,6 +24,7 @@ class Source extends SourceClass {
 		super({ signature: 'Source: serial'});
 		this._ports = {};
 		this._users = {};
+		this._scanPortsTimer = -1;
 	}
 
 	//////////////////////////////////////////////////////////
@@ -36,7 +38,7 @@ class Source extends SourceClass {
 			if (typeof params !== 'object' || params === null) {
 				return reject(new Error('Have been gotten not valid parameters for [open] method'));
 			}
-			if (typeof params.port !== 'string' || params.port.trim() !== null) {
+			if (typeof params.port !== 'string' || params.port.trim() === '') {
 				return reject(new Error('Not valid parameters for [open] method. No [port] property found.'));
 			}
 			if (this._ports[params.port] !== void 0) {
@@ -49,11 +51,13 @@ class Source extends SourceClass {
 				.then(() => {
 					this._ports[params.port] = port;
 					this._subscribePortEvents(port, params.port);
-					this._addUserToPort(user, port);
+					this._addUserToPort(user, params.port);
+					this._onPortOpened(params.port);
 					resolve();
 				})
 				.catch((e)=>{
 					this._logger.debug(`Fail to open port (${params.port}) due error: ${e.message}.`);
+					this._unsubscribePortEvents(port);
 					reject();
 				});
 		});
@@ -64,7 +68,7 @@ class Source extends SourceClass {
 			if (typeof user !== 'string' || user.trim() === '') {
 				return reject(new Error(`To close source (port) should be defined [user], but was gotten: ${util.instpect(user)}`));
 			}
-			if (typeof port !== 'string' && port.trim() !== '') {
+			if (typeof port !== 'string' && port.trim() === '') {
 				return reject(new Error(`To close a port, port should be defined as not empty {string}, but was gotten: ${util.inspect(port)}`));
 			}
 			if (this._ports[port] === void 0) {
@@ -78,12 +82,13 @@ class Source extends SourceClass {
 			}
 			this._ports[port].close()
 				.then(() => {
-					this._destroyPortReference();
+					this._destroyPortReference(port);
+					this._onPortClose(port, [user]);
 					resolve();
 				})
 				.catch((e)=>{
 					this._logger.debug(`Fail to close port (${port}) due error: ${e.message}.`);
-					this._destroyPortReference();
+					this._destroyPortReference(port);
 					reject(e);
 				});
 		});
@@ -91,13 +96,13 @@ class Source extends SourceClass {
 
 	[SourceImplementationMethods.send](port, str){
 		return new Promise((resolve, reject) => {
-			if (typeof port !== 'string' && port.trim() !== '') {
+			if (typeof port !== 'string' && port.trim() === '') {
 				return reject(new Error(`To write into port, port should be defined as not empty {string}, but was gotten: ${util.inspect(port)}`));
 			}
 			if (this._ports[port] === void 0) {
 				return reject(new Error(`Cannot write to a port, because port ${port} isn't opened.`));
 			}
-			if (typeof str !== 'string' && str.trim() !== ''){
+			if (typeof str !== 'string' && str.trim() === ''){
 				return reject(new Error(`Cannot write to a port, because buffer isn't a string or it's empty string: ${util.inspect(str)}`));
 			}
 			this._ports[port].write(str)
@@ -107,6 +112,17 @@ class Source extends SourceClass {
 					reject(e);
 				});
 		});
+	}
+
+	[SourceImplementationMethods.getType](){
+		return SOURCE_TYPE;
+	}
+
+	[SourceImplementationMethods.getUsers](port){
+		if (typeof port === 'string' && port.trim() !== '') {
+			return this._getUsersOfPort(port);
+		}
+		return this._getAllUsers();
 	}
 
 	//////////////////////////////////////////////////////////
@@ -138,12 +154,42 @@ class Source extends SourceClass {
 			}
 			this[SourceExtraMethods.getPortsList]()
 				.then((ports) => {
-					ports.forEach((info) => {
-						this[SourceImplementationMethods.open](user, { port: info.comName });
+					const promises = ports.map((info) => {
+						return this[SourceImplementationMethods.open](user, { port: info.comName });
 					});
-					resolve(ports);
+					Promise.all(promises)
+						.then(() => {
+							this._autostopScanPorts(user);
+							resolve(ports);
+						})
+						.catch((e)=>{
+							this._logger.debug(`Cannot open all ports due error: ${e.message}.`);
+							this._autostopScanPorts(user);
+							//Resolve in any case
+							resolve(ports);
+						});
 				})
 				.catch(reject);
+		});
+	}
+
+	[SourceExtraMethods.stopScanPorts](user){
+		return Promise((resolve, reject) => {
+			if (typeof user !== 'string' || user.trim() === '') {
+				return reject(new Error(`To stop scan ports should be defined [user], but was gotten: ${util.instpect(user)}`));
+			}
+			const promises = Object.keys(this._ports).map((port) => {
+				return this[SourceImplementationMethods.close](user, port);
+			});
+			Promise.all(promises)
+				.then(() => {
+					resolve();
+				})
+				.catch((e)=>{
+					this._logger.debug(`Cannot close all ports due error: ${e.message}.`);
+					//Resolve in any case
+					resolve();
+				});
 		});
 	}
 
@@ -151,10 +197,10 @@ class Source extends SourceClass {
 	// Port events
 	//////////////////////////////////////////////////////////
 	_subscribePortEvents(port, portId){
-		port.subscribe(port.EVENTS.open, this._onPortOpened.bind(portId));
-		port.subscribe(port.EVENTS.data, this._onPortData.bind(portId));
-		port.subscribe(port.EVENTS.error, this._onPortError.bind(portId));
-		port.subscribe(port.EVENTS.close, this._onPortClose.bind(portId));
+		port.subscribe(port.EVENTS.open, this._onPortOpened.bind(this, portId));
+		port.subscribe(port.EVENTS.data, this._onPortData.bind(this, portId));
+		port.subscribe(port.EVENTS.error, this._onPortError.bind(this, portId));
+		port.subscribe(port.EVENTS.close, this._onPortClose.bind(this, portId));
 	}
 
 	_unsubscribePortEvents(port){
@@ -165,25 +211,27 @@ class Source extends SourceClass {
 	}
 
 	_onPortOpened(port){
-		this.emit(SourceImplementationEvents.opened, new SourceDescriptionClass(SOURCE_TYPE, port));
+		this.emit(SourceImplementationEvents.opened, new SourceDescriptionClass(SOURCE_TYPE, port, this._users[port]));
 	}
 
 	_onPortData(port, str){
-		this.emit(SourceImplementationEvents.data, new SourceDescriptionClass(SOURCE_TYPE, port), str);
+		this.emit(SourceImplementationEvents.data, new SourceDescriptionClass(SOURCE_TYPE, port, this._users[port]), str);
 	}
 
 	_onPortError(port, error){
-		this.emit(SourceImplementationEvents.error, new SourceDescriptionClass(SOURCE_TYPE, port), error);
+		this.emit(SourceImplementationEvents.error, new SourceDescriptionClass(SOURCE_TYPE, port, this._users[port]), error);
 	}
 
-	_onPortClose(port){
-		this.emit(SourceImplementationEvents.closed, new SourceDescriptionClass(SOURCE_TYPE, port));
+	_onPortClose(port, users){
+		users = users instanceof Array ? users : this._users[port];
+		this.emit(SourceImplementationEvents.closed, new SourceDescriptionClass(SOURCE_TYPE, port, users));
 	}
 
 	//////////////////////////////////////////////////////////
 	// Private part (methods of implementation by itself)
 	//////////////////////////////////////////////////////////
 	_destroyPortReference(port){
+		this._unsubscribePortEvents(this._ports[port]);
 		this._ports[port] = null;
 		delete this._ports[port];
 	}
@@ -220,9 +268,34 @@ class Source extends SourceClass {
 		return this._users[port] !== void 0 ? true : false;
 	}
 
+	_getUsersOfPort(port){
+		return this._users[port] !== void 0 ? this._users[port].slice() : 0;
+	}
+
+	_getAllUsers(){
+		let users = [];
+		Object.keys(this._users).forEach((port) => {
+			this._users[port].forEach((user) => {
+				if (users.indexOf(user) === -1) {
+					users.push(user);
+				}
+			});
+		});
+		return users;
+	}
+
+	//////////////////////////////////////////////////////////
+	// Private part (scanning ports)
+	//////////////////////////////////////////////////////////
+	_autostopScanPorts(user){
+		this._scanPortsTimer = setTimeout(() => {
+			this[SourceExtraMethods.stopScanPorts](user);
+		}, SCAN_PORT_DURATION);
+	}
 }
 
 module.exports = {
 	Source: Source,
-	type: SOURCE_TYPE
+	type: SOURCE_TYPE,
+	SourceExtraMethods: SourceExtraMethods
 };

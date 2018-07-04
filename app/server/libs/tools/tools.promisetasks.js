@@ -16,10 +16,10 @@ module.exports = class PromiseTasks {
 	}
 
 	stop(){
-		return Promise((resolve) => {
+		return new Promise((resolve) => {
 			this._breaker = resolve;
 			if (this._tasks.length === 0) {
-				return resolve;
+				return resolve();
 			}
 		});
 	}

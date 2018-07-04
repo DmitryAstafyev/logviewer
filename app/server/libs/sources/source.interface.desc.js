@@ -3,7 +3,9 @@ const SourceImplementationMethods = {
 	close: 'close',
 	send: 'send',
 	subscribe: 'subscribe',
-	unsubscribe: 'unsubscribe'
+	unsubscribe: 'unsubscribe',
+	getType: 'getType',
+	getUsers: 'getUsers'
 };
 
 const SourceImplementationEvents = {

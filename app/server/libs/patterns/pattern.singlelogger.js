@@ -1,9 +1,10 @@
 
 const Logger = require('../tools/tools.logger');
 
-class LoggerClass {
+const LoggerClass = (Super) => class extends Super {
 
 	constructor( params = {}){
+		super(params);
 		this._logger = new Logger(typeof params.signature === 'string' ? params.signature : '');
 	}
 
