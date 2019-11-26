@@ -11,6 +11,7 @@ import {
     AsyncResult,
     IIndexDltParams,
     IChunk,
+    CancelablePromise,
 } from "indexer-neon";
 import ServiceStreams from "../../services/service.streams";
 import { Subscription } from "../../tools/index";
@@ -32,16 +33,14 @@ const ExtNames = ["dlt"];
 export default class FileParser extends AFileParser {
     private _subscriptions: { [key: string]: Subscription } = {};
     private _guid: string | undefined;
-    private _closed: boolean = false;
     private _logger: Logger = new Logger("indexing");
-    private _cancel: () => void;
+    private _task: CancelablePromise<void, void> | undefined;
 
     constructor() {
         super();
         this._subscriptions.onSessionClosed = ServiceStreams.getSubjects().onSessionClosed.subscribe(
             this._onSessionClosed.bind(this),
         );
-        this._cancel = this._defaultCancel;
     }
 
     public destroy() {
@@ -113,9 +112,9 @@ export default class FileParser extends AFileParser {
             this._guid = ServiceStreams.getActiveStreamId();
             const collectedChunks: IMapItem[] = [];
             const hrstart = process.hrtime();
-            let appIds: String[] | undefined;
-            let contextIds: String[] | undefined;
-            let ecuIds: String[] | undefined;
+            let appIds: string[] | undefined;
+            let contextIds: string[] | undefined;
+            let ecuIds: string[] | undefined;
             if (options.filters !== undefined && options.filters.app_ids instanceof Array) {
                 appIds = options.filters.app_ids;
             }
@@ -144,24 +143,14 @@ export default class FileParser extends AFileParser {
             };
             this._logger.debug("calling indexDltAsync with params: " + JSON.stringify(dltParams));
             let completeTicks: number = 0;
-            const onNotification = (notification: INeonNotification) => {
-                ServiceNotifications.notifyFromNeon(
-                    notification,
-                    "DLT-Indexing",
-                    this._guid,
-                    srcFile,
-                );
-            };
-            const [futureRes, cancel]: [Promise<AsyncResult>, () => void] = indexer.indexDltAsync(
-                dltParams,
-                TimeUnit.fromSeconds(60),
-                (ticks: ITicks) => {
+            this._task = indexer.indexDltAsync(dltParams, {
+                onProgress: (ticks: ITicks) => {
                     if (onProgress !== undefined) {
                         completeTicks = ticks.total;
                         onProgress(ticks);
                     }
                 },
-                (e: IChunk) => {
+                onChunk: (e: IChunk) => {
                     if (onMapUpdated !== undefined) {
                         const mapItem: IMapItem = {
                             rows: { from: e.rowsStart, to: e.rowsEnd },
@@ -171,51 +160,45 @@ export default class FileParser extends AFileParser {
                         collectedChunks.push(mapItem);
                     }
                 },
-                onNotification,
-            );
-            this._cancel = cancel;
-            futureRes
-                .then(x => {
-                    if (onProgress !== undefined) {
-                        onProgress({
-                            ellapsed: completeTicks,
-                            total: completeTicks,
-                        });
-                    }
-                    const hrend = process.hrtime(hrstart);
-                    const ms = Math.round(hrend[0] * 1000 + hrend[1] / 1000000);
-                    this._logger.debug("parseAndIndex task finished, result: " + x);
-                    this._logger.debug("Execution time for indexing : " + ms + "ms");
-                    this._cancel = this._defaultCancel;
-                    resolve(collectedChunks);
-                })
-                .catch((error: Error) => {
-                    if (this._closed) {
-                        return resolve([]);
-                    }
-                    ServiceNotifications.notify({
-                        message:
-                            error.message.length > 1500
-                                ? `${error.message.substr(0, 1500)}...`
-                                : error.message,
-                        caption: `Error with: ${path.basename(srcFile)}`,
-                        session: this._guid,
-                        file: sourceId.toString(),
-                        type: ENotificationType.error,
-                    });
-                    reject(error);
+                onNotification: (notification: INeonNotification) => {
+                    ServiceNotifications.notifyFromNeon(
+                        notification,
+                        "DLT-Indexing",
+                        this._guid,
+                        srcFile,
+                    );
+                },
+            }).then(() => {
+                const hrend = process.hrtime(hrstart);
+                const ms = Math.round(hrend[0] * 1000 + hrend[1] / 1000000);
+                this._logger.debug("!!!! parseAndIndex task finished");
+                this._logger.debug("Execution time for indexing : " + ms + "ms");
+                resolve(collectedChunks);
+            }).catch((error: Error) => {
+                ServiceNotifications.notify({
+                    message:
+                        error.message.length > 1500
+                            ? `${error.message.substr(0, 1500)}...`
+                            : error.message,
+                    caption: `Error with: ${path.basename(srcFile)}`,
+                    session: this._guid,
+                    file: sourceId.toString(),
+                    type: ENotificationType.error,
                 });
+                reject(error);
+            });
         });
     }
 
     private _onSessionClosed(guid: string) {
+        if (this._task === undefined) {
+            return;
+        }
         if (this._guid !== guid) {
             return;
         }
-        this._closed = true;
+        this._logger.env(`Session is closed. Breaking operation.`);
+        this._task.break();
     }
 
-    private _defaultCancel = () => {
-        this._logger.debug("no cancel function set");
-    };
 }
