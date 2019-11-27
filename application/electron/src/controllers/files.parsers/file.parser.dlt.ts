@@ -7,16 +7,7 @@ import { Subscription } from "../../tools/index";
 import Logger from "../../tools/env.logger";
 import * as Tools from "../../tools/index";
 import ServiceNotifications, { ENotificationType } from "../../services/service.notifications";
-
-interface IDLTFilters {
-    [key: string]: string[];
-}
-
-interface IDLTOptions {
-    logLevel: number;
-    filters: IDLTFilters;
-    fibexFilePath?: string;
-}
+import { CommonInterfaces } from '../../interfaces/interface.common';
 
 const ExtNames = ["dlt"];
 
@@ -60,7 +51,7 @@ export default class FileParser extends AFileParser {
         srcFile: string,
         destFile: string,
         sourceId: string,
-        options: IDLTOptions,
+        options: CommonInterfaces.DLT.IDLTOptions,
         onMapUpdated?: (map: IMapItem[]) => void,
         onProgress?: (ticks: Progress.ITicks) => void,
     ): Tools.CancelablePromise<IMapItem[], void> {
