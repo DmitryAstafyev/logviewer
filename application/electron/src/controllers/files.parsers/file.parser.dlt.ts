@@ -12,6 +12,8 @@ import {
     IIndexDltParams,
     IChunk,
     CancelablePromise,
+    TIndexDltAsyncEventCB,
+    TIndexDltAsyncEvents,
 } from "indexer-neon";
 import ServiceStreams from "../../services/service.streams";
 import { Subscription } from "../../tools/index";
@@ -34,7 +36,7 @@ export default class FileParser extends AFileParser {
     private _subscriptions: { [key: string]: Subscription } = {};
     private _guid: string | undefined;
     private _logger: Logger = new Logger("indexing");
-    private _task: CancelablePromise<void, void> | undefined;
+    private _task: CancelablePromise<void, void, TIndexDltAsyncEvents, TIndexDltAsyncEventCB> | undefined;
 
     constructor() {
         super();
@@ -186,6 +188,9 @@ export default class FileParser extends AFileParser {
                     type: ENotificationType.error,
                 });
                 reject(error);
+            });
+            this._task.on('progress', (ticks: ITicks) => {
+                //
             });
         });
     }
