@@ -1,20 +1,7 @@
 import { AFileParser, IFileParserFunc, IMapItem } from "./interface";
 import { Transform } from "stream";
 import * as path from "path";
-import {
-    indexer,
-    ITicks,
-    DltFilterConf,
-    TimeUnit,
-    INeonTransferChunk,
-    INeonNotification,
-    AsyncResult,
-    IIndexDltParams,
-    IChunk,
-    CancelablePromise,
-    TIndexDltAsyncEventCB,
-    TIndexDltAsyncEvents,
-} from "indexer-neon";
+import indexer, { DLT, Progress, CancelablePromise } from "indexer-neon";
 import ServiceStreams from "../../services/service.streams";
 import { Subscription } from "../../tools/index";
 import Logger from "../../tools/env.logger";
@@ -36,7 +23,7 @@ export default class FileParser extends AFileParser {
     private _subscriptions: { [key: string]: Subscription } = {};
     private _guid: string | undefined;
     private _logger: Logger = new Logger("indexing");
-    private _task: CancelablePromise<void, void, TIndexDltAsyncEvents, TIndexDltAsyncEventCB> | undefined;
+    private _task: CancelablePromise<void, void, DLT.TIndexDltAsyncEvents, DLT.TIndexDltAsyncEventCB> | undefined;
 
     constructor() {
         super();
@@ -105,7 +92,7 @@ export default class FileParser extends AFileParser {
         sourceId: string,
         options: IDLTOptions,
         onMapUpdated?: (map: IMapItem[]) => void,
-        onProgress?: (ticks: ITicks) => void,
+        onProgress?: (ticks: Progress.ITicks) => void,
     ): Promise<IMapItem[]> {
         return new Promise((resolve, reject) => {
             if (this._guid !== undefined) {
@@ -126,13 +113,13 @@ export default class FileParser extends AFileParser {
             if (options.filters !== undefined && options.filters.ecu_ids instanceof Array) {
                 ecuIds = options.filters.ecu_ids;
             }
-            const filterConfig: DltFilterConf = {
+            const filterConfig: DLT.DltFilterConf = {
                 min_log_level: options.logLevel,
                 app_ids: appIds,
                 context_ids: contextIds,
                 ecu_ids: ecuIds,
             };
-            const dltParams: IIndexDltParams = {
+            const dltParams: DLT.IIndexDltParams = {
                 dltFile: srcFile,
                 fibex: options.fibexFilePath,
                 filterConfig,
@@ -146,13 +133,13 @@ export default class FileParser extends AFileParser {
             this._logger.debug("calling indexDltAsync with params: " + JSON.stringify(dltParams));
             let completeTicks: number = 0;
             this._task = indexer.indexDltAsync(dltParams, {
-                onProgress: (ticks: ITicks) => {
+                onProgress: (ticks: Progress.ITicks) => {
                     if (onProgress !== undefined) {
                         completeTicks = ticks.total;
                         onProgress(ticks);
                     }
                 },
-                onChunk: (e: IChunk) => {
+                onChunk: (e: Progress.IChunk) => {
                     if (onMapUpdated !== undefined) {
                         const mapItem: IMapItem = {
                             rows: { from: e.rowsStart, to: e.rowsEnd },
@@ -162,7 +149,7 @@ export default class FileParser extends AFileParser {
                         collectedChunks.push(mapItem);
                     }
                 },
-                onNotification: (notification: INeonNotification) => {
+                onNotification: (notification: Progress.INeonNotification) => {
                     ServiceNotifications.notifyFromNeon(
                         notification,
                         "DLT-Indexing",
@@ -189,9 +176,6 @@ export default class FileParser extends AFileParser {
                 });
                 reject(error);
             });
-            this._task.on('progress', (ticks: ITicks) => {
-                //
-            });
         });
     }
 
@@ -203,7 +187,10 @@ export default class FileParser extends AFileParser {
             return;
         }
         this._logger.env(`Session is closed. Breaking operation.`);
-        this._task.break();
+        this._task.abort();
+        this._task.canceled(() => {
+            // All canceled 100%
+        });
     }
 
 }
