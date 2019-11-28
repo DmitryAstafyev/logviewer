@@ -5,6 +5,7 @@ import indexer, { DLT, Progress, CancelablePromise } from "indexer-neon";
 import ServiceStreams from "../../services/service.streams";
 import { Subscription } from "../../tools/index";
 import Logger from "../../tools/env.logger";
+import * as Tools from "../../tools/index";
 import ServiceNotifications, { ENotificationType } from "../../services/service.notifications";
 
 interface IDLTFilters {
@@ -20,22 +21,17 @@ interface IDLTOptions {
 const ExtNames = ["dlt"];
 
 export default class FileParser extends AFileParser {
-    private _subscriptions: { [key: string]: Subscription } = {};
+
     private _guid: string | undefined;
     private _logger: Logger = new Logger("indexing");
-    private _task: CancelablePromise<void, void, DLT.TIndexDltAsyncEvents, DLT.TIndexDltAsyncEventCB> | undefined;
+    private _task: CancelablePromise<void, void, DLT.TIndexDltAsyncEvents, DLT.TIndexDltAsyncEventObject> | undefined;
 
     constructor() {
         super();
-        this._subscriptions.onSessionClosed = ServiceStreams.getSubjects().onSessionClosed.subscribe(
-            this._onSessionClosed.bind(this),
-        );
     }
 
-    public destroy() {
-        Object.keys(this._subscriptions).forEach((key: string) => {
-            (this._subscriptions as any)[key].destroy();
-        });
+    public destroy(): Promise<void> {
+        return this.abort();
     }
 
     public getName(): string {
@@ -60,32 +56,6 @@ export default class FileParser extends AFileParser {
         });
     }
 
-    public getTransform(): Transform | undefined {
-        // Do not need any transform operations
-        return undefined;
-    }
-
-    public getParserFunc(): IFileParserFunc {
-        return {
-            parse: (chunk: Buffer) => {
-                return new Promise(resolve => {
-                    resolve(chunk);
-                });
-            },
-            close: () => {
-                // Do nothing
-            },
-            rest: () => {
-                // Do nothing
-                return "";
-            },
-        };
-    }
-
-    public isTicksSupported(): boolean {
-        return true;
-    }
-
     public parseAndIndex(
         srcFile: string,
         destFile: string,
@@ -93,8 +63,8 @@ export default class FileParser extends AFileParser {
         options: IDLTOptions,
         onMapUpdated?: (map: IMapItem[]) => void,
         onProgress?: (ticks: Progress.ITicks) => void,
-    ): Promise<IMapItem[]> {
-        return new Promise((resolve, reject) => {
+    ): Tools.CancelablePromise<IMapItem[], void> {
+        return new Tools.CancelablePromise<IMapItem[], void>((resolve, reject, cancel) => {
             if (this._guid !== undefined) {
                 return reject(new Error(`Parsing is already started.`));
             }
@@ -132,36 +102,7 @@ export default class FileParser extends AFileParser {
             };
             this._logger.debug("calling indexDltAsync with params: " + JSON.stringify(dltParams));
             let completeTicks: number = 0;
-            this._task = indexer.indexDltAsync(dltParams, {
-                onProgress: (ticks: Progress.ITicks) => {
-                    if (onProgress !== undefined) {
-                        completeTicks = ticks.total;
-                        onProgress(ticks);
-                    }
-                },
-                onChunk: (e: Progress.IChunk) => {
-                    if (onMapUpdated !== undefined) {
-                        const mapItem: IMapItem = {
-                            rows: { from: e.rowsStart, to: e.rowsEnd },
-                            bytes: { from: e.bytesStart, to: e.bytesEnd },
-                        };
-                        onMapUpdated([mapItem]);
-                        collectedChunks.push(mapItem);
-                    }
-                },
-                onNotification: (notification: Progress.INeonNotification) => {
-                    ServiceNotifications.notifyFromNeon(
-                        notification,
-                        "DLT-Indexing",
-                        this._guid,
-                        srcFile,
-                    );
-                },
-            }).then(() => {
-                const hrend = process.hrtime(hrstart);
-                const ms = Math.round(hrend[0] * 1000 + hrend[1] / 1000000);
-                this._logger.debug("!!!! parseAndIndex task finished");
-                this._logger.debug("Execution time for indexing : " + ms + "ms");
+            this._task = indexer.indexDltAsync(dltParams).then(() => {
                 resolve(collectedChunks);
             }).catch((error: Error) => {
                 ServiceNotifications.notify({
@@ -175,21 +116,47 @@ export default class FileParser extends AFileParser {
                     type: ENotificationType.error,
                 });
                 reject(error);
+            }).canceled(() => {
+                cancel();
+            }).finally(() => {
+                this._task = undefined;
+                const hrend = process.hrtime(hrstart);
+                const ms = Math.round(hrend[0] * 1000 + hrend[1] / 1000000);
+                this._logger.debug("parseAndIndex task finished");
+                this._logger.debug("Execution time for indexing : " + ms + "ms");
+            }).on('chunk', (event: Progress.IChunk) => {
+                if (onMapUpdated !== undefined) {
+                    const mapItem: IMapItem = {
+                        rows: { from: event.rowsStart, to: event.rowsEnd },
+                        bytes: { from: event.bytesStart, to: event.bytesEnd },
+                    };
+                    onMapUpdated([mapItem]);
+                    collectedChunks.push(mapItem);
+                }
+            }).on('progress', (event: Progress.ITicks) => {
+                if (onProgress !== undefined) {
+                    completeTicks = event.total;
+                    onProgress(event);
+                }
+            }).on('notification', (event: Progress.INeonNotification) => {
+                ServiceNotifications.notifyFromNeon(
+                    event,
+                    "DLT-Indexing",
+                    this._guid,
+                    srcFile,
+                );
             });
         });
     }
 
-    private _onSessionClosed(guid: string) {
-        if (this._task === undefined) {
-            return;
-        }
-        if (this._guid !== guid) {
-            return;
-        }
-        this._logger.env(`Session is closed. Breaking operation.`);
-        this._task.abort();
-        this._task.canceled(() => {
-            // All canceled 100%
+    public abort(): Promise<void> {
+        return new Promise((resolve) => {
+            if (this._task === undefined) {
+                return resolve();
+            }
+            this._task.canceled(() => {
+                resolve();
+            }).abort();
         });
     }
 
