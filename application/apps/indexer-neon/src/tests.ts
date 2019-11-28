@@ -72,7 +72,6 @@ export function testCallMergeFiles(mergeConf: string, out: string) {
                 out,
                 {
                     append: true,
-                    maxTime: Units.TimeUnit.fromSeconds(5),
                 }
             ).then(() => {
                 log.trace("TTT: done");
@@ -125,7 +124,6 @@ export function testCallConcatFiles(concatConfig: string, out: string) {
                 {
                     append: true,
                     chunk_size: 100,
-                    maxTime: Units.TimeUnit.fromSeconds(2),
                 }
             ).then(() => {
                 log.trace("TTT: done ");
@@ -238,7 +236,6 @@ export function testDiscoverTimespanAsync(files: string[]) {
         });
         discoverTimespanAsync(
             items,
-            { maxTime: Units.TimeUnit.fromSeconds(15) },
         ).then(() => {
             const hrend = process.hrtime(hrstart);
             const ms = Math.round(hrend[0] * 1000 + hrend[1] / 1000000);
@@ -349,7 +346,7 @@ export function testIndexingAsync(inFile: string, outPath: string) {
             inFile,
             outPath,
             'TAG',
-            { chunkSize: 500, maxTime: Units.TimeUnit.fromSeconds(15)}
+            { chunkSize: 500 }
         ).then(() => {
             bar.update(100);
             const hrend = process.hrtime(hrstart);
@@ -388,7 +385,7 @@ export function testTimedOutAsyncIndexing(fileToIndex: string, outPath: string) 
         fileToIndex,
         outPath,
         'TAG',
-        { chunkSize: 500, maxTime: Units.TimeUnit.fromMilliseconds(750) }
+        { chunkSize: 500 }
     ).then(() => {
         const hrend = process.hrtime(hrstart);
         const ms = Math.round(hrend[0] * 1000 + hrend[1] / 1000000);
@@ -420,7 +417,7 @@ export function testCancelledAsyncIndexing(fileToIndex: string, outPath: string)
         fileToIndex,
         outPath,
         'TAG',
-        { chunkSize: 500, maxTime: Units.TimeUnit.fromMilliseconds(750) }
+        { chunkSize: 500 }
     ).then(() => {
         const hrend = process.hrtime(hrstart);
         const ms = Math.round(hrend[0] * 1000 + hrend[1] / 1000000);
@@ -463,7 +460,7 @@ function testVeryShortIndexing() {
         examplePath + "/indexing/access_tiny.log",
         outPath,
         'TAG',
-        { chunkSize: 500, maxTime: Units.TimeUnit.fromMilliseconds(750) }
+        { chunkSize: 500 }
     ).then(() => {
         const hrend = process.hrtime(hrstart);
         const ms = Math.round(hrend[0] * 1000 + hrend[1] / 1000000);
