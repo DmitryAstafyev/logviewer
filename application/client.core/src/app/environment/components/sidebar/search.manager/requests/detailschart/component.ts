@@ -5,7 +5,7 @@ import { IChartRequest } from '../../../../../controller/controller.session.tab.
 import { CColors } from '../../../../../conts/colors';
 import { Subscription } from 'rxjs';
 import { IComponentDesc } from 'chipmunk-client-containers';
-import { InputStandardComponent, DDListStandardComponent, SliderNumericComponent } from 'chipmunk-client-primitive';
+import { InputStandardComponent, DDListStandardComponent, SliderDiscreteComponent } from 'chipmunk-client-primitive';
 import ChartControllers, { AChart, IOption, EOptionType, IOptionsObj, EChartType } from '../../../../views/chart/charts/charts';
 
 export interface IOnChangeEvent {
@@ -25,7 +25,7 @@ interface IOptionComponent {
 }
 
 const COptionComponents = {
-    [EOptionType.slider]: SliderNumericComponent,
+    [EOptionType.slider]: SliderDiscreteComponent,
     [EOptionType.list]: DDListStandardComponent,
     [EOptionType.input]: InputStandardComponent,
 };
@@ -130,7 +130,7 @@ export class SidebarAppSearchChartDetailsComponent implements OnDestroy, AfterCo
     }
 
     private _onOptionChange(controller: AChart, option: IOption, value: any) {
-        option.value = value;
+        option.value = option.setValue !== undefined ? option.setValue(value) : value;
         this.chart.request.options = controller.setOption(this.chart.request.options, option);
         this.chart.onChange({ options: Object.assign({}, this.chart.request.options) });
         this._cdRef.detectChanges();

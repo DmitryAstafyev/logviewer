@@ -16,6 +16,7 @@ import { SwitcherSimpleComponent                } from './switchers/simple/compo
 import { CheckSimpleComponent                   } from './checkbox/simple/component';
 
 import { SliderNumericComponent                 } from './sliders/numeric/component';
+import { SliderDiscreteComponent                } from './sliders/discrete/component';
 
 const checkboxes = [
     CheckSimpleComponent
@@ -43,7 +44,8 @@ const spinners = [
 ];
 
 const sliders = [
-    SliderNumericComponent
+    SliderNumericComponent,
+    SliderDiscreteComponent
 ];
 
 @NgModule({

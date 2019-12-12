@@ -23,6 +23,7 @@
     "@angular/platform-browser": "^8.2.12",
     "@angular/platform-browser-dynamic": "^8.2.12",
     "@angular/router": "^8.2.12",
+    "@material/slider": "^4.0.0",
     "core-js": "^3.3.5",
     "rxjs": "^6.5.3",
     "zone.js": "^0.10.2"

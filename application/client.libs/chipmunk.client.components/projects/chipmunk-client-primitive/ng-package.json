@@ -2,6 +2,10 @@
   "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
   "dest": "../../dist/chipmunk-client-primitive",
   "lib": {
-    "entryFile": "src/public_api.ts"
-  }
+    "entryFile": "src/public_api.ts",
+    "umdModuleIds": {
+      "@material/slider": "@material/slider"
+    }
+  },
+  "whitelistedNonPeerDependencies": ["."]
 }

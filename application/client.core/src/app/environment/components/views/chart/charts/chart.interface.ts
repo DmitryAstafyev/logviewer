@@ -52,6 +52,7 @@ export interface IOption {
     type: EOptionType;
     option: IOptionInput | IOptionList | IOptionSlider;
     value: any;
+    setValue?: (value: any) => any;
 }
 
 export interface IOptionsObj {

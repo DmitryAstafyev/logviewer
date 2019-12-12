@@ -96,10 +96,13 @@ export default class Chart extends AChart {
         return [
             {
                 type: EOptionType.slider,
-                option: { min: 0.1, max: 1, step: 0.1 },
+                option: { min: 0, max: 10, step: 1 },
                 caption: 'Line Tension',
                 value: options.lineTension,
                 name: 'lineTension',
+                setValue: (value: number) => {
+                    return value / 10;
+                }
             },
             {
                 type: EOptionType.slider,

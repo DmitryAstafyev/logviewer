@@ -1,0 +1,25 @@
+@import '../../../../../../theme/scheme.less';
+
+:host {
+    position: relative;
+    display: block;
+    width: ~"calc(100% - 24px)";
+    margin-left: 12px;
+    height: 2rem;
+    *.mdc-slider:not(.mdc-slider--disabled) .mdc-slider__track-container{
+        background-color: @scheme-color-3;
+    }
+    *.mdc-slider:not(.mdc-slider--disabled) .mdc-slider__focus-ring{
+        background-color: @scheme-color-4;
+    }
+    *.mdc-slider:not(.mdc-slider--disabled) .mdc-slider__thumb{
+        fill: @scheme-color-2;
+        stroke: @scheme-color-2;
+    }
+    *.mdc-slider:not(.mdc-slider--disabled) .mdc-slider__pin{
+        background-color: @scheme-color-4;
+    }
+    *.mdc-slider:not(.mdc-slider--disabled) .mdc-slider__track{
+        background-color: @scheme-color-2;
+    }
+}
