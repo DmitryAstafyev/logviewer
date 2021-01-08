@@ -3,17 +3,14 @@ use indexer_base::progress::Progress;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(strum_macros::ToString, Debug, Serialize, Deserialize)]
-pub enum CallbackEvent {
-    Progress(Progress),
-    Notification,
-    Done(Done),
-}
+pub type UUID = String;
 
 #[derive(strum_macros::ToString, Debug, Serialize, Deserialize)]
-pub enum Done {
-    Finished,
-    Interrupted,
+pub enum CallbackEvent {
+    Progress(UUID, Progress),
+    SearchStateChanged(u64),
+    OperationDone(UUID),
+    SessionDestroyed,
 }
 
 #[derive(Error, Debug)]
