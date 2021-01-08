@@ -1,8 +1,4 @@
-use indexer_base::progress::Ticks;
-use indexer_base::{
-    progress::{IndexingProgress, IndexingResults, Progress},
-    utils,
-};
+use indexer_base::{progress::Progress, utils};
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
@@ -18,7 +14,7 @@ pub enum GrabError {
     Config(String),
     #[error("Channel-Communication error ({0})")]
     Communication(String),
-    #[error("IO error while grabbing: ({0})")]
+    #[error("IO error while grabbing: ({0:?})")]
     IoOperation(#[from] std::io::Error),
     #[error("Invalid range: ({0:?})")]
     InvalidRange(LineRange),
@@ -147,9 +143,7 @@ impl Grabber {
     /// A new Grabber instance can only be created if the file is non-empty,
     /// otherwise this function will return an error
     pub fn new(path: impl AsRef<Path>, source_id: &str) -> Result<Self, GrabError> {
-        let input_file_size = std::fs::metadata(&path)
-            .map_err(|e| GrabError::Config("Could not get metadata of file to grab".to_string()))?
-            .len();
+        let input_file_size = std::fs::metadata(&path)?.len();
         if input_file_size == 0 {
             return Err(GrabError::Config("Cannot grab empty file".to_string()));
         }
@@ -198,11 +192,8 @@ impl Grabber {
         result_sender: &cc::Sender<Progress>,
         shutdown_receiver: Option<cc::Receiver<()>>,
     ) -> Result<Option<GrabMetadata>, GrabError> {
-        let mut f = fs::File::open(&path)
-            .map_err(|e| GrabError::Config(format!("Could not open file to grab: {}", e)))?;
-        let input_file_size = std::fs::metadata(&path)
-            .map_err(|e| GrabError::Config("Could not determine size of file".to_string()))?
-            .len();
+        let mut f = fs::File::open(&path)?;
+        let input_file_size = std::fs::metadata(&path)?.len();
         let mut slots = Vec::<Slot>::new();
 
         let mut buffer = vec![0; DEFAULT_SLOT_SIZE];

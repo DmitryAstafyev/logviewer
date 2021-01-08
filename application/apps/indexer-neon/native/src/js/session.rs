@@ -2,6 +2,7 @@ use crate::js::events::Channel;
 use crate::js::events::{CallbackEvent, ComputationError, Done};
 use crossbeam_channel as cc;
 use indexer_base::progress::Progress;
+use indexer_base::search::{SearchFilter, SearchHolder};
 use neon::prelude::*;
 use processor::grabber::GrabbedContent;
 use processor::grabber::LineRange;
@@ -9,14 +10,6 @@ use processor::grabber::{GrabMetadata, Grabber};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::thread;
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct SearchFilter {
-    value: String,
-    is_regex: bool,
-    case_sensitive: bool,
-    is_word: bool,
-}
 
 pub struct RustSession {
     pub id: String,
@@ -273,26 +266,70 @@ declare_types! {
         }
 
         method setFilters(mut cx) {
+            let assigned_file = {
+                let guard = cx.lock();
+                let session = cx.this().borrow(&guard);
+                session.assigned_file.clone()
+            };
+            match assigned_file {
+                None => cx.throw_error("No session file assigned yet"),
+                Some(f) => {
             let arg_filters = cx.argument::<JsString>(0)?.value();
             let filter_conf: Result<Vec<SearchFilter>, serde_json::Error> =
                 serde_json::from_str(arg_filters.as_str());
             match filter_conf {
                 Ok(conf) => {
                     let mut this = cx.this();
-                    {
+                    let error = {
                         let guard = cx.lock();
                         let mut this_mut = this.borrow_mut(&guard);
                         this_mut.filters.clear();
                         for filter in conf {
                             this_mut.filters.push(filter);
                         }
+                        let search_holder = SearchHolder::new(&f, &this_mut.filters);
+                        match Grabber::lazy(Path::new(&file_path), &source_id) {
+                            Ok(grabber) => {
+                                this_mut.content_grabber = Some(grabber);
+                                let (handler, shutdown_rx, metadata_tx) =
+                                    (this_mut.handler.clone(),
+                                    this_mut.shutdown_channel.1.clone(),
+                                    this_mut.metadata_channel.0.clone());
+                                let progress_tx = this_mut.start_listening_for_metadata_progress(handler);
+                                thread::spawn(move || {
+                                    log::debug!("Created rust thread for task execution");
+                                    match Grabber::create_metadata_for_file(file_path, &progress_tx, Some(shutdown_rx)) {
+                                        Ok(metadata)=> {
+                                            log::info!("received metadata");
+                                            let _ = metadata_tx.send(Ok(metadata));
+                                        } //this_mut.content_grabber.unwrap().metadata = metadata,
+                                        Err(e) => {
+                                            let e_str = format!("Error creating grabber for file: {}", e);
+                                            log::error!("{}", e_str);
+                                            let _ = metadata_tx.send(Err(ComputationError::Process(e_str)));
+                                        }
+                                    }
+                                });
+                                None
+                            },
+                            Err(e) => {
+                                Some(format!("Error creating grabber for file: {}", e))
+                            }
+                        }
                     };
-                    Ok(cx.undefined().upcast())
+                    match error {
+                        Some(e) => cx.throw_error(e),
+                        None => Ok(cx.undefined().upcast()),
+                    }
                 }
                 Err(e) => cx.throw_error(format!("{}", e))
             }
+
+                }
+            }
         }
 
+        // TODO: not needed, remove
         method clearFilters(mut cx) {
             let mut this = cx.this();
             {
