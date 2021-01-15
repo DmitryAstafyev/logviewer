@@ -91,6 +91,7 @@ enum EventType {
 }
 
 function parseEventType(eventString: string): EventType {
+	console.log('JS: received event, string: ' + eventString);
 	const event = JSON.parse(eventString);
 	console.log('JS: received event, keys: ' + Object.keys(event));
 	if (event.hasOwnProperty('Progress')) {

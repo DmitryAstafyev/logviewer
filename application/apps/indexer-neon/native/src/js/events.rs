@@ -1,15 +1,71 @@
 use crossbeam_channel as cc;
 use indexer_base::progress::Progress;
+use indexer_base::progress::Severity;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use uuid::Uuid;
 
-pub type UUID = String;
+#[derive(Debug, Serialize, Deserialize)]
+pub enum NativeErrorKind {
+    /// The file in question does not exist
+    FileNotFound,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct NativeError {
+    severity: Severity,
+    kind: NativeErrorKind,
+}
 
 #[derive(strum_macros::ToString, Debug, Serialize, Deserialize)]
 pub enum CallbackEvent {
-    Progress(UUID, Progress),
-    SearchStateChanged(u64),
-    OperationDone(UUID),
+    /**
+     * Triggered on update of stream (session) file
+     * @event StreamUpdated { rows: usize }
+     * rows - count of rows, which can be requested with method [grab]
+     * >> Scope: session
+     * >> Kind: repeated
+     */
+    StreamUpdated(u64),
+    /**
+     * Triggered on update of search result data
+     * @event SearchUpdated { rows: usize }
+     * rows - count of rows, which can be requested with method [grabSearchResult]
+     * >> Scope: session
+     * >> Kind: repeated
+     */
+    SearchUpdated(u64),
+    /**
+     * Triggered on progress of async operation
+     * @event Progress: { total: usize, done: usize }
+     * >> Scope: async operation
+     * >> Kind: repeated
+     */
+    Progress(Uuid, Progress),
+    /**
+     * Triggered on error in the scope of session
+     * >> Scope: session
+     * >> Kind: repeated
+     */
+    SessionError(NativeError),
+    /**
+     * Triggered on error in the scope proccessing an async operation
+     * >> Scope: session, async operation
+     * >> Kind: repeated
+     */
+    OperationError(Uuid, NativeError),
+    /**
+     * Triggered on some asynch operation is done
+     * >> Scope: async operation
+     * >> Kind: repeated
+     */
+    OperationDone(Uuid),
+
+    /**
+     * Triggered on session is destroyed
+     * >> Scope: session
+     * >> Kind: once
+     */
     SessionDestroyed,
 }
 

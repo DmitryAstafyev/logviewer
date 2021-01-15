@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
 use std::{
+    fs,
     fs::File,
     io::{BufWriter, Write},
 };
@@ -39,7 +40,7 @@ pub struct SearchHolder {
 pub struct SearchFilter {
     value: String,
     is_regex: bool,
-    case_sensitive: bool,
+    ignore_case: bool,
     is_word: bool,
 }
 
@@ -58,13 +59,13 @@ impl SearchFilter {
         SearchFilter {
             value: value.to_owned(),
             is_regex: true,
-            case_sensitive: false,
+            ignore_case: false,
             is_word: false,
         }
     }
 
-    pub fn case_sensitive(mut self, sensitive: bool) -> Self {
-        self.case_sensitive = sensitive;
+    pub fn ignore_case(mut self, ignore: bool) -> Self {
+        self.ignore_case = ignore;
         self
     }
 
@@ -95,8 +96,8 @@ fn escape(value: &str) -> String {
 
 fn filter_as_regex(filter: &SearchFilter) -> String {
     let word_marker = if filter.is_word { "\\b" } else { "" };
-    let ignore_case_start = if filter.case_sensitive { "(?i)" } else { "" };
-    let ignore_case_end = if filter.case_sensitive { "(?-i)" } else { "" };
+    let ignore_case_start = if filter.ignore_case { "(?i)" } else { "" };
+    let ignore_case_end = if filter.ignore_case { "(?-i)" } else { "" };
     let subject = if filter.is_regex {
         filter.value.clone()
     } else {
@@ -124,7 +125,10 @@ impl SearchHolder {
         }
     }
 
-    pub fn execute_search(&self) -> Result<PathBuf, SearchError> {
+    /// execute a search for the given input path and filters
+    /// return the file that contains the search results along with the
+    /// number of found matches
+    pub fn execute_search(&self) -> Result<(PathBuf, u64), SearchError> {
         if self.search_filters.is_empty() {
             return Err(SearchError::Input(
                 "Cannot search without filters".to_owned(),
@@ -137,20 +141,19 @@ impl SearchHolder {
                 .map(|f: &SearchFilter| filter_as_regex(&f))
                 .join("|")
         );
-        println!(
-            "Search {} in {:?}, put out to {:?}",
-            regex, self.file_path, self.out_file_path
-        );
         let matcher = RegexMatcher::new(&regex)?;
         let out_file = File::create(&self.out_file_path)?;
+        let mut matched_lines = 0u64;
+
         let mut writer = BufWriter::new(out_file);
         Searcher::new().search_path(
             &matcher,
             &self.file_path,
-            UTF8(|_lnum, line| {
+            UTF8(|lnum, line| {
+                matched_lines += 1;
                 let line_match = SearchMatch {
-                    line: _lnum,
-                    content: Cow::Borrowed(line),
+                    line: lnum,
+                    content: Cow::Borrowed(line.trim_end()),
                 };
                 if let Ok(content) = serde_json::to_string(&line_match) {
                     writeln!(writer, "{}", content);
@@ -161,7 +164,7 @@ impl SearchHolder {
             }),
         )?;
 
-        Ok(self.out_file_path.clone())
+        Ok((self.out_file_path.clone(), matched_lines))
     }
 }
 
@@ -185,32 +188,58 @@ mod tests {
             .collect()
     }
 
+    fn filtered(filters: &[SearchFilter]) -> Result<String, std::io::Error> {
+        let mut tmp_file = tempfile::NamedTempFile::new()?;
+        let input_file = tmp_file.as_file_mut();
+        input_file.write_all(LOGS.join("\n").as_bytes())?;
+        let search_holder = SearchHolder::new(tmp_file.path(), filters.iter());
+        let (out_path, _found) = search_holder
+            .execute_search()
+            .map_err(|e| Error::new(ErrorKind::Other, format!("Error in search: {}", e)))?;
+        std::fs::read_to_string(out_path)
+    }
+
     #[test]
-    fn test_ripgrep_as_library() -> Result<(), std::io::Error> {
+    fn test_ripgrep_regex_non_regex() -> Result<(), std::io::Error> {
         let filters = vec![
             SearchFilter::new(r"[Err]")
                 .regex(false)
-                .case_sensitive(true)
+                .ignore_case(true)
                 .word(false),
             SearchFilter::new(r"\[Warn\]")
                 .regex(true)
-                .case_sensitive(true)
+                .ignore_case(true)
                 .word(false),
         ];
-        let mut tmp_file = tempfile::NamedTempFile::new()?;
-        let input_file = tmp_file.as_file_mut();
-        input_file.write_all(LOGS.concat().as_bytes())?;
 
-        let search_holder = SearchHolder::new(tmp_file.path(), filters.iter());
-        let out_path = search_holder
-            .execute_search()
-            .map_err(|e| Error::new(ErrorKind::Other, format!("Error in search: {}", e)))?;
-        let result_content = std::fs::read_to_string(out_path)?;
+        let result_content = filtered(&filters)?;
         let matches = as_matches(&result_content);
-        println!("matches:\n{:?}", matches);
         assert_eq!(2, matches.len());
         assert_eq!(2, matches[0].line);
-        assert_eq!("a", matches[0].content);
+        assert_eq!("[Warn](1.4): b", matches[0].content);
+        assert_eq!(4, matches[1].line);
+        assert_eq!("[Err](1.6): d", matches[1].content);
+        Ok(())
+    }
+
+    #[test]
+    fn test_ripgrep_case_sensitivity() -> Result<(), std::io::Error> {
+        let filters = vec![
+            SearchFilter::new(r"[err]")
+                .regex(false)
+                .ignore_case(true)
+                .word(false),
+            SearchFilter::new(r"[warn]")
+                .regex(false)
+                .ignore_case(false)
+                .word(false),
+        ];
+
+        let result_content = filtered(&filters)?;
+        let matches = as_matches(&result_content);
+        assert_eq!(1, matches.len());
+        assert_eq!(4, matches[0].line);
+        assert_eq!("[Err](1.6): d", matches[0].content);
         Ok(())
     }
 }
