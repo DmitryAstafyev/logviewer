@@ -1,31 +1,41 @@
 use crate::js::events::Channel;
-use crate::js::events::{CallbackEvent, ComputationError, Done};
+use crate::js::events::{CallbackEvent, ComputationError};
 use crossbeam_channel as cc;
-use indexer_base::progress::Progress;
-use indexer_base::search::{SearchFilter, SearchHolder};
+use indexer_base::progress::{Notification, Progress, Severity};
 use neon::prelude::*;
 use processor::grabber::GrabbedContent;
 use processor::grabber::LineRange;
 use processor::grabber::{GrabMetadata, Grabber};
-use serde::{Deserialize, Serialize};
+use processor::search::{SearchFilter, SearchHolder};
+use serde::Serialize;
 use std::path::Path;
 use std::thread;
+use uuid::Uuid;
 
 pub struct RustSession {
     pub id: String,
     pub assigned_file: Option<String>,
     pub content_grabber: Option<Grabber>,
+    pub search_grabber: Option<Grabber>,
     pub(crate) handler: EventHandler,
     pub filters: Vec<SearchFilter>,
     // channel that allows to propagate shutdown requests to ongoing operations
     shutdown_channel: Channel<()>,
     // channel to store the metadata of a file once available
     metadata_channel: Channel<Result<Option<GrabMetadata>, ComputationError>>,
+    // channel to store the metadata of the search results once available
+    search_metadata_channel: Channel<Result<Option<GrabMetadata>, ComputationError>>,
+}
+
+enum GrabberKind {
+    Content,
+    Search,
 }
 
 impl RustSession {
-    pub fn start_listening_for_metadata_progress(
+    pub fn start_listening_for_progress(
         &self,
+        uuid: Uuid,
         javascript_listener: neon::event::EventHandler,
     ) -> cc::Sender<Progress> {
         let (progress_tx, progress_rx): Channel<Progress> = cc::unbounded();
@@ -41,13 +51,13 @@ impl RustSession {
                             _ => false,
                         };
                         log::info!("Received progress: {:?}", progress);
-                        if let Err(e) =
-                            send_js_event(&javascript_listener, CallbackEvent::Progress(progress))
-                        {
+                        if let Err(e) = send_js_event(
+                            &javascript_listener,
+                            CallbackEvent::Progress(uuid, progress),
+                        ) {
                             log::warn!("Could not send event to js: {}", e);
                         }
                         if operation_done {
-                            log::debug!("Stop listening for metadata");
                             break;
                         }
                     }
@@ -62,12 +72,33 @@ impl RustSession {
         progress_tx
     }
 
-    fn grab_lines(
+    fn grab_content_lines(
         &mut self,
         start_line_index: u64,
         number_of_lines: u64,
     ) -> Result<GrabbedContent, ComputationError> {
-        match &mut self.content_grabber {
+        self.grab_lines(start_line_index, number_of_lines, GrabberKind::Content)
+    }
+
+    fn grab_search_result_lines(
+        &mut self,
+        start_line_index: u64,
+        number_of_lines: u64,
+    ) -> Result<GrabbedContent, ComputationError> {
+        self.grab_lines(start_line_index, number_of_lines, GrabberKind::Search)
+    }
+
+    fn grab_lines(
+        &mut self,
+        start_line_index: u64,
+        number_of_lines: u64,
+        grabber_kind: GrabberKind,
+    ) -> Result<GrabbedContent, ComputationError> {
+        let grabber = match grabber_kind {
+            GrabberKind::Content => &mut self.content_grabber,
+            GrabberKind::Search => &mut self.search_grabber,
+        };
+        match grabber {
             Some(grabber) => {
                 if grabber.metadata.is_none() {
                     match self.metadata_channel.1.try_recv() {
@@ -170,9 +201,11 @@ declare_types! {
                 handler,
                 assigned_file: None,
                 content_grabber: None,
+                search_grabber: None,
                 filters: vec![],
                 shutdown_channel: cc::unbounded(),
                 metadata_channel: cc::unbounded(),
+                search_metadata_channel: cc::unbounded(),
             })
         }
 
@@ -200,6 +233,7 @@ declare_types! {
         method assignFile(mut cx) {
             let file_path = cx.argument::<JsString>(0)?.value();
             let source_id = cx.argument::<JsString>(1)?.value();
+            let operation_uuid = Uuid::new_v4();
             let mut this = cx.this();
             let error = {
                 let guard = cx.lock();
@@ -212,7 +246,7 @@ declare_types! {
                             (this_mut.handler.clone(),
                              this_mut.shutdown_channel.1.clone(),
                              this_mut.metadata_channel.0.clone());
-                        let progress_tx = this_mut.start_listening_for_metadata_progress(handler);
+                        let progress_tx = this_mut.start_listening_for_progress(operation_uuid, handler);
                         thread::spawn(move || {
                             log::debug!("Created rust thread for task execution");
                             match Grabber::create_metadata_for_file(file_path, &progress_tx, Some(shutdown_rx)) {
@@ -247,7 +281,32 @@ declare_types! {
             let error = {
                 let guard = cx.lock();
                 let mut this_mut = this.borrow_mut(&guard);
-                this_mut.grab_lines(start_line_index, number_of_lines)
+                this_mut.grab_content_lines(start_line_index, number_of_lines)
+            };
+            match error {
+                Err(e) => cx.throw_error(e.to_string()),
+                Ok(grabbed_content) => {
+                    match serde_json::to_string(&grabbed_content) {
+                        Ok(js_string) => {
+                            Ok(cx.string(js_string).upcast())
+                        },
+                        Err(e) => {
+                            log::error!("Could not convert SearchFilter: {}", e);
+                            cx.throw_error(e.to_string())
+                        },
+                    }
+                },
+            }
+        }
+
+        method grab_search_results(mut cx) {
+            let start_line_index: u64 = cx.argument::<JsNumber>(0)?.value() as u64;
+            let number_of_lines: u64 = cx.argument::<JsNumber>(1)?.value() as u64;
+            let mut this = cx.this();
+            let error = {
+                let guard = cx.lock();
+                let mut this_mut = this.borrow_mut(&guard);
+                this_mut.grab_search_result_lines(start_line_index, number_of_lines)
             };
             match error {
                 Err(e) => cx.throw_error(e.to_string()),
@@ -267,10 +326,12 @@ declare_types! {
 
         method setFilters(mut cx) {
             let assigned_file = {
+                let this = cx.this();
                 let guard = cx.lock();
-                let session = cx.this().borrow(&guard);
+                let session = this.borrow(&guard);
                 session.assigned_file.clone()
             };
+            let operation_uuid = Uuid::new_v4();
             match assigned_file {
                 None => cx.throw_error("No session file assigned yet"),
                 Some(f) => {
@@ -280,42 +341,50 @@ declare_types! {
             match filter_conf {
                 Ok(conf) => {
                     let mut this = cx.this();
-                    let error = {
+                    let error: Option<String> = {
                         let guard = cx.lock();
                         let mut this_mut = this.borrow_mut(&guard);
                         this_mut.filters.clear();
                         for filter in conf {
                             this_mut.filters.push(filter);
                         }
-                        let search_holder = SearchHolder::new(&f, &this_mut.filters);
-                        match Grabber::lazy(Path::new(&file_path), &source_id) {
-                            Ok(grabber) => {
-                                this_mut.content_grabber = Some(grabber);
-                                let (handler, shutdown_rx, metadata_tx) =
-                                    (this_mut.handler.clone(),
-                                    this_mut.shutdown_channel.1.clone(),
-                                    this_mut.metadata_channel.0.clone());
-                                let progress_tx = this_mut.start_listening_for_metadata_progress(handler);
-                                thread::spawn(move || {
-                                    log::debug!("Created rust thread for task execution");
-                                    match Grabber::create_metadata_for_file(file_path, &progress_tx, Some(shutdown_rx)) {
+                        let (handler, shutdown_rx, search_metadata_tx) =
+                            (this_mut.handler.clone(),
+                             this_mut.shutdown_channel.1.clone(),
+                             this_mut.search_metadata_channel.0.clone());
+                        let progress_tx = this_mut.start_listening_for_progress(operation_uuid, handler);
+                        let search_holder = SearchHolder::new(Path::new(&f), this_mut.filters.iter());
+                        thread::spawn(move || {
+                            log::debug!("Created rust thread for task execution");
+                            match search_holder.execute_search() {
+                                Ok((out_path, match_count))=> {
+                                    log::info!("Finished search");
+                                    let _ = progress_tx.send(Progress::ticks(match_count, match_count));
+
+                                    log::debug!("Done with search, create metadata for search result file");
+                                    match Grabber::create_metadata_for_file(out_path, &progress_tx, Some(shutdown_rx)) {
                                         Ok(metadata)=> {
-                                            log::info!("received metadata");
-                                            let _ = metadata_tx.send(Ok(metadata));
+                                            log::info!("Received metadata for search result file");
+                                            let _ = search_metadata_tx.send(Ok(metadata));
                                         } //this_mut.content_grabber.unwrap().metadata = metadata,
                                         Err(e) => {
                                             let e_str = format!("Error creating grabber for file: {}", e);
                                             log::error!("{}", e_str);
-                                            let _ = metadata_tx.send(Err(ComputationError::Process(e_str)));
+                                            let _ = search_metadata_tx.send(Err(ComputationError::Process(e_str)));
                                         }
                                     }
-                                });
-                                None
-                            },
-                            Err(e) => {
-                                Some(format!("Error creating grabber for file: {}", e))
+
+
+                                } //this_mut.content_grabber.unwrap().metadata = metadata,
+                                Err(e) => {
+                                    let e_str = format!("Error executing search: {}", e);
+                                    log::error!("{}", e_str);
+                                    let notification = Notification { severity: Severity::ERROR, content: e_str, line: None};
+                                    let _ = progress_tx.send(Progress::Notification(notification));
+                                }
                             }
-                        }
+                        });
+                        None
                     };
                     match error {
                         Some(e) => cx.throw_error(e),
@@ -360,7 +429,8 @@ declare_types! {
         }
 
         method shutdown(mut cx) {
-            send_js_event_cx(&mut cx, CallbackEvent::Done(Done::Finished))?;
+            // TODO clean up
+            send_js_event_cx(&mut cx, CallbackEvent::SessionDestroyed)?;
             Ok(cx.undefined().upcast())
         }
     }
