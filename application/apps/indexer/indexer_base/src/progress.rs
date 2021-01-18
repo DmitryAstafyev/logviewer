@@ -1,7 +1,7 @@
 use crossbeam_channel as cc;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub enum Severity {
     WARNING,
     ERROR,

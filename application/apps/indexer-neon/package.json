@@ -4,7 +4,7 @@
   "description": "",
   "main": "./dist/apps/indexer-neon/src/index.js",
   "types": "./dist/apps/indexer-neon/src/index.d.ts",
- "scripts": {
+  "scripts": {
     "neon": "npm run build-ts-neon && npm run build-neon",
     "build-ts-neon": "tsc -p ./tsconfig.json",
     "build-neon": "node_modules/.bin/electron-build-env neon build --release",

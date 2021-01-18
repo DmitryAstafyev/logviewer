@@ -1,6 +1,5 @@
 import * as path from 'path';
 import ServiceProduction from '../services/service.production';
-import * as path from 'path';
 
 export interface IRustModuleExports {
     RustSession: any;
