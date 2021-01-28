@@ -22,7 +22,9 @@ pub enum GrabError {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GrabbedElement {
+    #[serde(rename = "id")]
     pub source_id: String,
+    #[serde(rename = "c")]
     pub content: String,
 }
 
@@ -187,6 +189,56 @@ impl Grabber {
         Ok(buffer[0] == b'\n' || buffer[0] == b'\r')
     }
 
+    pub async fn create_metadata_async(
+        path: impl AsRef<Path>,
+        shutdown_receiver: Option<tokio::sync::broadcast::Receiver<()>>,
+    ) -> Result<Option<GrabMetadata>, GrabError> {
+        log::trace!("create_metadata_async");
+        use tokio::fs::File;
+        use tokio::io::AsyncReadExt;
+        let mut f = File::open(&path).await?;
+        let input_file_size = tokio::fs::metadata(&path).await?.len();
+        let mut slots = Vec::<Slot>::new();
+
+        let mut buffer = vec![0; DEFAULT_SLOT_SIZE];
+        let mut byte_index = 0u64;
+        let mut processed_lines = 0u64;
+        while let Ok(len) = f.read(&mut buffer).await {
+            // TODO check for shutdown
+            // if utils::check_if_stop_was_requested(shutdown_receiver.as_ref(), "grabber") {
+            //     result_sender
+            //         .send(Progress::Stopped)
+            //         .map_err(|_| GrabError::Communication("Could not send progress".to_string()))?;
+            //     return Ok(None);
+            // }
+            if len == 0 {
+                break;
+            }
+            if len < DEFAULT_SLOT_SIZE {
+                buffer.resize(len, 0);
+            }
+            let line_count = bytecount::count(&buffer, b'\n') as u64 + 1;
+            let slot = Slot {
+                bytes: ByteRange::new(byte_index, byte_index + len as u64),
+                lines: LineRange::new(processed_lines, processed_lines + line_count),
+            };
+            slots.push(slot);
+            byte_index += len as u64;
+            processed_lines += line_count;
+            // TODO generate update events
+            // result_sender
+            //     .send(Progress::ticks(byte_index, input_file_size))
+            //     .map_err(|_| GrabError::Communication("Could not send progress".to_string()))?;
+        }
+        // TODO generate done event
+        // result_sender
+        //     .send(Progress::ticks(input_file_size, input_file_size))
+        //     .map_err(|_| GrabError::Communication("Could not send progress".to_string()))?;
+        Ok(Some(GrabMetadata {
+            slots,
+            line_count: processed_lines as usize,
+        }))
+    }
     pub fn create_metadata_for_file(
         path: impl AsRef<Path>,
         result_sender: &cc::Sender<Progress>,
