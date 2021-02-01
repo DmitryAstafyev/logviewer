@@ -117,11 +117,6 @@ enum GrabberKind {
     Search,
 }
 
-async fn compute() -> Uuid {
-    thread::sleep(std::time::Duration::from_millis(1000));
-    Uuid::new_v4()
-}
-
 #[node_bindgen]
 impl RustSession {
     #[node_bindgen(constructor)]
@@ -151,9 +146,8 @@ impl RustSession {
     }
 
     #[node_bindgen]
-    fn cancel_operations(&mut self) -> Result<(), ComputationError> {
+    fn cancel_operations(&mut self) {
         let _ = self.shutdown_channel.0.send(());
-        Ok(())
     }
 
     #[node_bindgen(mt)]
