@@ -3,7 +3,7 @@ import ServiceStreams from "../../services/service.sessions";
 import ServiceStreamSource from '../../services/service.stream.sources';
 import ServiceNotifications from "../../services/service.notifications";
 
-import { CancelablePromise } from "indexer-neon";
+import { CancelablePromise } from "rustcore";
 import { IDLTDeamonConnectionOptions as IConnectionOptions } from '../../../../common/ipc/electron.ipc.messages/dlt.deamon.recent.response';
 import { EventEmitter } from 'events';
 
