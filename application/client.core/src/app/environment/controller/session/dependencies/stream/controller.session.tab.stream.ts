@@ -1,7 +1,6 @@
 import { IPCMessages, Subscription as IPCSubscription } from '../../../../services/service.electron.ipc';
 import { Observable, Subject, Subscription } from 'rxjs';
 import { ControllerSessionTabStreamOutput, IStreamState } from '../output/controller.session.tab.stream.output';
-import { ControllerSessionTabStreamBookmarks } from '../bookmarks/controller.session.tab.stream.bookmarks';
 import { ControllerSessionScope } from '../scope/controller.session.tab.scope';
 import { ControllerSessionTabTimestamp } from '../timestamps/session.dependency.timestamps';
 import { IQueueController } from '../../../../services/standalone/service.queue';

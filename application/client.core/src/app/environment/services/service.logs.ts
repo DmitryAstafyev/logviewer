@@ -5,7 +5,9 @@ import ElectronIpcService from './service.electron.ipc';
 import { IPCMessages, Subscription } from './service.electron.ipc';
 import { IService } from '../interfaces/interface.service';
 import { setGlobalLogLevel, setGlobalLogCallback, ELogLevels } from 'chipmunk.client.toolkit';
-import { enableProdMode } from '@angular/core';
+
+declare var global: any;
+declare var window: any;
 
 export class LogsService implements IService {
 
@@ -75,6 +77,21 @@ export class LogsService implements IService {
         setGlobalLogLevel(ELogLevels.DEBUG);
         this._logger.debug(`Production mode: ${this._production}`);
         setGlobalLogLevel(this._level);
+        if (global !== undefined && global.chipmunk !== undefined) {
+            if (global.chipmunk.Logger === undefined) {
+                global.chipmunk.Logger = Toolkit.Logger;
+            }
+            if (global.chipmunk.logger === undefined) {
+                global.chipmunk.logger = new Toolkit.Logger('Global');
+            }
+        } else if (window !== undefined && window.chipmunk !== undefined) {
+            if (window.chipmunk.Logger === undefined) {
+                window.chipmunk.Logger = Toolkit.Logger;
+            }
+            if (window.chipmunk.logger === undefined) {
+                window.chipmunk.logger = new Toolkit.Logger('Global');
+            }
+        }
     }
 
     private _write(msg: string, level: ELogLevels) {

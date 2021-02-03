@@ -3,7 +3,7 @@ import { Logger, TLogFunc, IChipmunkNodeGlobal } from '../../../../../common/int
 export { Logger };
 
 export function log(s: any) {
-    if ((global as any).chipmunk !== undefined) {
+    if ((global as any).chipmunk !== undefined && (global as any).chipmunk.logger !== undefined) {
         (global as any).chipmunk.logger.debug(s);
     } else if (typeof s === 'string') {
         console.log("[JS]: %d: %s", new Date().getTime(), s);
@@ -14,7 +14,7 @@ export function log(s: any) {
 
 export function getLogger(alias: string): Logger {
     const signature: string = `|RustBinding|>${alias}`;
-    if ((global as any).chipmunk !== undefined) {
+    if ((global as any).chipmunk !== undefined && (global as any).chipmunk.Logger !== undefined) {
         const globals = (global as any).chipmunk as IChipmunkNodeGlobal;
         return new globals.Logger(signature);
     } else {

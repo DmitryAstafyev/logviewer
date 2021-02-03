@@ -231,11 +231,11 @@ class ServiceElectron implements IService {
         }
         // Create client
         this._createBrowserWindow().then(() => {
-            if (!ServiceProduction.isProduction() && !ServiceEnv.get().CHIPMUNK_NO_WEBDEVTOOLS) {
+            //if (!ServiceProduction.isProduction() && !ServiceEnv.get().CHIPMUNK_NO_WEBDEVTOOLS) {
                 if (this._controllerBrowserWindow !== undefined) {
                     this._controllerBrowserWindow.debug();
                 }
-            }
+            //}
             // Menu
             this._controllerElectronMenu = new ControllerElectronMenu();
                 // Files from cmd

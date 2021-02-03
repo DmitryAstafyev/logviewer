@@ -12,6 +12,7 @@ import OutputRedirectionsService from '../../../../services/standalone/service.o
 import ServiceElectronIpc from '../../../../services/service.electron.ipc';
 
 import * as Toolkit from 'chipmunk.client.toolkit';
+import { rejects } from 'assert';
 
 export type TRequestDataHandler = (start: number, end: number) => Promise<IPCMessages.StreamChunk>;
 
@@ -54,6 +55,9 @@ export const Settings = {
     requestDelay    : 0,         // ms, delay before to do request
 };
 
+declare var require: any;
+declare var window: any;
+
 export class ControllerSessionTabStreamOutput implements Dependency {
 
     private _guid: string;
@@ -78,6 +82,8 @@ export class ControllerSessionTabStreamOutput implements Dependency {
         bufferLoadingRequestId: undefined,
     };
 
+    private _nativeSession: any;
+
     private _subjects = {
         onStateUpdated: new Subject<IStreamState>(),
         onRangeLoaded: new Subject<ILoadedRange>(),
@@ -95,15 +101,27 @@ export class ControllerSessionTabStreamOutput implements Dependency {
     constructor(uuid: string, getter: SessionGetter) {
         this._guid = uuid;
         this._session = getter;
-        // this._requestData = params.requestDataHandler;
         this._logger = new Toolkit.Logger(`ControllerSessionTabStreamOutput: ${this._guid}`);
     }
 
     public init(): Promise<void> {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             this._subscriptions.onRowSelected = OutputRedirectionsService.subscribe(this._guid, this._onRowSelected.bind(this));
             this._subscriptions.onBookmarkRowSelected = this._session().getBookmarks().getObservable().onSelected.subscribe(this._onRowSelected.bind(this, EParent.bookmark, {}));
-            resolve();
+            if (typeof (window as any).__file_to_assign === 'string') {
+                const rc = (window as any).require('rustcore');
+                this._nativeSession = new rc.Session(this._session().getGuid());
+                const stream = this._nativeSession.getStream();
+                if (stream instanceof Error) {
+                    return reject(stream);
+                }
+                stream.assign((window as any).__file_to_assign, undefined).then(() => {
+                    resolve();
+                }).catch((e) => {
+                    debugger
+                    console.log(e);
+                });    
+            }
         });
     }
 
@@ -378,6 +396,9 @@ export class ControllerSessionTabStreamOutput implements Dependency {
         this._state.lastLoadingRequestId = setTimeout(() => {
             this._state.lastLoadingRequestId = undefined;
             this._requestData(request.start, request.end).then((message: IPCMessages.StreamChunk) => {
+                if (message.data === '') {
+                    return;
+                }
                 // Check: do we already have other request
                 if (this._state.lastLoadingRequestId !== undefined) {
                     // No need to parse - new request was created
@@ -480,6 +501,7 @@ export class ControllerSessionTabStreamOutput implements Dependency {
         packets = packets.filter((packet: IRow) => {
             return (packet.position !== -1);
         });
+        this._lastRequestedRows = packets;
         if (dest !== undefined) {
             // Destination storage is defined: we don't need to store rows (accept it)
             dest.push(...packets);
@@ -515,42 +537,7 @@ export class ControllerSessionTabStreamOutput implements Dependency {
             return;
         }
         const size: number = this._rows.length;
-        const packet: IRange = { start: packets[0].position, end: packets[packets.length - 1].position};
-        if (this._rows.length === 0) {
-            this._rows.push(...packets);
-        } else if (packet.start === this._state.stored.end + 1) {
-            this._rows.push(...packets);
-            // Check size
-            if (this._rows.length > Settings.maxStoredCount) {
-                const toCrop: number = this._rows.length - Settings.maxStoredCount;
-                // Remove from the begin
-                this._rows.splice(0, toCrop);
-            }
-        } else if (packet.start > this._state.stored.end) {
-            this._rows = packets;
-        } else if (packet.end < this._state.stored.start) {
-            this._rows = packets;
-        } else if (packet.start < this._state.stored.start) {
-            const range = this._state.stored.start - packet.start;
-            const injection = packets.slice(0, range);
-            this._rows.unshift(...injection);
-            // Check size
-            if (this._rows.length > Settings.maxStoredCount) {
-                const toCrop: number = this._rows.length - Settings.maxStoredCount;
-                // Remove from the end
-                this._rows.splice(-toCrop, toCrop);
-            }
-        } else if (packet.end > this._state.stored.end) {
-            const range = packet.end - this._state.stored.end;
-            const injection = packets.slice(packets.length - range, packets.length);
-            this._rows.push(...injection);
-            // Check size
-            if (this._rows.length > Settings.maxStoredCount) {
-                const toCrop: number = this._rows.length - Settings.maxStoredCount;
-                // Remove from the begin
-                this._rows.splice(0, toCrop);
-            }
-        }
+        this._rows = packets;
         this._state.stored.start = this._rows[0].position;
         this._state.stored.end = this._rows[this._rows.length - 1].position;
         if (size === 0 && this._rows.length !== 0) {
@@ -572,6 +559,22 @@ export class ControllerSessionTabStreamOutput implements Dependency {
 
     private _requestData(start: number, end: number): Promise<IPCMessages.StreamChunk> {
         return new Promise((resolve, reject) => {
+            if (this._nativeSession === undefined) {
+                return reject(new Error(`No native session`));
+            }
+            const stream = this._nativeSession.getStream();
+            if (stream instanceof Error) {
+                return reject(stream);
+            }
+            const chunk = stream.grab(start, end - start);
+            resolve(new IPCMessages.StreamChunk({
+                guid: this._guid,
+                start: start,
+                end: start + chunk.length,
+                data: chunk.map((r) => r.content).join('\n'),
+                rows: stream.len(),
+            }));
+            /*
             const s = Date.now();
             ServiceElectronIpc.request(
                 new IPCMessages.StreamChunk({
@@ -586,6 +589,7 @@ export class ControllerSessionTabStreamOutput implements Dependency {
                 }
                 resolve(response);
             });
+            */
         });
     }
 

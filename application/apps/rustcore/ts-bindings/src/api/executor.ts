@@ -103,9 +103,10 @@ export function noResultsExecutor<TOptions>(
             const _: string | Error = runner(session, options);
             if (_ instanceof Error) {
                 lifecircle.unsunscribe();
-                reject(new Error(`Fail to run "${name}" operation due error: ${_.message}`));
+                reject(new Error(logger.warn(`Fail to run "${name}" operation due error: ${_.message}`)));
                 return '';
             } else {
+                logger.debug(`Executed operation UUID: ${_}`);
                 return _;
             }
         })();

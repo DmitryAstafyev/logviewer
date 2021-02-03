@@ -273,18 +273,7 @@ export class RustSessionDebug extends RustSession {
     }
 
     public assign(filename: string, options: TFileOptions): string | IGeneralError {
-        // Temporary solution (assignFile (and any other async operation
-        // should return uuid or error))
-        const oUuid = uuid();
-        this._native.assign(filename, filename);
-        /*
-        setTimeout(() => {
-            this._assigned = true;
-            // this._emitter({ OperationDone: { uuid: oUuid, result: undefined } });
-            this._emitter({ StreamUpdated: 10000 });
-        }, 2000);
-        */
-        return oUuid;
+        return this._native.assign(filename, filename);
     }
 
     public concat(files: string[]): string | IGeneralError {

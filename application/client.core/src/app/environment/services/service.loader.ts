@@ -55,7 +55,6 @@ const InitializeStages = [
 ];
 
 // TODO: Destroy method, even dummy
-
 export class LoaderService {
 
     private _logger: Toolkit.Logger = new Toolkit.Logger('LoaderService');
