@@ -3,6 +3,7 @@ mod handlers;
 pub mod operations;
 pub mod session;
 pub mod state;
+mod traits;
 
 #[cfg(test)]
 mod tests {
