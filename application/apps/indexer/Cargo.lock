@@ -1591,6 +1591,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "crossbeam-channel",
+ "encoding_rs_io",
  "indexer_base",
  "log",
  "merging",

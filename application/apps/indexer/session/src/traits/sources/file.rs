@@ -1,11 +1,14 @@
 use crate::traits::{error, source};
 use async_trait::async_trait;
 use bytes::BytesMut;
-use std::path::PathBuf;
+use encoding_rs_io::*;
+use std::{
+    fs::File,
+    io::{BufRead, BufReader, Read},
+    path::PathBuf,
+};
 use thiserror::Error as ThisError;
 use tokio::{
-    fs::File,
-    io::AsyncReadExt,
     join, select,
     sync::{
         mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
@@ -13,6 +16,8 @@ use tokio::{
     },
 };
 use tokio_util::sync::CancellationToken;
+
+const READ_BUFFER_SIZE: usize = 100 * 1024;
 
 #[derive(ThisError, Debug, Clone)]
 pub enum Error {
@@ -148,25 +153,34 @@ impl Source {
     ) -> Result<(), Error> {
         let mut read: usize = 0;
         while !self.cancel.is_cancelled() {
-            let mut buffer = BytesMut::with_capacity(options.buffer_size);
-            file.read_buf(&mut buffer)
-                .await
+            // let decoder = DecodeReaderBytesBuilder::new()
+            //     .utf8_passthru(true)
+            //     .strip_bom(true)
+            //     .bom_override(true)
+            //     .bom_sniffing(true)
+            //     .build(chunk);
+            // let mut reader = BufReader::new(decoder);
+            let mut buffer = [0; READ_BUFFER_SIZE];
+            let buffer_len = file
+                .read(&mut buffer)
                 .map_err(|e| Error::Io(e.to_string()))?;
-            let chunk = buffer.freeze().slice(..);
-            read += chunk.len();
-            println!(">>>>>>>>>>>>>>>> read: {} bytes", read);
-            if !chunk.is_empty() {
+            read += buffer.len();
+            println!(">>>>>>>>>>>>>>>> read: {} Mb", read / 1024 / 1024);
+            if !buffer.is_empty() {
                 let (tx_confirm, rx_confirm): (oneshot::Sender<bool>, oneshot::Receiver<bool>) =
                     oneshot::channel();
                 tx_api
-                    .send(APIEvent::Chunk(chunk.to_vec(), tx_confirm))
+                    .send(APIEvent::Chunk(buffer.to_vec(), tx_confirm))
                     .map_err(|e| {
                         Error::Channel(format!("fail to trigger \"APIEvent::Chunk\": {}", e))
                     })?;
                 rx_confirm.await.map_err(|_| Error::ChunkIsNotConfirmed)?;
             }
-            if chunk.len() < options.buffer_size {
-                println!(">>>>>>>>>>>>>>> EXIT FROM FILE-SOURCE");
+            if buffer_len < READ_BUFFER_SIZE {
+                println!(
+                    ">>>>>>>>>>>>>>> EXIT FROM FILE-SOURCE: {}/{}",
+                    buffer_len, READ_BUFFER_SIZE
+                );
                 // TODO: we should wait... tail functionality
                 break;
             }
@@ -260,9 +274,7 @@ impl source::Source<Options, Error, API> for Source {
         } else {
             return Err(Error::AlreadyInUse);
         };
-        let file = File::open(&options.path)
-            .await
-            .map_err(|e| Error::Io(e.to_string()))?;
+        let file = File::open(&options.path).map_err(|e| Error::Io(e.to_string()))?;
         let (reader_task_res, api_task_res) = join!(
             async {
                 let result = self.read_task(file, &options, self.tx_api.clone()).await;
@@ -275,6 +287,8 @@ impl source::Source<Options, Error, API> for Source {
                 result
             },
         );
+        println!(">>>>> {:?}", reader_task_res);
+        println!(">>>>> {:?}", api_task_res);
         if reader_task_res.is_err() {
             reader_task_res
         } else if api_task_res.is_err() {

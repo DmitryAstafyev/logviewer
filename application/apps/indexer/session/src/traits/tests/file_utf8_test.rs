@@ -28,8 +28,8 @@ async fn test() -> Result<(), String> {
             let result = collector
                 .attach(
                     file::Options {
-                        path: PathBuf::from("/storage/projects/esrlabs/logs-examples/small.log"),
-                        buffer_size: 2000,
+                        path: PathBuf::from("/storage/projects/esrlabs/logs-examples/biggest.log"),
+                        buffer_size: 40 * 1024,
                     },
                     utf8_text::Options {},
                     source,

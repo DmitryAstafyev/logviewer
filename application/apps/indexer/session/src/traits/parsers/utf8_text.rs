@@ -1,5 +1,7 @@
 use crate::traits::{error, parser};
 use async_trait::async_trait;
+use encoding_rs_io::*;
+use std::io::{BufRead, BufReader};
 use thiserror::Error as ThisError;
 
 #[derive(ThisError, Debug, Clone)]
@@ -26,7 +28,7 @@ impl Parser {
 #[async_trait]
 impl parser::Parser<Options, Error> for Parser {
     fn decode(&self, chunk: &[u8], _opt: &Options) -> Result<parser::Decoded, Error> {
-        let text = std::str::from_utf8(chunk).map_err(|e| Error::UTF8String(e.to_string()))?;
+        let text = unsafe { std::str::from_utf8_unchecked(chunk) };
         let mut lines: Vec<String> = text
             .split('\n')
             .collect::<Vec<&str>>()
