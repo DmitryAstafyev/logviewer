@@ -1,9 +1,26 @@
 use crate::traits;
 use async_trait::async_trait;
+use std::ops::Range;
+
+pub struct Slot {
+    pub row: usize,
+    pub position: Range<usize>,
+}
 
 pub struct Decoded {
     pub output: Vec<String>,
+    pub map: Vec<Slot>,
     pub rest: Vec<u8>,
+}
+
+impl Decoded {
+    pub fn new() -> Self {
+        Self {
+            output: vec![],
+            map: vec![],
+            rest: vec![],
+        }
+    }
 }
 
 #[async_trait]

@@ -11,13 +11,13 @@ use thiserror::Error as ThisError;
 use tokio::{
     join, select,
     sync::{
-        mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
+        mpsc::{channel, unbounded_channel, Receiver, Sender, UnboundedReceiver, UnboundedSender},
         oneshot,
     },
 };
 use tokio_util::sync::CancellationToken;
 
-const READ_BUFFER_SIZE: usize = 100 * 1024;
+const READ_BUFFER_SIZE: usize = 50 * 1024;
 
 #[derive(ThisError, Debug, Clone)]
 pub enum Error {
@@ -59,11 +59,11 @@ pub enum APIEvent {
 
 #[derive(Clone)]
 pub struct API {
-    tx_api: UnboundedSender<APIEvent>,
+    tx_api: Sender<APIEvent>,
 }
 
 impl API {
-    pub fn new(tx_api: UnboundedSender<APIEvent>) -> Self {
+    pub fn new(tx_api: Sender<APIEvent>) -> Self {
         Self { tx_api }
     }
 }
@@ -79,7 +79,12 @@ impl source::API<Error> for API {
             oneshot::Sender<Option<Vec<u8>>>,
             oneshot::Receiver<Option<Vec<u8>>>,
         ) = oneshot::channel();
-        if self.tx_api.send(APIEvent::NextChunk(tx_response)).is_err() {
+        if self
+            .tx_api
+            .send(APIEvent::NextChunk(tx_response))
+            .await
+            .is_err()
+        {
             None
         } else {
             match rx_response.await {
@@ -99,45 +104,38 @@ impl source::API<Error> for API {
     async fn get_source_file(&self) -> Result<PathBuf, Error> {
         let (tx_response, rx_response): (oneshot::Sender<Options>, oneshot::Receiver<Options>) =
             oneshot::channel();
-        if let Err(err) = self.tx_api.send(APIEvent::GetOptions(tx_response)) {
-            Err(Error::Channel(format!(
-                "fail request options; error: {}",
-                err
-            )))
-        } else {
-            let options = rx_response
-                .await
-                .map_err(|_| Error::Channel(String::from("Fail to get option response")))?;
-            Ok(options.path)
-        }
+        self.tx_api
+            .send(APIEvent::GetOptions(tx_response))
+            .await
+            .map_err(|e| Error::Channel(format!("fail request options; error: {}", e)))?;
+        let options = rx_response
+            .await
+            .map_err(|_| Error::Channel(String::from("Fail to get option response")))?;
+        Ok(options.path)
     }
 
     async fn shutdown(&self) -> Result<(), Error> {
         let (tx_response, rx_response): (oneshot::Sender<()>, oneshot::Receiver<()>) =
             oneshot::channel();
-        if let Err(err) = self.tx_api.send(APIEvent::Shutdown(tx_response)) {
-            Err(Error::Channel(format!(
-                "fail send shutdown request; error: {}",
-                err
-            )))
-        } else {
-            rx_response
-                .await
-                .map_err(|_| Error::Channel(String::from("Fail to get shutdown response")))
-        }
+        self.tx_api
+            .send(APIEvent::Shutdown(tx_response))
+            .await
+            .map_err(|e| Error::Channel(format!("fail send shutdown request; error: {}", e)))?;
+        rx_response
+            .await
+            .map_err(|_| Error::Channel(String::from("Fail to get shutdown response")))
     }
 }
 
 pub struct Source {
-    tx_api: UnboundedSender<APIEvent>,
-    rx_api: Option<UnboundedReceiver<APIEvent>>,
+    tx_api: Sender<APIEvent>,
+    rx_api: Option<Receiver<APIEvent>>,
     cancel: CancellationToken,
 }
 
 impl Source {
     pub fn new() -> Self {
-        let (tx_api, rx_api): (UnboundedSender<APIEvent>, UnboundedReceiver<APIEvent>) =
-            unbounded_channel();
+        let (tx_api, rx_api): (Sender<APIEvent>, Receiver<APIEvent>) = channel(10);
         Self {
             tx_api,
             rx_api: Some(rx_api),
@@ -149,17 +147,10 @@ impl Source {
         &self,
         mut file: File,
         options: &Options,
-        tx_api: UnboundedSender<APIEvent>,
+        tx_api: Sender<APIEvent>,
     ) -> Result<(), Error> {
         let mut read: usize = 0;
         while !self.cancel.is_cancelled() {
-            // let decoder = DecodeReaderBytesBuilder::new()
-            //     .utf8_passthru(true)
-            //     .strip_bom(true)
-            //     .bom_override(true)
-            //     .bom_sniffing(true)
-            //     .build(chunk);
-            // let mut reader = BufReader::new(decoder);
             let mut buffer = [0; READ_BUFFER_SIZE];
             let buffer_len = file
                 .read(&mut buffer)
@@ -171,6 +162,7 @@ impl Source {
                     oneshot::channel();
                 tx_api
                     .send(APIEvent::Chunk(buffer.to_vec(), tx_confirm))
+                    .await
                     .map_err(|e| {
                         Error::Channel(format!("fail to trigger \"APIEvent::Chunk\": {}", e))
                     })?;
@@ -191,7 +183,7 @@ impl Source {
     async fn api_task(
         &self,
         options: &Options,
-        mut rx_api: UnboundedReceiver<APIEvent>,
+        mut rx_api: Receiver<APIEvent>,
     ) -> Result<(), Error> {
         let mut pending_responser: Option<oneshot::Sender<Option<Vec<u8>>>> = None;
         let mut pending_chunk: Option<(Option<Vec<u8>>, oneshot::Sender<bool>)> = None;

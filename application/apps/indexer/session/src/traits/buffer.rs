@@ -7,7 +7,7 @@ use tokio::{
     io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, SeekFrom},
     join, select,
     sync::{
-        mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
+        mpsc::{channel, Receiver, Sender},
         oneshot,
     },
 };
@@ -55,11 +55,11 @@ pub enum APIEvent {
 
 #[derive(Clone, Debug)]
 pub struct API {
-    tx_api: UnboundedSender<APIEvent>,
+    tx_api: Sender<APIEvent>,
 }
 
 impl API {
-    pub fn new(tx_api: UnboundedSender<APIEvent>) -> Self {
+    pub fn new(tx_api: Sender<APIEvent>) -> Self {
         Self { tx_api }
     }
 
@@ -68,7 +68,12 @@ impl API {
             oneshot::Sender<Option<Event>>,
             oneshot::Receiver<Option<Event>>,
         ) = oneshot::channel();
-        if self.tx_api.send(APIEvent::NextEvent(tx_response)).is_err() {
+        if self
+            .tx_api
+            .send(APIEvent::NextEvent(tx_response))
+            .await
+            .is_err()
+        {
             None
         } else {
             match rx_response.await {
@@ -81,34 +86,29 @@ impl API {
     pub async fn shutdown(&self) -> Result<(), Error> {
         let (tx_response, rx_response): (oneshot::Sender<()>, oneshot::Receiver<()>) =
             oneshot::channel();
-        if let Err(err) = self.tx_api.send(APIEvent::Shutdown(tx_response)) {
-            Err(Error::Channel(format!(
-                "fail send shutdown request; error: {}",
-                err
-            )))
-        } else {
-            rx_response
-                .await
-                .map_err(|_| Error::Channel(String::from("Fail to get shutdown response")))
-        }
+        self.tx_api
+            .send(APIEvent::Shutdown(tx_response))
+            .await
+            .map_err(|e| Error::Channel(format!("fail send shutdown request; error: {}", e)))?;
+        rx_response
+            .await
+            .map_err(|_| Error::Channel(String::from("Fail to get shutdown response")))
     }
 }
 
 pub struct Buffer {
     location: PathBuf,
     cancel: CancellationToken,
-    tx_api: UnboundedSender<APIEvent>,
-    rx_api: Option<UnboundedReceiver<APIEvent>>,
-    tx_events: UnboundedSender<Event>,
-    rx_events: Option<UnboundedReceiver<Event>>,
+    tx_api: Sender<APIEvent>,
+    rx_api: Option<Receiver<APIEvent>>,
+    tx_events: Sender<Event>,
+    rx_events: Option<Receiver<Event>>,
 }
 
 impl Buffer {
     pub fn new(location: PathBuf) -> Self {
-        let (tx_api, rx_api): (UnboundedSender<APIEvent>, UnboundedReceiver<APIEvent>) =
-            unbounded_channel();
-        let (tx_events, rx_events): (UnboundedSender<Event>, UnboundedReceiver<Event>) =
-            unbounded_channel();
+        let (tx_api, rx_api): (Sender<APIEvent>, Receiver<APIEvent>) = channel(10);
+        let (tx_events, rx_events): (Sender<Event>, Receiver<Event>) = channel(10);
         Self {
             location,
             cancel: CancellationToken::new(),
@@ -220,6 +220,7 @@ impl Buffer {
         let mut rest: Vec<u8> = vec![];
         self.tx_api
             .send(APIEvent::FilePath(decoded_file_path.clone()))
+            .await
             .map_err(|e| Error::Channel(format!("fail to set decoded_file_path: {}", e)))?;
         while let Some(mut chunk) = select! {
             chunk = source_api.next() => chunk,
@@ -235,7 +236,6 @@ impl Buffer {
             }
             let output_str = decoded.output.join("\n");
             let output_bytes = output_str.as_bytes();
-            //println!(">>>>>>>>>>>>>>> {}", output_str);
             if let Some(decoded_file) = decoded_file.as_mut() {
                 decoded_file
                     .write_all(output_bytes)
@@ -247,6 +247,7 @@ impl Buffer {
                     output_bytes.len(),
                     decoded.output.len(),
                 ))
+                .await
                 .map_err(|e| Error::Channel(e.to_string()))?;
         }
         if parser.is_encoding_required() {
@@ -255,7 +256,7 @@ impl Buffer {
         Ok(())
     }
 
-    async fn api_task(&self, mut rx_api: UnboundedReceiver<APIEvent>) -> Result<(), Error> {
+    async fn api_task(&self, mut rx_api: Receiver<APIEvent>) -> Result<(), Error> {
         let mut map = Map::new();
         let mut rows_total: usize = 0;
         let mut bytes_total: usize = 0;
@@ -271,9 +272,10 @@ impl Buffer {
                     bytes_total += bytes;
                     rows_total += rows;
                     map.push(bytes_total, rows_total);
-                    if let Err(err) = self.tx_events.send(Event::Updated(rows_total)) {
-                        return Err(Error::Channel(format!("Fail send event; error: {}", err)));
-                    }
+                    self.tx_events
+                        .send(Event::Updated(rows_total))
+                        .await
+                        .map_err(|e| Error::Channel(format!("Fail send event; error: {}", e)))?;
                 }
                 APIEvent::Event(event) => {
                     events.push(event);
@@ -294,11 +296,11 @@ impl Buffer {
                         pending_responser = Some(tx_response);
                     } else {
                         let event = events.remove(0);
-                        if tx_response.send(Some(event)).is_err() {
-                            return Err(Error::Channel(String::from(
+                        tx_response.send(Some(event)).map_err(|_| {
+                            Error::Channel(String::from(
                                 "Fail to response for \"APIEvent::NextEvent\"",
-                            )));
-                        }
+                            ))
+                        })?;
                     }
                 }
                 APIEvent::FilePath(file_path) => {
@@ -308,11 +310,9 @@ impl Buffer {
                     let file_path = if let Some(file_path) = decoded_file_path.as_ref() {
                         file_path
                     } else {
-                        if tx_response.send(Err(Error::NoOutputFile)).is_err() {
-                            return Err(Error::Channel(String::from(
-                                "Fail to response for \"APIEvent::Read\"",
-                            )));
-                        }
+                        tx_response.send(Err(Error::NoOutputFile)).map_err(|_| {
+                            Error::Channel(String::from("Fail to response for \"APIEvent::Read\""))
+                        })?;
                         continue;
                     };
                     if let Some((bytes, rows)) = map.get_bytes_range(&range) {
@@ -342,10 +342,10 @@ impl Buffer {
                             )));
                         }
                         // Let's rock here!
-                    } else if tx_response.send(Err(Error::NoRange)).is_err() {
-                        return Err(Error::Channel(String::from(
-                            "Fail to response for \"APIEvent::Read\"",
-                        )));
+                    } else {
+                        tx_response.send(Err(Error::NoRange)).map_err(|_| {
+                            Error::Channel(String::from("Fail to response for \"APIEvent::Read\""))
+                        })?;
                     }
                 }
                 APIEvent::Shutdown(tx_response) => {
@@ -361,13 +361,14 @@ impl Buffer {
         Ok(())
     }
 
-    async fn events_task(&self, mut rx_events: UnboundedReceiver<Event>) -> Result<(), Error> {
+    async fn events_task(&self, mut rx_events: Receiver<Event>) -> Result<(), Error> {
         while let Some(event) = select! {
             event = rx_events.recv() => event,
             _ = self.cancel.cancelled() => None,
         } {
             self.tx_api
                 .send(APIEvent::Event(event))
+                .await
                 .map_err(|e| Error::Channel(e.to_string()))?;
         }
         Ok(())

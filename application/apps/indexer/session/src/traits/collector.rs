@@ -6,7 +6,7 @@ use thiserror::Error as ThisError;
 use tokio::{
     join, select,
     sync::{
-        mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
+        mpsc::{channel, Receiver, Sender},
         oneshot,
     },
 };
@@ -43,11 +43,11 @@ pub enum APIEvent {
 
 #[derive(Clone, Debug)]
 pub struct API {
-    tx_api: UnboundedSender<APIEvent>,
+    tx_api: Sender<APIEvent>,
 }
 
 impl API {
-    pub fn new(tx_api: UnboundedSender<APIEvent>) -> Self {
+    pub fn new(tx_api: Sender<APIEvent>) -> Self {
         Self { tx_api }
     }
 
@@ -56,7 +56,12 @@ impl API {
             oneshot::Sender<Option<Event>>,
             oneshot::Receiver<Option<Event>>,
         ) = oneshot::channel();
-        if self.tx_api.send(APIEvent::NextEvent(tx_response)).is_err() {
+        if self
+            .tx_api
+            .send(APIEvent::NextEvent(tx_response))
+            .await
+            .is_err()
+        {
             None
         } else {
             match rx_response.await {
@@ -69,30 +74,25 @@ impl API {
     pub async fn len(&self) -> Result<usize, Error> {
         let (tx_response, rx_response): (oneshot::Sender<usize>, oneshot::Receiver<usize>) =
             oneshot::channel();
-        if self.tx_api.send(APIEvent::Len(tx_response)).is_err() {
-            Err(Error::Channel(String::from(
-                "Fail to send \"APIEvent::Len\"",
-            )))
-        } else {
-            Ok(rx_response.await.map_err(|_| {
-                Error::Channel(String::from("Fail to get response for \"APIEvent::Len\""))
-            })?)
-        }
+        self.tx_api
+            .send(APIEvent::Len(tx_response))
+            .await
+            .map_err(|_| Error::Channel(String::from("Fail to send \"APIEvent::Len\"")))?;
+        Ok(rx_response.await.map_err(|_| {
+            Error::Channel(String::from("Fail to get response for \"APIEvent::Len\""))
+        })?)
     }
 
     pub async fn shutdown(&self) -> Result<(), Error> {
         let (tx_response, rx_response): (oneshot::Sender<()>, oneshot::Receiver<()>) =
             oneshot::channel();
-        if let Err(err) = self.tx_api.send(APIEvent::Shutdown(tx_response)) {
-            Err(Error::Channel(format!(
-                "fail send shutdown request; error: {}",
-                err
-            )))
-        } else {
-            rx_response
-                .await
-                .map_err(|_| Error::Channel(String::from("Fail to get shutdown response")))
-        }
+        self.tx_api
+            .send(APIEvent::Shutdown(tx_response))
+            .await
+            .map_err(|e| Error::Channel(format!("fail send shutdown request; error: {}", e)))?;
+        rx_response
+            .await
+            .map_err(|_| Error::Channel(String::from("Fail to get shutdown response")))
     }
 
     /// Returns a number of rows to be delivered to render
@@ -108,8 +108,8 @@ impl API {
 pub struct Collector {
     buffer: Option<Buffer>,
     buffer_api: buffer::API,
-    tx_api: UnboundedSender<APIEvent>,
-    rx_api: Option<UnboundedReceiver<APIEvent>>,
+    tx_api: Sender<APIEvent>,
+    rx_api: Option<Receiver<APIEvent>>,
     cancel: CancellationToken,
 }
 
@@ -117,8 +117,7 @@ impl Collector {
     pub fn new(location: PathBuf) -> Self {
         let buffer = Buffer::new(location);
         let buffer_api = buffer.get_api();
-        let (tx_api, rx_api): (UnboundedSender<APIEvent>, UnboundedReceiver<APIEvent>) =
-            unbounded_channel();
+        let (tx_api, rx_api): (Sender<APIEvent>, Receiver<APIEvent>) = channel(10);
         Self {
             buffer: Some(buffer),
             buffer_api,
@@ -201,6 +200,7 @@ impl Collector {
                 buffer::Event::Updated(rows) => {
                     self.tx_api
                         .send(APIEvent::Event(Event::Update(rows)))
+                        .await
                         .map_err(|e| Error::Channel(e.to_string()))?;
                 }
             }
@@ -208,7 +208,7 @@ impl Collector {
         Ok(())
     }
 
-    async fn api_task(&self, mut rx_api: UnboundedReceiver<APIEvent>) -> Result<(), Error> {
+    async fn api_task(&self, mut rx_api: Receiver<APIEvent>) -> Result<(), Error> {
         let mut events: Vec<Event> = vec![];
         let mut pending_responser: Option<oneshot::Sender<Option<Event>>> = None;
         let mut len: usize = 0;
