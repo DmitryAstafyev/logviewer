@@ -27,7 +27,7 @@ impl Decoded {
 pub trait Parser<PO, E: traits::error::Error> {
     /// Takes chunk of data and try to decode it.traits
     /// Returns decoded part and rest part as Decoded struct
-    fn decode(&self, chunk: &[u8], opt: &PO) -> Result<Decoded, E>;
+    fn decode(&self, chunk: &[u8]) -> Result<Decoded, E>;
 
     /// Returns true if source file has encoded data; and false if source file/stream
     /// is a text file/stream

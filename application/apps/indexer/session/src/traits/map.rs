@@ -4,15 +4,23 @@ pub struct Map {
     /// Vector of positions in file
     ///      (byte,  row  )
     map: Vec<(usize, usize)>,
+    bytes: usize,
+    rows: usize,
 }
 
 impl Map {
     pub fn new() -> Self {
-        Self { map: vec![] }
+        Self {
+            map: vec![],
+            bytes: 0,
+            rows: 0,
+        }
     }
 
     pub fn push(&mut self, bytes: usize, rows: usize) {
-        self.map.push((bytes, rows));
+        self.bytes += bytes;
+        self.rows += rows;
+        self.map.push((self.bytes, self.rows));
     }
 
     /// Returns bytyes & rows ranges considering to passed rows range

@@ -4,7 +4,7 @@ use bytes::BytesMut;
 use encoding_rs_io::*;
 use std::{
     fs::File,
-    io::{BufRead, BufReader, Read},
+    io::{BufRead, BufReader, Read, Seek, SeekFrom},
     path::PathBuf,
 };
 use thiserror::Error as ThisError;
@@ -39,6 +39,8 @@ pub enum Error {
     ChunkIsNotConfirmed,
     #[error("Fail to confirm a chunk")]
     FailChunkConfirmation,
+    #[error("Not supported yet")]
+    NotSupported,
 }
 
 impl error::Error for Error {}
@@ -49,52 +51,62 @@ pub struct Options {
     pub buffer_size: usize,
 }
 
-#[derive(Debug)]
-pub enum APIEvent {
-    Chunk(Vec<u8>, oneshot::Sender<bool>),
-    NextChunk(oneshot::Sender<Option<Vec<u8>>>),
-    GetOptions(oneshot::Sender<Options>),
-    Shutdown(oneshot::Sender<()>),
+pub struct Source {
+    path: Option<PathBuf>,
+    file: Option<File>,
+    pos: u64,
+    cancel: CancellationToken,
 }
 
-#[derive(Clone)]
-pub struct API {
-    tx_api: Sender<APIEvent>,
-}
-
-impl API {
-    pub fn new(tx_api: Sender<APIEvent>) -> Self {
-        Self { tx_api }
+impl Source {
+    pub fn new() -> Self {
+        Self {
+            file: None,
+            path: None,
+            pos: 0,
+            cancel: CancellationToken::new(),
+        }
     }
 }
 
 #[async_trait]
-impl source::API<Error> for API {
-    async fn close(&self) -> Result<(), Error> {
+impl source::Source<Options, Error> for Source {
+    async fn assign(&mut self, options: Options) -> Result<(), Error> {
+        self.file = Some(File::open(&options.path).map_err(|e| Error::Io(e.to_string()))?);
+        self.path = Some(options.path);
         Ok(())
     }
+    async fn close(&self) -> Result<(), Error> {
+        Err(Error::NotSupported)
+    }
 
-    async fn next(&self) -> Option<Vec<u8>> {
-        let (tx_response, rx_response): (
-            oneshot::Sender<Option<Vec<u8>>>,
-            oneshot::Receiver<Option<Vec<u8>>>,
-        ) = oneshot::channel();
-        if self
-            .tx_api
-            .send(APIEvent::NextChunk(tx_response))
-            .await
-            .is_err()
-        {
-            None
-        } else {
-            match rx_response.await {
-                Ok(event) => event,
-                Err(_) => None,
+    async fn next(&mut self) -> Option<Vec<u8>> {
+        if let Some(file) = self.file.as_mut() {
+            if file.seek(SeekFrom::Start(self.pos)).is_err() {
+                return None;
             }
+            let mut buffer = [0; READ_BUFFER_SIZE];
+            let buffer_len = match file.read(&mut buffer) {
+                Ok(len) => len,
+                Err(_) => {
+                    return None;
+                }
+            };
+            if buffer_len == 0 {
+                println!(">>>>>>>>>>> READ DONE: {:?} Mb", self.pos / 1024 / 1024);
+                None
+            } else {
+                self.pos += buffer_len as u64;
+                println!(">>>>>>>>>>> READ: {:?} Mb", self.pos / 1024 / 1024);
+                Some(buffer.to_vec())
+            }
+        } else {
+            None
         }
     }
-    async fn write(&self, _data: &[u8]) -> Result<(), Error> {
-        Err(Error::NotWritableSource)
+
+    async fn write(&self, data: &[u8]) -> Result<(), Error> {
+        Err(Error::NotSupported)
     }
 
     fn writable(&self) -> bool {
@@ -102,195 +114,10 @@ impl source::API<Error> for API {
     }
 
     async fn get_source_file(&self) -> Result<PathBuf, Error> {
-        let (tx_response, rx_response): (oneshot::Sender<Options>, oneshot::Receiver<Options>) =
-            oneshot::channel();
-        self.tx_api
-            .send(APIEvent::GetOptions(tx_response))
-            .await
-            .map_err(|e| Error::Channel(format!("fail request options; error: {}", e)))?;
-        let options = rx_response
-            .await
-            .map_err(|_| Error::Channel(String::from("Fail to get option response")))?;
-        Ok(options.path)
-    }
-
-    async fn shutdown(&self) -> Result<(), Error> {
-        let (tx_response, rx_response): (oneshot::Sender<()>, oneshot::Receiver<()>) =
-            oneshot::channel();
-        self.tx_api
-            .send(APIEvent::Shutdown(tx_response))
-            .await
-            .map_err(|e| Error::Channel(format!("fail send shutdown request; error: {}", e)))?;
-        rx_response
-            .await
-            .map_err(|_| Error::Channel(String::from("Fail to get shutdown response")))
-    }
-}
-
-pub struct Source {
-    tx_api: Sender<APIEvent>,
-    rx_api: Option<Receiver<APIEvent>>,
-    cancel: CancellationToken,
-}
-
-impl Source {
-    pub fn new() -> Self {
-        let (tx_api, rx_api): (Sender<APIEvent>, Receiver<APIEvent>) = channel(10);
-        Self {
-            tx_api,
-            rx_api: Some(rx_api),
-            cancel: CancellationToken::new(),
-        }
-    }
-
-    async fn read_task(
-        &self,
-        mut file: File,
-        options: &Options,
-        tx_api: Sender<APIEvent>,
-    ) -> Result<(), Error> {
-        let mut read: usize = 0;
-        while !self.cancel.is_cancelled() {
-            let mut buffer = [0; READ_BUFFER_SIZE];
-            let buffer_len = file
-                .read(&mut buffer)
-                .map_err(|e| Error::Io(e.to_string()))?;
-            read += buffer.len();
-            println!(">>>>>>>>>>>>>>>> read: {} Mb", read / 1024 / 1024);
-            if !buffer.is_empty() {
-                let (tx_confirm, rx_confirm): (oneshot::Sender<bool>, oneshot::Receiver<bool>) =
-                    oneshot::channel();
-                tx_api
-                    .send(APIEvent::Chunk(buffer.to_vec(), tx_confirm))
-                    .await
-                    .map_err(|e| {
-                        Error::Channel(format!("fail to trigger \"APIEvent::Chunk\": {}", e))
-                    })?;
-                rx_confirm.await.map_err(|_| Error::ChunkIsNotConfirmed)?;
-            }
-            if buffer_len < READ_BUFFER_SIZE {
-                println!(
-                    ">>>>>>>>>>>>>>> EXIT FROM FILE-SOURCE: {}/{}",
-                    buffer_len, READ_BUFFER_SIZE
-                );
-                // TODO: we should wait... tail functionality
-                break;
-            }
-        }
-        Ok(())
-    }
-
-    async fn api_task(
-        &self,
-        options: &Options,
-        mut rx_api: Receiver<APIEvent>,
-    ) -> Result<(), Error> {
-        let mut pending_responser: Option<oneshot::Sender<Option<Vec<u8>>>> = None;
-        let mut pending_chunk: Option<(Option<Vec<u8>>, oneshot::Sender<bool>)> = None;
-        while let Some(event) = select! {
-            event = rx_api.recv() => event,
-            _ = self.cancel.cancelled() => None
-        } {
-            match event {
-                APIEvent::Chunk(chunk, tx_confirm) => {
-                    if pending_chunk.is_some() {
-                        return Err(Error::MultipleChunkPassed);
-                    }
-                    if let Some(tx_response) = pending_responser.take() {
-                        if tx_response.send(Some(chunk)).is_err() {
-                            tx_confirm
-                                .send(false)
-                                .map_err(|_| Error::FailChunkConfirmation)?;
-                            return Err(Error::Channel(String::from(
-                                "Fail to response for \"APIEvent::NextEvent\" from \"APIEvent::Chunk\"",
-                            )));
-                        } else {
-                            tx_confirm
-                                .send(true)
-                                .map_err(|_| Error::FailChunkConfirmation)?;
-                        }
-                    } else {
-                        pending_chunk = Some((Some(chunk), tx_confirm));
-                    }
-                }
-                APIEvent::NextChunk(tx_response) => {
-                    if pending_responser.is_some() {
-                        return Err(Error::MultipleChunkRequest);
-                    }
-                    if let Some((chunk, tx_confirm)) = pending_chunk.take() {
-                        if tx_response.send(chunk).is_err() {
-                            tx_confirm
-                                .send(false)
-                                .map_err(|_| Error::FailChunkConfirmation)?;
-                            return Err(Error::Channel(String::from(
-                                "Fail to response for \"APIEvent::NextChunk\"",
-                            )));
-                        } else {
-                            tx_confirm
-                                .send(true)
-                                .map_err(|_| Error::FailChunkConfirmation)?;
-                        }
-                    } else {
-                        pending_responser = Some(tx_response);
-                    }
-                }
-                APIEvent::Shutdown(tx_response) => {
-                    self.cancel.cancel();
-                    if tx_response.send(()).is_err() {
-                        return Err(Error::Channel(String::from(
-                            "Fail to response for \"APIEvent::Shutdown\"",
-                        )));
-                    }
-                }
-                APIEvent::GetOptions(tx_response) => {
-                    if tx_response.send(options.clone()).is_err() {
-                        return Err(Error::Channel(String::from(
-                            "Fail to response for \"APIEvent::GetOptions\"",
-                        )));
-                    }
-                }
-            }
-        }
-        Ok(())
-    }
-}
-
-#[async_trait]
-impl source::Source<Options, Error, API> for Source {
-    async fn open(&mut self, options: Options) -> Result<(), Error> {
-        if !options.path.exists() {
-            return Err(Error::NoFile);
-        }
-        let rx_api = if let Some(rx_api) = self.rx_api.take() {
-            rx_api
+        if let Some(path) = self.path.as_ref() {
+            Ok(path.clone())
         } else {
-            return Err(Error::AlreadyInUse);
-        };
-        let file = File::open(&options.path).map_err(|e| Error::Io(e.to_string()))?;
-        let (reader_task_res, api_task_res) = join!(
-            async {
-                let result = self.read_task(file, &options, self.tx_api.clone()).await;
-                self.cancel.cancel();
-                result
-            },
-            async {
-                let result = self.api_task(&options, rx_api).await;
-                self.cancel.cancel();
-                result
-            },
-        );
-        println!(">>>>> {:?}", reader_task_res);
-        println!(">>>>> {:?}", api_task_res);
-        if reader_task_res.is_err() {
-            reader_task_res
-        } else if api_task_res.is_err() {
-            api_task_res
-        } else {
-            Ok(())
+            Err(Error::NotSupported)
         }
-    }
-
-    fn get_api(&self) -> API {
-        API::new(self.tx_api.clone())
     }
 }

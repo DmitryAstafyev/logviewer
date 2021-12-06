@@ -18,34 +18,19 @@ mod shortcuts {
 #[tokio::test]
 async fn test() -> Result<(), String> {
     let started = shortcuts::get_timestamp();
-    let mut collector = Collector::new(PathBuf::from("/home/dmitry/tmp"));
-    let collector_api = collector.get_api();
-    let source = file::Source::new();
-    let parser = utf8_text::Parser::new();
-    let cancel = CancellationToken::new();
-    let (collector_task) = join!(
-        async {
-            let result = collector
-                .attach(
-                    file::Options {
-                        path: PathBuf::from("/storage/projects/esrlabs/logs-examples/biggest.log"),
-                        buffer_size: 40 * 1024,
-                    },
-                    utf8_text::Options {},
-                    source,
-                    parser,
-                )
-                .await;
-            cancel.cancel();
-            result
+    let mut collector = Collector::new(
+        PathBuf::from("/home/dmitry/tmp"),
+        file::Source::new(),
+        file::Options {
+            path: PathBuf::from("/storage/projects/esrlabs/logs-examples/biggest.log"),
+            buffer_size: 40 * 1024,
         },
-        async {
-            while let Some(event) = collector_api.next().await {
-                //println!(">>>>>>>>>> {:?}", event);
-            }
-            cancel.cancel();
-        }
-    );
+        utf8_text::Parser::new(),
+        utf8_text::Options {},
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+    while let Ok(event) = collector.next().await {}
     let finished = shortcuts::get_timestamp();
     let duration = finished.as_millis() - started.as_millis();
     println!(
