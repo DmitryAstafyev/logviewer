@@ -1,44 +1,45 @@
 use crate::traits::error;
 use async_trait::async_trait;
-use std::ops::Range;
+use futures_core::stream::Stream;
 use std::path::PathBuf;
 
+trait Output: Send + Sync + Unpin {
+    fn as_strings() -> Vec<String>;
+    fn as_bytes() -> Vec<u8>;
+}
+
 #[async_trait]
-pub trait Source<O, E: error::Error> {
-    /// Init transport to be used and start streaming.
-    /// After init method next() has to be available
-    /// Init can be called multiple times per session
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - specific options for source
-    /// * `parsers` - collection of parser to decode / encode content
-    async fn assign(&mut self, options: O) -> Result<(), E>;
+pub trait Source<E: error::Error>:
+    Stream<Item = Result<Vec<String>, E>> + Send + Sync + Unpin
+{
+    /// Provides safe way to shutdown/close source
+    async fn close(&self) -> Result<(), E> {
+        Ok(())
+    }
 
-    /// Stop any reading operations.
-    /// After transport is closed method `next` should returns error
-    /// After transport is closed it can be opened again with `open` method
-    async fn close(&self) -> Result<(), E>;
+    async fn next_map(&mut self) -> Option<Result<(usize, usize), E>> {
+        None
+    }
 
-    /// Returns next chunk of data from source
-    /// Returns None in case of closing source
-    /// Returns None in case of source wasn't opened
-    async fn next(&mut self) -> Option<(Vec<u8>)>;
-
+    fn is_mapper(&self) -> bool {
+        false
+    }
     /// Attempt to write data into transport
     /// If transport doesn't support writing should return error
     /// # Arguments
     ///
     /// * `data` - a buffer to write
-    async fn write(&self, data: &[u8]) -> Result<(), E>;
-
+    async fn write(&self, data: &[u8]) -> Result<(), E> {
+        Ok(())
+    }
     /// Returns true in case of transport supports writing operations (ex: serialport, process spawing)
-    fn writable(&self) -> bool;
-
-    /// Note: Probably we want to have dynamic options for source,
-    ///       which can be changes during session. That's why this
-    ///       method is async
-    ///
-    /// Returns path to file if source of data located in a file
-    async fn get_source_file(&self) -> Result<PathBuf, E>;
+    fn writable(&self) -> bool {
+        false
+    }
+    /// Returns path to file if source of data located in a text file and
+    /// doesn't require decode/encode operation. It means source file could be
+    /// used for search and grabbing.
+    /// Should return None in case of source-file cannot be used for
+    /// search or/and grabbibg
+    fn get_output_file(&self) -> Option<PathBuf>;
 }

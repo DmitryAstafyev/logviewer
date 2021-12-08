@@ -23,6 +23,14 @@ impl Map {
         self.map.push((self.bytes, self.rows));
     }
 
+    pub fn get_rows_count(&self) -> usize {
+        if self.map.len() > 0 {
+            self.map[self.map.len() - 1].1
+        } else {
+            0
+        }
+    }
+
     /// Returns bytyes & rows ranges considering to passed rows range
     /// (bytes_range,  rows_range  )
     /// (Range<usize>, Range<usize>)
@@ -48,5 +56,22 @@ impl Map {
                 end: end.1,
             },
         ))
+    }
+
+    pub fn report(&self) -> String {
+        let len = self.map.len();
+        let mut output = String::new();
+        output = format!("{}slots: {}", output, len);
+        output = format!(
+            "{}\nbytes: {}",
+            output,
+            if len > 0 { self.map[len - 1].0 } else { 0 }
+        );
+        output = format!(
+            "{}\nrows: {}",
+            output,
+            if len > 0 { self.map[len - 1].1 } else { 0 }
+        );
+        output
     }
 }

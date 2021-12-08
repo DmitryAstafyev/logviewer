@@ -1,35 +1,51 @@
 use crate::traits;
 use async_trait::async_trait;
-use std::ops::Range;
+use std::marker::Unpin;
+use thiserror::Error as ThisError;
 
-pub struct Slot {
-    pub row: usize,
-    pub position: Range<usize>,
+#[derive(ThisError, Debug, Clone)]
+pub enum PhantomError {
+    #[error("Dummy")]
+    Dummy,
 }
 
-pub struct Decoded {
-    pub output: Vec<String>,
-    pub map: Vec<Slot>,
-    pub rest: Vec<u8>,
+impl traits::error::Error for PhantomError {}
+
+pub struct PhantomParser {}
+
+impl Parser<PhantomError> for PhantomParser {}
+
+pub enum Decoded {
+    Rows(Vec<String>, Vec<u8>),
+    Map(usize, usize, Vec<u8>),
 }
 
-impl Decoded {
-    pub fn new() -> Self {
-        Self {
-            output: vec![],
-            map: vec![],
-            rest: vec![],
-        }
-    }
+pub struct MetaData {
+    pub name: String,
+    pub desc: String,
+    pub file_extention: String,
 }
 
-#[async_trait]
-pub trait Parser<PO, E: traits::error::Error> {
+pub trait Parser<E: traits::error::Error>: Sync + Send + Unpin {
     /// Takes chunk of data and try to decode it.traits
     /// Returns decoded part and rest part as Decoded struct
-    fn decode(&self, chunk: &[u8]) -> Result<Decoded, E>;
+    fn decode(&self, _chunk: &[u8]) -> Result<Decoded, E> {
+        Ok(Decoded::Rows(vec![], vec![]))
+    }
 
-    /// Returns true if source file has encoded data; and false if source file/stream
-    /// is a text file/stream
-    fn is_encoding_required(&self) -> bool;
+    /// Takes chunk of data and try to encode it
+    /// Gives back bytes ready to be written and bytes, which weren't
+    /// used
+    /// (bytes_to_write, unused_bytes)
+    /// (Vec<u8>,        Vec<u8>     )
+    fn encode(&self, _chunk: &[u8]) -> Result<(Vec<u8>, Vec<u8>), E> {
+        Ok((vec![], vec![]))
+    }
+    fn get_metadata() -> MetaData {
+        MetaData {
+            name: String::from("PhantomParser"),
+            desc: String::from("PhantomParser"),
+            file_extention: String::from("PhantomParser"),
+        }
+    }
 }

@@ -1,12 +1,10 @@
-mod buffer; //-------| struct
-            //       |<= shared grabber's functionality
-mod collector; //----| struct
-               //
-mod error; //        Common trait for errors
-mod map; //          File (parsed/text) map holder | struct
-mod parser; //       Parser trait
+mod collector;
+mod error;
+mod map;
+mod output;
+mod parser;
 mod parsers;
-mod source; //       Source trait
+mod source;
 mod sources;
 #[cfg(test)]
 mod tests;

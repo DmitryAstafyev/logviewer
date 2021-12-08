@@ -1,45 +1,23 @@
-use crate::traits::{error, source};
+use crate::traits::{error, parser, parser::Parser, source};
 use async_trait::async_trait;
-use bytes::BytesMut;
-use encoding_rs_io::*;
+use futures_core::stream::Stream;
+use std::marker::PhantomData;
 use std::{
     fs::File,
-    io::{BufRead, BufReader, Read, Seek, SeekFrom},
+    io::{Read, Seek, SeekFrom},
     path::PathBuf,
 };
 use thiserror::Error as ThisError;
-use tokio::{
-    join, select,
-    sync::{
-        mpsc::{channel, unbounded_channel, Receiver, Sender, UnboundedReceiver, UnboundedSender},
-        oneshot,
-    },
-};
-use tokio_util::sync::CancellationToken;
 
 const READ_BUFFER_SIZE: usize = 50 * 1024;
 
 #[derive(ThisError, Debug, Clone)]
 pub enum Error {
-    #[error("Input file doesn't exist")]
-    NoFile,
     #[error("IO error: {0}")]
     Io(String),
-    #[error("Method next called multiple times")]
-    MultipleChunkRequest,
-    #[error("Attempt to pass chunks multiple times")]
-    MultipleChunkPassed,
-    #[error("Channel error: {0}")]
-    Channel(String),
-    #[error("API already in use")]
-    AlreadyInUse,
-    #[error("This source doesn't support write operations")]
-    NotWritableSource,
-    #[error("Fail to confirm recieving of chunk")]
-    ChunkIsNotConfirmed,
-    #[error("Fail to confirm a chunk")]
-    FailChunkConfirmation,
-    #[error("Not supported yet")]
+    #[error("Parser error: {0}")]
+    Parser(String),
+    #[error("Not implemented/supported functionality")]
     NotSupported,
 }
 
@@ -48,76 +26,108 @@ impl error::Error for Error {}
 #[derive(Clone, Debug)]
 pub struct Options {
     pub path: PathBuf,
-    pub buffer_size: usize,
 }
 
-pub struct Source {
-    path: Option<PathBuf>,
-    file: Option<File>,
+pub struct Source<PE: error::Error, P: Parser<PE>> {
+    path: PathBuf,
+    file: File,
+    buffer: Vec<u8>,
     pos: u64,
-    cancel: CancellationToken,
+    parser: Option<P>,
+    pe: Option<PhantomData<PE>>,
 }
 
-impl Source {
-    pub fn new() -> Self {
-        Self {
-            file: None,
-            path: None,
+impl<PE: error::Error, P: Parser<PE>> Source<PE, P> {
+    pub fn new(options: Options, parser: Option<P>) -> Result<Self, Error> {
+        Ok(Self {
+            file: File::open(&options.path).map_err(|e| Error::Io(e.to_string()))?,
+            path: options.path,
             pos: 0,
-            cancel: CancellationToken::new(),
+            parser,
+            buffer: vec![],
+            pe: None,
+        })
+    }
+
+    fn read_next_segment(&mut self) -> Option<Result<(usize, usize), Error>> {
+        if let Err(err) = self.file.seek(SeekFrom::Start(self.pos)) {
+            return Some(Err(Error::Io(err.to_string())));
+        }
+        let mut buffer = [0; READ_BUFFER_SIZE];
+        let len = match self.file.read(&mut buffer) {
+            Ok(len) => len,
+            Err(err) => {
+                return Some(Err(Error::Io(err.to_string())));
+            }
+        };
+        self.buffer.append(&mut buffer[..len].to_vec());
+        if len == 0 {
+            println!(">>>>>>>>>>> READ DONE: {:?} Mb", self.pos / 1024 / 1024);
+            None
+        } else {
+            self.pos += len as u64;
+            if let Some(parser) = self.parser.as_mut() {
+                let decoded = match parser.decode(&self.buffer) {
+                    Ok(decoded) => decoded,
+                    Err(err) => {
+                        return Some(Err(Error::Parser(err.to_string())));
+                    }
+                };
+                println!(
+                    ">>>>>>>>>>> READ: {:?} Mb / {} Kb",
+                    self.pos / 1024 / 1024,
+                    self.buffer.len() / 1024
+                );
+                match decoded {
+                    parser::Decoded::Rows(rows, rest) => {
+                        self.buffer = rest;
+                        Some(Ok((0, 0)))
+                        //Some(Ok(Output::Rows(rows)))
+                    }
+                    parser::Decoded::Map(bytes, rows, rest) => {
+                        self.buffer = rest;
+                        Some(Ok((bytes, rows)))
+                    }
+                }
+            } else if let Some(last) = self.buffer.iter().rposition(|b| *b == b'\n') {
+                let breaks = bytecount::count(&self.buffer, b'\n');
+                println!(
+                    ">>>>>>>>>>> READ: {:?} Mb / {} Kb",
+                    self.pos / 1024 / 1024,
+                    self.buffer.len() / 1024
+                );
+                if breaks <= 1 {
+                    Some(Ok((0, 0)))
+                } else {
+                    self.buffer = self.buffer[last..].to_vec();
+                    Some(Ok((last, breaks - 1)))
+                }
+            } else {
+                None
+            }
         }
     }
 }
 
 #[async_trait]
-impl source::Source<Options, Error> for Source {
-    async fn assign(&mut self, options: Options) -> Result<(), Error> {
-        self.file = Some(File::open(&options.path).map_err(|e| Error::Io(e.to_string()))?);
-        self.path = Some(options.path);
-        Ok(())
+impl<PE: error::Error, P: Parser<PE>> source::Source<Error> for Source<PE, P> {
+    fn get_output_file(&self) -> Option<PathBuf> {
+        Some(self.path.clone())
     }
-    async fn close(&self) -> Result<(), Error> {
-        Err(Error::NotSupported)
+    async fn next_map(&mut self) -> Option<Result<(usize, usize), Error>> {
+        self.read_next_segment()
     }
+    fn is_mapper(&self) -> bool {
+        true
+    }
+}
 
-    async fn next(&mut self) -> Option<Vec<u8>> {
-        if let Some(file) = self.file.as_mut() {
-            if file.seek(SeekFrom::Start(self.pos)).is_err() {
-                return None;
-            }
-            let mut buffer = [0; READ_BUFFER_SIZE];
-            let buffer_len = match file.read(&mut buffer) {
-                Ok(len) => len,
-                Err(_) => {
-                    return None;
-                }
-            };
-            if buffer_len == 0 {
-                println!(">>>>>>>>>>> READ DONE: {:?} Mb", self.pos / 1024 / 1024);
-                None
-            } else {
-                self.pos += buffer_len as u64;
-                println!(">>>>>>>>>>> READ: {:?} Mb", self.pos / 1024 / 1024);
-                Some(buffer.to_vec())
-            }
-        } else {
-            None
-        }
-    }
-
-    async fn write(&self, data: &[u8]) -> Result<(), Error> {
-        Err(Error::NotSupported)
-    }
-
-    fn writable(&self) -> bool {
-        false
-    }
-
-    async fn get_source_file(&self) -> Result<PathBuf, Error> {
-        if let Some(path) = self.path.as_ref() {
-            Ok(path.clone())
-        } else {
-            Err(Error::NotSupported)
-        }
+impl<PE: error::Error, P: Parser<PE>> Stream for Source<PE, P> {
+    type Item = Result<Vec<String>, Error>;
+    fn poll_next(
+        mut self: std::pin::Pin<&mut Self>,
+        _cx: &mut std::task::Context,
+    ) -> core::task::Poll<Option<Self::Item>> {
+        core::task::Poll::Ready(None)
     }
 }

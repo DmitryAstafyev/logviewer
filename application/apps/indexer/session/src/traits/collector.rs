@@ -1,23 +1,13 @@
-use crate::traits::{
-    buffer, buffer::Buffer, error, parser, parser::Parser, source, source::Source,
-};
+use crate::traits::{error, output, output::Output, source::Source};
 use std::marker::PhantomData;
-use std::{ops::Range, path::PathBuf};
+use std::path::PathBuf;
 use thiserror::Error as ThisError;
-use tokio::{
-    join, select,
-    sync::{
-        mpsc::{channel, Receiver, Sender},
-        oneshot,
-    },
-};
-use tokio_util::sync::CancellationToken;
-use uuid::Uuid;
+use tokio_stream::StreamExt;
 
 #[derive(ThisError, Debug)]
 pub enum Error {
-    #[error("Buffer error: {0}")]
-    Buffer(buffer::Error),
+    #[error("Output error: {0}")]
+    Output(output::Error),
     #[error("Source error: {0}")]
     Source(String),
     #[error("Not supported yet")]
@@ -26,63 +16,53 @@ pub enum Error {
 
 pub enum Next {
     Updated(usize),
+    Empty,
 }
 
-pub struct Collector<SO, PO, SE, PE, P, S>
+pub struct Collector<S, E>
 where
-    SO: Clone,
-    PO: Clone,
-    SE: error::Error,
-    PE: error::Error,
-    P: Parser<PO, PE>,
-    S: Source<SO, SE>,
+    E: error::Error,
+    S: Source<E>,
 {
-    buffer: Buffer<SO, PO, SE, PE, P, S>,
-    cancel: CancellationToken,
-    source_options: SO,
-    parser_options: PO,
-    se: Option<PhantomData<SE>>,
-    pe: Option<PhantomData<PE>>,
+    source: S,
+    output: Output,
+    _e: Option<PhantomData<E>>,
 }
 
-impl<
-        SO: Clone,
-        PO: Clone,
-        SE: error::Error,
-        PE: error::Error,
-        P: Parser<PO, PE>,
-        S: Source<SO, SE>,
-    > Collector<SO, PO, SE, PE, P, S>
-{
-    pub async fn new(
-        location: PathBuf,
-        mut source: S,
-        source_options: SO,
-        parser: P,
-        parser_options: PO,
-    ) -> Result<Self, Error> {
-        source
-            .assign(source_options.clone())
-            .await
-            .map_err(|e| Error::Source(e.to_string()))?;
-        let buffer = Buffer::new(location, source, parser, parser_options.clone())
-            .await
-            .map_err(Error::Buffer)?;
+impl<E: error::Error, S: Source<E>> Collector<S, E> {
+    pub async fn new(source: S) -> Result<Self, Error> {
+        let path = if let Some(path) = source.get_output_file() {
+            path
+        } else {
+            PathBuf::from("/tmp/temp_file.log")
+        };
         Ok(Self {
-            buffer,
-            source_options,
-            parser_options,
-            cancel: CancellationToken::new(),
-            se: None,
-            pe: None,
+            source,
+            output: Output::new(path).await.map_err(Error::Output)?,
+            _e: None,
         })
     }
 
     pub async fn next(&mut self) -> Result<Next, Error> {
-        let event = self.buffer.next().await.map_err(Error::Buffer)?;
-        match event {
-            buffer::Next::Updated(rows) => Ok(Next::Updated(rows)),
-            _ => Err(Error::NotSupported),
+        if self.source.is_mapper() {
+            if let Some(res) = self.source.next_map().await {
+                let (bytes, rows) = res.map_err(|e| Error::Source(e.to_string()))?;
+                Ok(Next::Updated(
+                    self.output.map(bytes, rows).await.map_err(Error::Output)?,
+                ))
+            } else {
+                Ok(Next::Empty)
+            }
+        } else if let Some(rows) = self.source.next().await {
+            match rows {
+                Ok(rows) => Ok(Next::Updated(
+                    self.output.content(rows).await.map_err(Error::Output)?,
+                )),
+                Err(err) => Err(Error::Source(err.to_string())),
+            }
+        } else {
+            self.output.report();
+            Ok(Next::Empty)
         }
     }
 }
