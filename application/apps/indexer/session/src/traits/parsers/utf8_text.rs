@@ -1,5 +1,4 @@
 use crate::traits::{error, parser};
-use async_trait::async_trait;
 use thiserror::Error as ThisError;
 
 #[derive(ThisError, Debug, Clone)]

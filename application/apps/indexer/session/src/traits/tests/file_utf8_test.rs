@@ -1,4 +1,6 @@
-use crate::traits::{collector, collector::Collector, parser, parsers::utf8_text, sources::file};
+use crate::traits::{
+    collector, collector::Collector, parser, parsers::utf8_text, source, sources::file,
+};
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio;
@@ -24,13 +26,14 @@ async fn test() -> Result<(), String> {
     //     Some(parser),
     // )
     // .map_err(|e| e.to_string())?;
-    let source = file::Source::<parser::PhantomError, parser::PhantomParser>::new(
-        file::Options {
-            path: PathBuf::from("/storage/projects/esrlabs/logs-examples/biggest.log"),
-        },
-        None,
-    )
-    .map_err(|e| e.to_string())?;
+    let source =
+        file::Source::<parser::PhantomError, parser::PhantomParser, source::PhantomHolder>::new(
+            file::Options {
+                path: PathBuf::from("/storage/projects/esrlabs/logs-examples/biggest.log"),
+            },
+            None,
+        )
+        .map_err(|e| e.to_string())?;
     let mut collector = Collector::new(source).await.map_err(|e| e.to_string())?;
     while let Ok(event) = collector.next().await {
         if let collector::Next::Empty = event {

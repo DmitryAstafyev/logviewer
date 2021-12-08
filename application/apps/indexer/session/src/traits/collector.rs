@@ -1,4 +1,8 @@
-use crate::traits::{error, output, output::Output, source::Source};
+use crate::traits::{
+    error, output,
+    output::Output,
+    source::{Data, Source},
+};
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use thiserror::Error as ThisError;
@@ -19,17 +23,19 @@ pub enum Next {
     Empty,
 }
 
-pub struct Collector<S, E>
+pub struct Collector<S, E, D>
 where
     E: error::Error,
-    S: Source<E>,
+    D: Data,
+    S: Source<D, E>,
 {
     source: S,
     output: Output,
     _e: Option<PhantomData<E>>,
+    _d: Option<PhantomData<D>>,
 }
 
-impl<E: error::Error, S: Source<E>> Collector<S, E> {
+impl<E: error::Error, D: Data, S: Source<D, E>> Collector<S, E, D> {
     pub async fn new(source: S) -> Result<Self, Error> {
         let path = if let Some(path) = source.get_output_file() {
             path
@@ -40,6 +46,7 @@ impl<E: error::Error, S: Source<E>> Collector<S, E> {
             source,
             output: Output::new(path).await.map_err(Error::Output)?,
             _e: None,
+            _d: None,
         })
     }
 
@@ -53,10 +60,10 @@ impl<E: error::Error, S: Source<E>> Collector<S, E> {
             } else {
                 Ok(Next::Empty)
             }
-        } else if let Some(rows) = self.source.next().await {
-            match rows {
-                Ok(rows) => Ok(Next::Updated(
-                    self.output.content(rows).await.map_err(Error::Output)?,
+        } else if let Some(data) = self.source.next().await {
+            match data {
+                Ok(data) => Ok(Next::Updated(
+                    self.output.content(data).await.map_err(Error::Output)?,
                 )),
                 Err(err) => Err(Error::Source(err.to_string())),
             }

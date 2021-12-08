@@ -1,4 +1,4 @@
-use crate::traits::{error, map, map::Map, parser, parser::Parser, source};
+use crate::traits::{error, map, map::Map, parser, parser::Parser, source::Data};
 use std::{fs, io, ops::Range, path::PathBuf, str::Utf8Error};
 use thiserror::Error as ThisError;
 use tokio::{fs::File, io::AsyncWriteExt};
@@ -27,7 +27,8 @@ impl Output {
         })
     }
 
-    pub async fn content(&mut self, rows: Vec<String>) -> Result<usize, Error> {
+    pub async fn content<D: Data>(&mut self, data: D) -> Result<usize, Error> {
+        let rows = data.as_strings();
         let output_str = rows.join("\n");
         let output_bytes = output_str.as_bytes();
         self.file.write_all(output_bytes).await.map_err(Error::Io)?;

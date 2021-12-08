@@ -1,4 +1,4 @@
-use crate::traits::{error, parser, parser::Parser, source};
+use crate::traits::{error, holders, parser, parser::Parser, source, source::Data};
 use async_trait::async_trait;
 use futures_core::stream::Stream;
 use std::marker::PhantomData;
@@ -28,16 +28,17 @@ pub struct Options {
     pub path: PathBuf,
 }
 
-pub struct Source<PE: error::Error, P: Parser<PE>> {
+pub struct Source<PE: error::Error, P: Parser<PE>, D: Data> {
     path: PathBuf,
     file: File,
     buffer: Vec<u8>,
     pos: u64,
     parser: Option<P>,
     pe: Option<PhantomData<PE>>,
+    _d: Option<PhantomData<D>>,
 }
 
-impl<PE: error::Error, P: Parser<PE>> Source<PE, P> {
+impl<PE: error::Error, P: Parser<PE>, D: Data> Source<PE, P, D> {
     pub fn new(options: Options, parser: Option<P>) -> Result<Self, Error> {
         Ok(Self {
             file: File::open(&options.path).map_err(|e| Error::Io(e.to_string()))?,
@@ -46,6 +47,7 @@ impl<PE: error::Error, P: Parser<PE>> Source<PE, P> {
             parser,
             buffer: vec![],
             pe: None,
+            _d: None,
         })
     }
 
@@ -110,7 +112,7 @@ impl<PE: error::Error, P: Parser<PE>> Source<PE, P> {
 }
 
 #[async_trait]
-impl<PE: error::Error, P: Parser<PE>> source::Source<Error> for Source<PE, P> {
+impl<PE: error::Error, P: Parser<PE>, D: Data> source::Source<D, Error> for Source<PE, P, D> {
     fn get_output_file(&self) -> Option<PathBuf> {
         Some(self.path.clone())
     }
@@ -122,8 +124,8 @@ impl<PE: error::Error, P: Parser<PE>> source::Source<Error> for Source<PE, P> {
     }
 }
 
-impl<PE: error::Error, P: Parser<PE>> Stream for Source<PE, P> {
-    type Item = Result<Vec<String>, Error>;
+impl<PE: error::Error, P: Parser<PE>, D: Data> Stream for Source<PE, P, D> {
+    type Item = Result<D, Error>;
     fn poll_next(
         mut self: std::pin::Pin<&mut Self>,
         _cx: &mut std::task::Context,
