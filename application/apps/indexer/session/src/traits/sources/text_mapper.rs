@@ -1,7 +1,5 @@
-use crate::traits::{error, holders, parser, parser::Parser, source, source::Data};
+use crate::traits::{error, parser::PhantomData, source};
 use async_trait::async_trait;
-use futures_core::stream::Stream;
-use std::marker::PhantomData;
 use std::{
     fs::File,
     io::{Read, Seek, SeekFrom},
@@ -28,26 +26,20 @@ pub struct Options {
     pub path: PathBuf,
 }
 
-pub struct Source<PE: error::Error, P: Parser<PE>, D: Data> {
+pub struct Source {
     path: PathBuf,
     file: File,
     buffer: Vec<u8>,
     pos: u64,
-    parser: Option<P>,
-    pe: Option<PhantomData<PE>>,
-    _d: Option<PhantomData<D>>,
 }
 
-impl<PE: error::Error, P: Parser<PE>, D: Data> Source<PE, P, D> {
-    pub fn new(options: Options, parser: Option<P>) -> Result<Self, Error> {
+impl Source {
+    pub fn new(options: Options) -> Result<Self, Error> {
         Ok(Self {
             file: File::open(&options.path).map_err(|e| Error::Io(e.to_string()))?,
             path: options.path,
             pos: 0,
-            parser,
             buffer: vec![],
-            pe: None,
-            _d: None,
         })
     }
 
@@ -68,30 +60,7 @@ impl<PE: error::Error, P: Parser<PE>, D: Data> Source<PE, P, D> {
             None
         } else {
             self.pos += len as u64;
-            if let Some(parser) = self.parser.as_mut() {
-                let decoded = match parser.decode(&self.buffer) {
-                    Ok(decoded) => decoded,
-                    Err(err) => {
-                        return Some(Err(Error::Parser(err.to_string())));
-                    }
-                };
-                println!(
-                    ">>>>>>>>>>> READ: {:?} Mb / {} Kb",
-                    self.pos / 1024 / 1024,
-                    self.buffer.len() / 1024
-                );
-                match decoded {
-                    parser::Decoded::Rows(rows, rest) => {
-                        self.buffer = rest;
-                        Some(Ok((0, 0)))
-                        //Some(Ok(Output::Rows(rows)))
-                    }
-                    parser::Decoded::Map(bytes, rows, rest) => {
-                        self.buffer = rest;
-                        Some(Ok((bytes, rows)))
-                    }
-                }
-            } else if let Some(last) = self.buffer.iter().rposition(|b| *b == b'\n') {
+            if let Some(last) = self.buffer.iter().rposition(|b| *b == b'\n') {
                 let breaks = bytecount::count(&self.buffer, b'\n');
                 println!(
                     ">>>>>>>>>>> READ: {:?} Mb / {} Kb",
@@ -112,7 +81,7 @@ impl<PE: error::Error, P: Parser<PE>, D: Data> Source<PE, P, D> {
 }
 
 #[async_trait]
-impl<PE: error::Error, P: Parser<PE>, D: Data> source::Source<D, Error> for Source<PE, P, D> {
+impl source::Source<PhantomData, Error> for Source {
     fn get_output_file(&self) -> Option<PathBuf> {
         Some(self.path.clone())
     }
@@ -121,15 +90,5 @@ impl<PE: error::Error, P: Parser<PE>, D: Data> source::Source<D, Error> for Sour
     }
     fn is_mapper(&self) -> bool {
         true
-    }
-}
-
-impl<PE: error::Error, P: Parser<PE>, D: Data> Stream for Source<PE, P, D> {
-    type Item = Result<D, Error>;
-    fn poll_next(
-        mut self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context,
-    ) -> core::task::Poll<Option<Self::Item>> {
-        core::task::Poll::Ready(None)
     }
 }

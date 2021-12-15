@@ -1,6 +1,5 @@
 mod collector;
 mod error;
-mod holders;
 mod map;
 mod output;
 mod parser;

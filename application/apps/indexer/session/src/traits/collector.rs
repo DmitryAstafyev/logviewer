@@ -1,8 +1,4 @@
-use crate::traits::{
-    error, output,
-    output::Output,
-    source::{Data, Source},
-};
+use crate::traits::{error, output, output::Output, parser::Data, source::Source};
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use thiserror::Error as ThisError;

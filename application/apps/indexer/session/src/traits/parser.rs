@@ -1,7 +1,22 @@
 use crate::traits;
-use async_trait::async_trait;
 use std::marker::Unpin;
 use thiserror::Error as ThisError;
+
+pub trait Data: Send + Sync + Unpin {
+    fn as_strings(&self) -> Vec<String> {
+        vec![]
+    }
+    fn as_bytes(&self) -> Vec<u8> {
+        vec![]
+    }
+    fn get_rest(&self) -> Vec<u8> {
+        vec![]
+    }
+}
+
+pub struct PhantomData {}
+
+impl Data for PhantomData {}
 
 #[derive(ThisError, Debug, Clone)]
 pub enum PhantomError {
@@ -11,14 +26,13 @@ pub enum PhantomError {
 
 impl traits::error::Error for PhantomError {}
 
+pub struct PhantomInput {}
+
+impl Input for PhantomInput {}
+
 pub struct PhantomParser {}
 
-impl Parser<PhantomError> for PhantomParser {}
-
-pub enum Decoded {
-    Rows(Vec<String>, Vec<u8>),
-    Map(usize, usize, Vec<u8>),
-}
+impl Parser<PhantomError, PhantomInput, PhantomData> for PhantomParser {}
 
 pub struct MetaData {
     pub name: String,
@@ -26,11 +40,13 @@ pub struct MetaData {
     pub file_extention: String,
 }
 
-pub trait Parser<E: traits::error::Error>: Sync + Send + Unpin {
+pub trait Input: Sync + Send + Unpin {}
+
+pub trait Parser<E: traits::error::Error, I: Input, D: Data>: Sync + Send + Unpin {
     /// Takes chunk of data and try to decode it.traits
     /// Returns decoded part and rest part as Decoded struct
-    fn decode(&self, _chunk: &[u8]) -> Result<Decoded, E> {
-        Ok(Decoded::Rows(vec![], vec![]))
+    fn decode(&self, _chunk: &[u8], _input: Option<I>) -> Result<Option<D>, E> {
+        Ok(None)
     }
 
     /// Takes chunk of data and try to encode it
@@ -38,7 +54,7 @@ pub trait Parser<E: traits::error::Error>: Sync + Send + Unpin {
     /// used
     /// (bytes_to_write, unused_bytes)
     /// (Vec<u8>,        Vec<u8>     )
-    fn encode(&self, _chunk: &[u8]) -> Result<(Vec<u8>, Vec<u8>), E> {
+    fn encode(&self, _chunk: &[u8], _input: Option<I>) -> Result<(Vec<u8>, Vec<u8>), E> {
         Ok((vec![], vec![]))
     }
     fn get_metadata() -> MetaData {

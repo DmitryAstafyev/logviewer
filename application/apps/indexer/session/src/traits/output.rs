@@ -1,4 +1,9 @@
-use crate::traits::{error, map, map::Map, parser, parser::Parser, source::Data};
+use crate::traits::{
+    error, map,
+    map::Map,
+    parser,
+    parser::{Data, Parser},
+};
 use std::{fs, io, ops::Range, path::PathBuf, str::Utf8Error};
 use thiserror::Error as ThisError;
 use tokio::{fs::File, io::AsyncWriteExt};
@@ -31,7 +36,7 @@ impl Output {
         let rows = data.as_strings();
         let output_str = rows.join("\n");
         let output_bytes = output_str.as_bytes();
-        self.file.write_all(output_bytes).await.map_err(Error::Io)?;
+        //self.file.write_all(output_bytes).await.map_err(Error::Io)?;
         self.map.push(output_bytes.len(), rows.len());
         Ok(self.map.get_rows_count())
     }

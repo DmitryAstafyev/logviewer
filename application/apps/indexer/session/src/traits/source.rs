@@ -1,28 +1,16 @@
-use crate::traits::error;
+use crate::traits::{error, parser::Data};
 use async_trait::async_trait;
-use futures_core::stream::Stream;
 use std::path::PathBuf;
 
-pub trait Data: Send + Sync + Unpin {
-    fn as_strings(&self) -> Vec<String> {
-        vec![]
-    }
-    fn as_bytes(&self) -> Vec<u8> {
-        vec![]
-    }
-}
-
-pub struct PhantomHolder {}
-
-impl Data for PhantomHolder {}
-
 #[async_trait]
-pub trait Source<D: Data, E: error::Error>:
-    Stream<Item = Result<D, E>> + Send + Sync + Unpin
-{
+pub trait Source<D: Data, E: error::Error>: Send + Sync + Unpin {
     /// Provides safe way to shutdown/close source
     async fn close(&self) -> Result<(), E> {
         Ok(())
+    }
+
+    async fn next(&mut self) -> Option<Result<D, E>> {
+        None
     }
 
     async fn next_map(&mut self) -> Option<Result<(usize, usize), E>> {
