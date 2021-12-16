@@ -1,3 +1,4 @@
+use console::style;
 use std::ops::Range;
 
 pub struct Map {
@@ -58,20 +59,18 @@ impl Map {
         ))
     }
 
-    pub fn report(&self) -> String {
+    pub fn report(&self) {
         let len = self.map.len();
-        let mut output = String::new();
-        output = format!("{}slots: {}", output, len);
-        output = format!(
-            "{}\nbytes: {}",
-            output,
+        println!("{}: {}", style("[slots]").bold().dim(), len);
+        println!(
+            "{}: {}",
+            style("[bytes]").bold().dim(),
             if len > 0 { self.map[len - 1].0 } else { 0 }
         );
-        output = format!(
-            "{}\nrows: {}",
-            output,
+        println!(
+            "{}: {}",
+            style("[rows]").bold().dim(),
             if len > 0 { self.map[len - 1].1 } else { 0 }
         );
-        output
     }
 }

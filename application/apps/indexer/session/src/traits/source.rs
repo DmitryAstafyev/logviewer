@@ -9,12 +9,12 @@ pub trait Source<D: Data, E: error::Error>: Send + Sync + Unpin {
         Ok(())
     }
 
-    async fn next(&mut self) -> Option<Result<D, E>> {
-        None
+    async fn next(&mut self) -> Result<Option<D>, E> {
+        Ok(None)
     }
 
-    async fn next_map(&mut self) -> Option<Result<(usize, usize), E>> {
-        None
+    async fn next_map(&mut self) -> Result<Option<(usize, usize)>, E> {
+        Ok(None)
     }
 
     fn is_mapper(&self) -> bool {

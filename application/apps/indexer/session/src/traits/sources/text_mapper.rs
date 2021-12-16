@@ -1,5 +1,6 @@
 use crate::traits::{error, parser::PhantomData, source};
 use async_trait::async_trait;
+use console::{style, Term};
 use std::{
     fs::File,
     io::{Read, Seek, SeekFrom},
@@ -31,6 +32,7 @@ pub struct Source {
     file: File,
     buffer: Vec<u8>,
     pos: u64,
+    term: Term,
 }
 
 impl Source {
@@ -40,41 +42,49 @@ impl Source {
             path: options.path,
             pos: 0,
             buffer: vec![],
+            term: Term::stdout(),
         })
     }
 
-    fn read_next_segment(&mut self) -> Option<Result<(usize, usize), Error>> {
+    fn report(&self) {
+        println!(
+            "{}: {} Mb",
+            style("[reading]").bold().dim(),
+            self.pos / 1024 / 1024
+        );
+        if let Err(err) = self.term.move_cursor_up(1) {
+            eprintln!("Fail to manipulate console: {}", err);
+        }
+    }
+
+    fn read_next_segment(&mut self) -> Result<Option<(usize, usize)>, Error> {
         if let Err(err) = self.file.seek(SeekFrom::Start(self.pos)) {
-            return Some(Err(Error::Io(err.to_string())));
+            return Err(Error::Io(err.to_string()));
         }
         let mut buffer = [0; READ_BUFFER_SIZE];
         let len = match self.file.read(&mut buffer) {
             Ok(len) => len,
             Err(err) => {
-                return Some(Err(Error::Io(err.to_string())));
+                return Err(Error::Io(err.to_string()));
             }
         };
         self.buffer.append(&mut buffer[..len].to_vec());
         if len == 0 {
-            println!(">>>>>>>>>>> READ DONE: {:?} Mb", self.pos / 1024 / 1024);
-            None
+            self.report();
+            Ok(None)
         } else {
             self.pos += len as u64;
             if let Some(last) = self.buffer.iter().rposition(|b| *b == b'\n') {
                 let breaks = bytecount::count(&self.buffer, b'\n');
-                println!(
-                    ">>>>>>>>>>> READ: {:?} Mb / {} Kb",
-                    self.pos / 1024 / 1024,
-                    self.buffer.len() / 1024
-                );
+                self.report();
                 if breaks <= 1 {
-                    Some(Ok((0, 0)))
+                    Ok(Some((0, 0)))
                 } else {
                     self.buffer = self.buffer[last..].to_vec();
-                    Some(Ok((last, breaks - 1)))
+                    Ok(Some((last, breaks - 1)))
                 }
             } else {
-                None
+                Ok(None)
             }
         }
     }
@@ -85,7 +95,7 @@ impl source::Source<PhantomData, Error> for Source {
     fn get_output_file(&self) -> Option<PathBuf> {
         Some(self.path.clone())
     }
-    async fn next_map(&mut self) -> Option<Result<(usize, usize), Error>> {
+    async fn next_map(&mut self) -> Result<Option<(usize, usize)>, Error> {
         self.read_next_segment()
     }
     fn is_mapper(&self) -> bool {

@@ -6,11 +6,8 @@ pub trait Data: Send + Sync + Unpin {
     fn as_strings(&self) -> Vec<String> {
         vec![]
     }
-    fn as_bytes(&self) -> Vec<u8> {
-        vec![]
-    }
-    fn get_rest(&self) -> Vec<u8> {
-        vec![]
+    fn as_bytes(&self) -> Option<Vec<u8>> {
+        None
     }
 }
 
@@ -45,8 +42,8 @@ pub trait Input: Sync + Send + Unpin {}
 pub trait Parser<E: traits::error::Error, I: Input, D: Data>: Sync + Send + Unpin {
     /// Takes chunk of data and try to decode it.traits
     /// Returns decoded part and rest part as Decoded struct
-    fn decode(&self, _chunk: &[u8], _input: Option<I>) -> Result<Option<D>, E> {
-        Ok(None)
+    fn decode<'a>(&self, chunk: &'a [u8], _input: Option<I>) -> Result<(&'a [u8], Option<D>), E> {
+        Ok((chunk, None))
     }
 
     /// Takes chunk of data and try to encode it

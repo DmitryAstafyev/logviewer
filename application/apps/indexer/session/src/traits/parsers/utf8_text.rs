@@ -3,7 +3,6 @@ use thiserror::Error as ThisError;
 
 pub struct Utf8Entity {
     lines: Vec<String>,
-    rest: Vec<u8>,
 }
 
 impl parser::Data for Utf8Entity {
@@ -33,21 +32,25 @@ impl Parser {
 }
 
 impl parser::Parser<Error, Input, Utf8Entity> for Parser {
-    fn decode(&self, chunk: &[u8], _inputs: Option<Input>) -> Result<Option<Utf8Entity>, Error> {
-        let mut entity = Utf8Entity {
-            lines: vec![],
-            rest: vec![],
-        };
+    fn decode<'a>(
+        &self,
+        chunk: &'a [u8],
+        _inputs: Option<Input>,
+    ) -> Result<(&'a [u8], Option<Utf8Entity>), Error> {
         let str = unsafe { std::str::from_utf8_unchecked(&chunk) };
         let mut rows: Vec<&str> = str.split('\n').collect();
         if rows.len() == 1 {
-            entity.rest = chunk.to_vec();
+            Ok((chunk, None))
         } else {
             let last = rows.remove(rows.len() - 1);
-            entity.rest = last.as_bytes().to_vec();
-            entity.lines = rows.iter().map(|r| r.to_string()).collect();
+            let rest = last.as_bytes();
+            Ok((
+                rest,
+                Some(Utf8Entity {
+                    lines: rows.iter().map(|r| r.to_string()).collect(),
+                }),
+            ))
         }
-        Ok(Some(entity))
     }
     fn get_metadata() -> parser::MetaData {
         parser::MetaData {

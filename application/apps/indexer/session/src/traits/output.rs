@@ -1,12 +1,7 @@
-use crate::traits::{
-    error, map,
-    map::Map,
-    parser,
-    parser::{Data, Parser},
-};
-use std::{fs, io, ops::Range, path::PathBuf, str::Utf8Error};
+use crate::traits::{map::Map, parser::Data};
+use std::{io, path::PathBuf};
 use thiserror::Error as ThisError;
-use tokio::{fs::File, io::AsyncWriteExt};
+use tokio::fs::File;
 
 #[derive(ThisError, Debug)]
 pub enum Error {
@@ -48,7 +43,7 @@ impl Output {
 
     pub fn report(&self) {
         println!("{}", "=".repeat(60));
-        println!("{}", self.map.report());
+        self.map.report();
         println!("{}", "=".repeat(60));
     }
 }

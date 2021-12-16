@@ -2,7 +2,6 @@ use crate::traits::{error, output, output::Output, parser::Data, source::Source}
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use thiserror::Error as ThisError;
-use tokio_stream::StreamExt;
 
 #[derive(ThisError, Debug)]
 pub enum Error {
@@ -48,24 +47,33 @@ impl<E: error::Error, D: Data, S: Source<D, E>> Collector<S, E, D> {
 
     pub async fn next(&mut self) -> Result<Next, Error> {
         if self.source.is_mapper() {
-            if let Some(res) = self.source.next_map().await {
-                let (bytes, rows) = res.map_err(|e| Error::Source(e.to_string()))?;
+            let map = self
+                .source
+                .next_map()
+                .await
+                .map_err(|e| Error::Source(e.to_string()))?;
+            if let Some((bytes, rows)) = map {
                 Ok(Next::Updated(
                     self.output.map(bytes, rows).await.map_err(Error::Output)?,
                 ))
             } else {
+                self.output.report();
                 Ok(Next::Empty)
             }
-        } else if let Some(data) = self.source.next().await {
-            match data {
-                Ok(data) => Ok(Next::Updated(
-                    self.output.content(data).await.map_err(Error::Output)?,
-                )),
-                Err(err) => Err(Error::Source(err.to_string())),
-            }
         } else {
-            self.output.report();
-            Ok(Next::Empty)
+            let entity = self
+                .source
+                .next()
+                .await
+                .map_err(|e| Error::Source(e.to_string()))?;
+            if let Some(entity) = entity {
+                Ok(Next::Updated(
+                    self.output.content(entity).await.map_err(Error::Output)?,
+                ))
+            } else {
+                self.output.report();
+                Ok(Next::Empty)
+            }
         }
     }
 }

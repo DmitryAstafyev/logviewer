@@ -5,6 +5,7 @@ use crate::traits::{
     source,
 };
 use async_trait::async_trait;
+use console::{style, Term};
 use std::{
     fs::File,
     io::{Read, Seek, SeekFrom},
@@ -37,6 +38,7 @@ pub struct Source {
     buffer: Vec<u8>,
     pos: u64,
     parser: utf8_text::Parser,
+    term: Term,
 }
 
 impl Source {
@@ -47,37 +49,49 @@ impl Source {
             pos: 0,
             parser,
             buffer: vec![],
+            term: Term::stdout(),
         })
     }
 
-    fn read_next_segment(&mut self) -> Option<Result<utf8_text::Utf8Entity, Error>> {
+    fn report(&self) {
+        println!(
+            "{}: {} Mb",
+            style("[reading]").bold().dim(),
+            self.pos / 1024 / 1024
+        );
+        if let Err(err) = self.term.move_cursor_up(1) {
+            eprintln!("Fail to manipulate console: {}", err);
+        }
+    }
+
+    fn read_next_segment(&mut self) -> Result<Option<utf8_text::Utf8Entity>, Error> {
         if let Err(err) = self.file.seek(SeekFrom::Start(self.pos)) {
-            return Some(Err(Error::Io(err.to_string())));
+            return Err(Error::Io(err.to_string()));
         }
         let mut buffer = [0; READ_BUFFER_SIZE];
         let len = match self.file.read(&mut buffer) {
             Ok(len) => len,
             Err(err) => {
-                return Some(Err(Error::Io(err.to_string())));
+                return Err(Error::Io(err.to_string()));
             }
         };
         self.buffer.append(&mut buffer[..len].to_vec());
         if len == 0 {
-            println!(">>>>>>>>>>> READ DONE: {:?} Mb", self.pos / 1024 / 1024);
-            None
+            self.report();
+            Ok(None)
         } else {
             self.pos += len as u64;
-            println!(">>>>>>>>>>> READ DONE: {:?} Mb", self.pos / 1024 / 1024);
+            self.report();
             match self.parser.decode(&self.buffer, None) {
-                Ok(result) => {
-                    if let Some(entity) = result {
-                        self.buffer = entity.get_rest().to_vec();
-                        Some(Ok(entity))
+                Ok((rest, entity)) => {
+                    self.buffer = rest.to_vec();
+                    if let Some(entity) = entity {
+                        Ok(Some(entity))
                     } else {
-                        None
+                        Ok(None)
                     }
                 }
-                Err(err) => Some(Err(Error::Parser(err.to_string()))),
+                Err(err) => Err(Error::Parser(err.to_string())),
             }
         }
     }
@@ -88,7 +102,7 @@ impl source::Source<utf8_text::Utf8Entity, Error> for Source {
     fn get_output_file(&self) -> Option<PathBuf> {
         Some(self.path.clone())
     }
-    async fn next(&mut self) -> Option<Result<utf8_text::Utf8Entity, Error>> {
+    async fn next(&mut self) -> Result<Option<utf8_text::Utf8Entity>, Error> {
         self.read_next_segment()
     }
 }
