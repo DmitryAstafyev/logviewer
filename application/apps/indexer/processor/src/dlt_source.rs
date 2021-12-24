@@ -50,7 +50,7 @@ impl MetadataSource for DltSource {
     }
 
     fn from_file(
-        &self,
+        &mut self,
         shutdown_token: Option<CancellationToken>,
     ) -> Result<ComputationResult<GrabMetadata>, GrabError> {
         if !fs::metadata(&self.path)

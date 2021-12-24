@@ -14,6 +14,7 @@ pub mod factory;
 pub trait GrabTrait {
     fn grab_content(&self, line_range: &LineRange) -> Result<GrabbedContent, GrabError>;
     fn inject_metadata(&mut self, metadata: GrabMetadata) -> Result<(), GrabError>;
+    fn merge_metadata(&mut self, metadata: GrabMetadata) -> Result<(), GrabError>;
     fn get_metadata(&self) -> Option<&GrabMetadata>;
     fn drop_metadata(&mut self);
     fn associated_file(&self) -> PathBuf;
@@ -137,7 +138,7 @@ pub trait MetadataSource {
 
     /// This will initialize the cached metadata from a file
     fn from_file(
-        &self,
+        &mut self,
         shutdown_token: Option<CancellationToken>,
     ) -> Result<ComputationResult<GrabMetadata>, GrabError>;
 
@@ -222,6 +223,18 @@ where
         self.metadata.as_ref()
     }
 
+    fn merge_metadata(&mut self, metadata: GrabMetadata) -> Result<(), GrabError> {
+        self.metadata = if let Some(md) = self.metadata.take() {
+            Some(GrabMetadata {
+                slots: [md.slots, metadata.slots].concat(),
+                line_count: metadata.line_count,
+            })
+        } else {
+            Some(metadata)
+        };
+        Ok(())
+    }
+
     fn drop_metadata(&mut self) {
         self.metadata = None;
     }
@@ -263,7 +276,7 @@ impl<T: MetadataSource> Grabber<T> {
     /// ...
     /// A new Grabber instance can only be created if the file is non-empty,
     /// otherwise this function will return an error
-    pub fn new(source: T) -> Result<Self, GrabError> {
+    pub fn new(mut source: T) -> Result<Self, GrabError> {
         let input_file_size = source.input_size()?;
         if input_file_size == 0 {
             return Err(GrabError::Config("Cannot grab empty file".to_string()));
@@ -308,6 +321,10 @@ impl<T: MetadataSource> Grabber<T> {
                 self.source.get_entries(md, line_range)
             }
         }
+    }
+
+    pub fn source(&mut self) -> &mut T {
+        &mut self.source
     }
 
     /// if the metadata was already created, we know the number of log entries in a file
