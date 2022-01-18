@@ -58,7 +58,7 @@ impl<R: Read> PcapngByteSource<R> {
 }
 
 #[async_trait]
-impl<R: Read + Send> ByteSource for PcapngByteSource<R> {
+impl<R: Read + Send + Sync> ByteSource for PcapngByteSource<R> {
     fn current_slice(&self) -> &[u8] {
         self.buffer.buf()
     }

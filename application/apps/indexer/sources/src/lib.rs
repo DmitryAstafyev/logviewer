@@ -27,7 +27,7 @@ pub enum Error {
 
 /// Parser trait that needs to be implemented for any parser we support
 /// in chipmunk
-pub trait Parser<T: LogMessage> {
+pub trait Parser<T: LogMessage>: Unpin + Send + Sync {
     /// take a slice of bytes and try to apply a parser. If the parse was
     /// successfull, this will yield  the rest of the slice along with `Some(log_message)`
     ///
@@ -45,7 +45,7 @@ pub trait LineFormat {
     fn format_line(&self) -> String;
 }
 
-pub trait LogMessage: Display {
+pub trait LogMessage: Display + Unpin + Send {
     fn as_stored_bytes(&self) -> Vec<u8>;
 }
 
@@ -89,7 +89,7 @@ impl ReloadInfo {
 }
 
 #[async_trait]
-pub trait ByteSource {
+pub trait ByteSource: Send + Sync {
     /// will load more bytes from the underlying source
     /// when the source has reached it's end, this function
     /// will return Ok((None, _))

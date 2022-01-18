@@ -9,6 +9,7 @@ use log::{debug, trace, warn};
 use std::marker::PhantomData;
 use tokio_stream::Stream;
 
+#[derive(Debug)]
 pub struct MessageProducer<T, P, S>
 where
     T: LogMessage,
