@@ -61,6 +61,7 @@ vim-markdown-preview.html
 local/**/*
 **/.env
 **/*.node
+**/.angular/*
 application/apps/indexer-neon/native/artifacts.json
 *portable.tgz
 **/*.metadata.json
