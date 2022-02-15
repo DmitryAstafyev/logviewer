@@ -1,0 +1,91 @@
+<div *ngIf="_ng_session !== undefined" class="request">
+    <div class="comstyle-input-holder search-input-wrapper">
+        <div>
+            <mat-form-field class="recent-requests outline regular" appearance="outline">
+                <div
+                    class="activeSearchHolder"
+                    (click)="_ng_clickActiveSearchHolder($event)"
+                    *ngIf="_ng_searchState.term !== '' && !_ng_searchState.editing"
+                >
+                    <span class="activeSearch">{{_ng_searchState.term}}</span>
+                    <button (click)="_ng_onStoreRequest()" [disabled]="!_ng_canSaveFilter()">
+                        <mat-icon [class]="_ng_canSaveFilter() ? '' : 'disabled'">save</mat-icon>
+                    </button>
+                    <button (click)="_ng_onStoreChart()" [disabled]="!_ng_canSaveChart()">
+                        <mat-icon [class]="_ng_canSaveChart() ? '' : 'disabled'">timeline</mat-icon>
+                    </button>
+                    <button (click)="_ng_onDropRequest()">
+                        <mat-icon>close</mat-icon>
+                    </button>
+                </div>
+                <input
+                    #requestinput
+                    tabindex="1000"
+                    type="text"
+                    [placeholder]="_ng_searchState.term === '' ? 'Type a Search Request' : 'Override the search request'"
+                    aria-label="Filter"
+                    (focus)="_ng_onFocusRequestInput()"
+                    (blur)="_ng_onBlurRequestInput()"
+                    (keyup)="_ng_onKeyUpRequestInput($event)"
+                    (keydown)="_ng_onKeyDownRequestInput($event)"
+                    matInput
+                    [formControl]="_ng_inputCtrl"
+                    [readonly]="_ng_isWorking()"
+                    [matAutocomplete]="auto"
+                />
+                <mat-autocomplete
+                    #auto="matAutocomplete"
+                    class="regular"
+                    (optionSelected)="_ng_onRecentSelected($event)"
+                    (opened)="_ng_onAutocompletePanelOpen()"
+                    [classList]="'recent-requests'"
+                    [disableRipple]="true"
+                >
+                    <mat-option
+                        *ngFor="let recent of _ng_recent | async"
+                        [value]="recent"
+                        [attr.title]="recent"
+                        class="recent-requests small t-console t-small"
+                        (click)="_ng_recentOptionClick()"
+                    >
+                        <span
+                            class="filename"
+                            [innerHTML]="_ng_getSafeHTML(recent.tdescription === undefined ? recent.description : recent.tdescription)"
+                        ></span>
+                    </mat-option>
+                </mat-autocomplete>
+            </mat-form-field>
+            <div class="spinner" *ngIf="_ng_isWorking()">
+                <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+            </div>
+        </div>
+        <div class="request-mode-buttons">
+            <span
+                tabindex="11"
+                [attr.class]="'small-icon-button codicon codicon-case-sensitive ' + (_ng_flags.casesensitive ? 'active' : 'inactive')"
+                (click)="_ng_flagsToggle($event, 'casesensitive')"
+            ></span>
+            <span
+                tabindex="12"
+                [attr.class]="'small-icon-button codicon codicon-whole-word ' + (_ng_flags.wholeword ? 'active' : 'inactive')"
+                (click)="_ng_flagsToggle($event, 'wholeword')"
+            ></span>
+            <span
+                tabindex="13"
+                [attr.class]="'small-icon-button codicon codicon-regex ' + (_ng_flags.regexp ? 'active' : 'inactive')"
+                (click)="_ng_flagsToggle($event, 'regexp')"
+            ></span>
+        </div>
+    </div>
+    <p class="t-small color-scheme-2 summary" *ngIf="_ng_isSummaryVisible()">
+        ({{_ng_getMatchesProc()}}% or rows matched. {{_ng_getFound()}} out of {{_ng_getTotal()}})
+    </p>
+</div>
+<div *ngIf="_ng_session !== undefined" class="rows noreset">
+    <app-views-search-output
+        #output
+        [injectionIntoTitleBar]="injectionIntoTitleBar"
+        [onSessionChanged]="_ng_onSessionChanged"
+        [session]="_ng_session"
+    ></app-views-search-output>
+</div>

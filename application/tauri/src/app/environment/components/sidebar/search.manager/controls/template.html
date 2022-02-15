@@ -1,0 +1,31 @@
+<div class="controls">
+    <div class="filename-holder">
+        <span class="filename">{{_ng_filename}}</span>
+    </div>
+    <button
+        mat-icon-button
+        color="primary"
+        aria-label="Available Actions"
+        [matMenuTriggerFor]="searchManagerActionsMenu"
+    >
+        <mat-icon>more_horiz</mat-icon>
+    </button>
+</div>
+
+<mat-menu #searchManagerActionsMenu="matMenu" xPosition="before">
+    <button mat-menu-item (click)="_ng_onSave(_ng_filename)">
+        <span>Save</span>
+    </button>
+    <div *ngIf="_ng_filename !== ''">
+        <button mat-menu-item (click)="_ng_onSave()">
+            <span>Save as</span>
+        </button>
+    </div>
+    <button mat-menu-item (click)="_ng_onLoad()">
+        <span>Load</span>
+    </button>
+    <mat-divider></mat-divider>
+    <button mat-menu-item (click)="_ng_onRecentOpen()">
+        <span>Recent</span>
+    </button>
+</mat-menu>
