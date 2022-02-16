@@ -1,0 +1,40 @@
+/* To learn more about this file see: https://angular.io/config/tsconfig. */
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "./dist/out-tsc",
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "sourceMap": true,
+    "declaration": false,
+    "downlevelIteration": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "node",
+    "importHelpers": true,
+    "target": "es2017",
+    "module": "es2020",
+    "lib": [
+      "es2020",
+      "dom"
+    ],
+    "paths": {
+      "@chipmunk/functions/*": ["src/app/environment/functions/*"],
+      "@chipmunk/service/*": ["src/app/environment/services/*"],
+      "@chipmunk/controller/*": ["src/app/environment/controller/*"],
+      "@chipmunk/interfaces/*": ["src/app/environment/interfaces/*"],
+      "@chipmunk/ipc/electron/*": ["src/app/environment/interfaces/ipc/electron.ipc.messages/*"],
+      "@chipmunk/ipc/plugins/*": ["src/app/environment/interfaces/ipc/plugins.ipc.messages/*"]
+    }
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  }
+}

@@ -46,6 +46,8 @@ Thumbs.db
 **/.DS_store
 **/dist
 **/build
+**/target
+**/target/*
 application/apps/**/target/*
 application/apps/rustcore/ts-cli
 .vscode
