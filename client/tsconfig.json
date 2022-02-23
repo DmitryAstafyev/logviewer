@@ -23,12 +23,14 @@
       "dom"
     ],
     "paths": {
-      "@chipmunk/functions/*": ["src/app/environment/functions/*"],
+      "@chipmunk/logs/*": ["src/app/environment/utils/logs/*"],
+      "@chipmunk/utils/*": ["src/app/environment/utils/*"],
       "@chipmunk/service/*": ["src/app/environment/services/*"],
       "@chipmunk/controller/*": ["src/app/environment/controller/*"],
       "@chipmunk/interfaces/*": ["src/app/environment/interfaces/*"],
       "@chipmunk/ipc/electron/*": ["src/app/environment/interfaces/ipc/electron.ipc.messages/*"],
-      "@chipmunk/ipc/plugins/*": ["src/app/environment/interfaces/ipc/plugins.ipc.messages/*"]
+      "@chipmunk/ipc/plugins/*": ["src/app/environment/interfaces/ipc/plugins.ipc.messages/*"],
+	  "@chipmunk/api/requests/*": ["src/app/environment/services/api/requests/*"]
     }
   },
   "angularCompilerOptions": {

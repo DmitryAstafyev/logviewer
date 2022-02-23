@@ -216,7 +216,7 @@ export class DialogsFileOptionsDltComponent implements OnDestroy, AfterContentIn
         });
         if (this._requestId !== undefined) {
             this._logger.env(`Canceling DLT stats getting by request "${this._requestId}"`);
-            ElectronIpcService.request<IPC.DLTStatsResponse>(
+            ElectronIpcService.request<IPC.DLTStatsCancelResponse>(
                 new IPC.DLTStatsCancelRequest({
                     id: this._requestId,
                     session: 'none',

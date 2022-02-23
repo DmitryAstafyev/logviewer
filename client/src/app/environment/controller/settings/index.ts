@@ -62,13 +62,13 @@ export abstract class LocalField<T> extends Field<T> {
 				}),
 				IPC.SettingsOperationGetResponse,
 			)
-				.then((response: IPC.SettingsOperationGetResponse<T>) => {
+				.then((response) => {
 					if (response.error !== undefined) {
 						reject(new Error(response.error));
 					} else if (response.value === undefined) {
 						reject(new Error(`Invalid response for SettingsOperationGetResponse`));
 					} else {
-						resolve(response.value);
+						resolve(response.value as T);
 					}
 				})
 				.catch((err: Error) => {

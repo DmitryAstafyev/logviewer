@@ -6,9 +6,10 @@
 use std::sync::{Arc, RwLock};
 use tauri::Manager;
 mod binding;
+use futures::lock::Mutex;
 
 fn main() {
-	let context = Arc::new(RwLock::new(binding::context::Context::new()));
+	let context = Mutex::new(binding::context::Context::new());
 	tauri::Builder::default()
 		.manage(binding::context::ContextHolder(context))
 		.setup(|app| {

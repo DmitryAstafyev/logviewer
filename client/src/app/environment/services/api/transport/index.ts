@@ -63,4 +63,9 @@ export abstract class Transport {
 		event: string,
 		refEventConstructor: new (...args: any[]) => any
 	): Promise<Observable<any>>;
+
+	public abstract subscribeDirect(
+		event: string,
+		refEventConstructor: new (...args: any[]) => any
+	): Observable<any>;
 }

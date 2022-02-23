@@ -9,6 +9,7 @@ use processor::{
     map::{FilterMatch, SearchMap},
     text_source::TextFileSource,
 };
+use std::time::{Duration, Instant};
 use std::{
     collections::{hash_map::Entry, HashMap},
     path::PathBuf,
@@ -618,12 +619,19 @@ pub async fn task(
                 }
             }
             Api::Grab((range, tx_response)) => {
+                println!(">>>>>>>>>>>>>> range: {:?}", range);
+                let now = Instant::now();
                 let result = if let Some(ref mut grabber) = state.content_grabber {
-                    grabber.grab_content(&range).map_err(|e| NativeError {
+                    let result = grabber.grab_content(&range).map_err(|e| NativeError {
                         severity: Severity::ERROR,
                         kind: NativeErrorKind::Grabber,
                         message: Some(format!("Failed to grab data. Error: {}", e)),
-                    })
+                    });
+                    println!(
+                        ">>>>>>>>>>>>>>>>>>>> grabbing call: {}ms",
+                        now.elapsed().as_millis()
+                    );
+                    result
                 } else {
                     Err(NativeError {
                         severity: Severity::ERROR,

@@ -15,12 +15,7 @@ pub async fn handling(
 	context: State<'_, context::ContextHolder>,
 ) -> Result<Response, String> {
 	let tx_events = events::listen(app_handle).await;
-	match context.0.write() {
-		Ok(mut context) => {
-			context.set_events_channel(tx_events);
-		}
-		Err(_err) => {}
-	};
-	//
+	let mut ctx = context.0.lock().await;
+	ctx.set_events_channel(tx_events);
 	Ok(Response { error: None })
 }

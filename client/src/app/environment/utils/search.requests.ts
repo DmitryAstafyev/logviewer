@@ -1,5 +1,5 @@
 import { ISearchExpressionFlags } from '@chipmunk/ipc/electron/index';
-import { serializeRegStr, createFromStr } from './functions.regexp';
+import { serializeRegStr, createFromStr } from './regexp';
 
 export function getSearchRegExp(request: string, flags: ISearchExpressionFlags): RegExp {
 	if (flags.regexp) {

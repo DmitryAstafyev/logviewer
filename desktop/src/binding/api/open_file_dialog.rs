@@ -18,14 +18,14 @@ pub async fn handling(
 	_request: Request,
 	context: State<'_, context::ContextHolder>,
 ) -> Result<Response, String> {
-	println!(">>>>>>>>>>>>>>>>>>>> REQUESTED!");
-	let context = context.0.read().unwrap();
-	context.emit(events::Event::StreamUpdated(
-		events::stream_updated::Event {
-			session: String::from("test"),
-			rows: 666,
-		},
-	));
+	// println!(">>>>>>>>>>>>>>>>>>>> REQUESTED!");
+	// let context = context.0.read().unwrap();
+	// context.emit(events::Event::StreamUpdated(
+	// 	events::stream_updated::Event {
+	// 		session: String::from("test"),
+	// 		rows: 666,
+	// 	},
+	// ));
 	Ok(Response {
 		foo: String::from("foo"),
 		bar: String::from("bar"),

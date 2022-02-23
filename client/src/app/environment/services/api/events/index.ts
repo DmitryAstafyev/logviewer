@@ -1,9 +1,5 @@
-import {
-	Transport,
-	RequestWrapper,
-	wrapResponseConstructor,
-} from '../transport';
-import { ServiceAPI } from '@chipmunk/services/service.api';
+import { Transport, RequestWrapper, wrapResponseConstructor } from '../transport';
+import { ServiceAPI } from '@chipmunk/service/service.api';
 import { Observable, Subscription } from 'rxjs';
 
 export class APIEventBase<E extends {}> {
@@ -33,9 +29,7 @@ export class APIEventBase<E extends {}> {
 	}
 }
 
-export function APIEvent<T extends { new (...args: any[]): any }>(
-	constructor: T
-) {
+export function APIEvent<T extends { new (...args: any[]): any }>(constructor: T) {
 	if (typeof constructor.prototype.subscribe !== 'function') {
 		throw new Error(`Cannot create event holder for "${constructor.name}" because no method "subscribe" has been found. \n
 Make sure, class "APIEventBase" was extended.\n
@@ -50,7 +44,7 @@ class YourEventHolder extended APIEventBase {\n
 			super(...args);
 			if (args.length !== 1) {
 				throw new Error(
-					`Event holder constructor should have one argument:\n- event body constructor reference`
+					`Event holder constructor should have one argument:\n- event body constructor reference`,
 				);
 			}
 		}

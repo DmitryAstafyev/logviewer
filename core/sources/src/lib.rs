@@ -68,6 +68,9 @@ pub enum Error {
     Unrecoverable(String),
 }
 
+pub(crate) const DEFAULT_READER_CAPACITY: usize = 10 * 1024 * 1024;
+pub(crate) const DEFAULT_MIN_BUFFER_SPACE: usize = 10 * 1024;
+
 #[async_trait]
 pub trait ByteSource {
     fn consume(&mut self, offset: usize);
@@ -86,8 +89,13 @@ pub trait ByteSource {
     /// will return Ok((None, _))
     ///
     /// A successfull reload operation will return the number
-    /// of bytes that were loaded
+    /// of bytes that were newly loaded `newly_loaded_bytes`
+    /// along with all currently available bytes `available_bytes`
+    /// In some cases it is possible that some bytes had to be skipped in order to
+    /// reach the next usable bytes, this is indicated in the `skipped_bytes` number
+    ///
+    ///
     /// If the source has access to some timestamp (e.g. timestamp of network package),
-    /// this timestamp is passed on additionally
+    /// this timestamp is passed on additionally (`last_known_ts`)
     async fn reload(&mut self, filter: Option<&SourceFilter>) -> Result<Option<ReloadInfo>, Error>;
 }

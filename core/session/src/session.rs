@@ -1,4 +1,4 @@
-use crate::{
+pub use crate::{
     events::{CallbackEvent, ComputationError},
     operations,
     operations::Operation,
@@ -7,12 +7,13 @@ use crate::{
 };
 use indexer_base::progress::Severity;
 use log::{debug, error};
-use processor::{
+pub use processor::{
     grabber::{GrabbedContent, LineRange},
     search::SearchFilter,
 };
 use serde::Serialize;
-use sources::factory::Source;
+pub use sources::{factory, factory::Source};
+use std::time::{Duration, Instant};
 use tokio::{
     join,
     sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
@@ -80,10 +81,17 @@ impl Session {
     }
 
     pub async fn grab(&self, range: LineRange) -> Result<GrabbedContent, ComputationError> {
-        self.state
+        let now = Instant::now();
+        let result = self
+            .state
             .grab(range)
             .await
-            .map_err(ComputationError::NativeError)
+            .map_err(ComputationError::NativeError);
+        println!(
+            ">>>>>>>>>>>>>>>>>>>> grab, call from state: {}ms",
+            now.elapsed().as_millis()
+        );
+        result
     }
 
     pub async fn grab_search(&self, range: LineRange) -> Result<GrabbedContent, ComputationError> {

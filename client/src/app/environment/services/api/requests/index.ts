@@ -1,9 +1,5 @@
-import {
-	Transport,
-	RequestWrapper,
-	wrapResponseConstructor,
-} from '../transport';
-import { ServiceAPI } from '@chipmunk/services/service.api';
+import { Transport, RequestWrapper, wrapResponseConstructor } from '../transport';
+import { ServiceAPI } from '@chipmunk/service/service.api';
 
 export class APIBase<Q extends {}, A extends {}> {
 	readonly _request: Q;
@@ -21,13 +17,11 @@ export class APIBase<Q extends {}, A extends {}> {
 		}
 		const signature = (this as any).getSignature();
 		if (typeof signature !== 'string' || signature.trim() === '') {
-			return Promise.reject(
-				new Error(`No request signature has been found.`)
-			);
+			return Promise.reject(new Error(`No request signature has been found.`));
 		}
 		return transport.request(
 			new RequestWrapper(signature, this._request),
-			wrapResponseConstructor<A>(signature, this._responseConstructor)
+			wrapResponseConstructor<A>(signature, this._responseConstructor),
 		);
 	}
 }
@@ -47,7 +41,7 @@ class YourRequest extended APIBase {\n
 			super(...args);
 			if (args.length !== 2) {
 				throw new Error(
-					`Request constructor should have two arguments:\n- request\n- response constructor reference`
+					`Request constructor should have two arguments:\n- request\n- response constructor reference`,
 				);
 			}
 		}

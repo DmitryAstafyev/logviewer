@@ -1,16 +1,6 @@
-export interface IStreamChunk {
+export interface IGrabbed {
 	guid: string;
 	id: string;
-	data?: string;
-	start: number;
-	end: number;
-	length?: number;
-	rows?: number;
-	error?: string;
-}
-
-export interface IValidStreamChunk {
-	guid: string;
 	data: string;
 	start: number;
 	end: number;
@@ -18,19 +8,18 @@ export interface IValidStreamChunk {
 	rows: number;
 }
 
-export class StreamChunk {
-	public static signature: string = 'StreamChunk';
-	public signature: string = StreamChunk.signature;
+export class Grabbed {
+	public static signature: string = 'Grabbed';
+	public signature: string = Grabbed.signature;
 	public guid: string;
 	public id: string;
-	public data?: string;
+	public data: string;
 	public start: number;
 	public end: number;
-	public length?: number;
-	public rows?: number;
-	public error?: string;
+	public length: number;
+	public rows: number;
 
-	constructor(params: IStreamChunk) {
+	constructor(params: IGrabbed) {
 		if (typeof params !== 'object' || params === null) {
 			throw new Error(`Incorrect parameters for StreamChunk message`);
 		}
@@ -42,13 +31,6 @@ export class StreamChunk {
 		}
 		if (typeof params.data !== 'string' && params.data !== undefined) {
 			throw new Error(`Field "data" should be defined as string or should be "undefined"`);
-		}
-		if (
-			typeof params.error !== 'string' &&
-			params.error !== undefined &&
-			params.error !== null
-		) {
-			throw new Error(`Field "error" should be defined as string or should be "undefined"`);
 		}
 		if (typeof params.start !== 'number' || isNaN(params.start) || !isFinite(params.start)) {
 			throw new Error(`Field "start" should be defined as number (not NaN and finited)`);
@@ -75,6 +57,5 @@ export class StreamChunk {
 		this.end = params.end;
 		this.length = params.length;
 		this.rows = params.rows;
-		this.error = params.error === null ? undefined : params.error;
 	}
 }

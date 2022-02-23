@@ -1,9 +1,6 @@
 import { Subject, Subscription } from 'rxjs';
-import {
-	ISearchExpression,
-	ISearchExpressionFlags,
-} from '@chipmunk/interfaces/interface.ipc';
-import { getMarkerRegExp } from '@chipmunk/functions/functions.search.requests';
+import { ISearchExpression, ISearchExpressionFlags } from '@chipmunk/interfaces/interface.ipc';
+import { getMarkerRegExp } from '@chipmunk/utils/search.requests';
 import {
 	AChart,
 	IOptionsObj,

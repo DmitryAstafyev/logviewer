@@ -1,3 +1,4 @@
+pub mod grabbed;
 pub mod stream_updated;
 
 use serde::{Deserialize, Serialize};
@@ -10,6 +11,7 @@ use tokio::{
 #[derive(Serialize, Deserialize, Clone)]
 pub enum Event {
 	StreamUpdated(stream_updated::Event),
+	Grabbed(grabbed::Event),
 }
 
 pub async fn listen(app_handle: tauri::AppHandle) -> UnboundedSender<Event> {
