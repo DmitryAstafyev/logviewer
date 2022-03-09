@@ -1,6 +1,5 @@
 import { Observable, Subject } from 'rxjs';
 import * as Toolkit from 'chipmunk.client.toolkit';
-import PluginsService from '../service.plugins';
 
 export class PopupsService {
     private _subjects: {
@@ -35,16 +34,6 @@ export class PopupsService {
         }
         if (popup.component.factory === undefined) {
             return;
-        }
-        if (typeof popup.component.factory.name === 'string') {
-            // If it's plugin, we should have stored factory of component (it was created in stored in PluginsService
-            // during intialization of plugin). If it is - we should put instead component reference, reference to factory
-            // and set it is "resolved"
-            const factory = PluginsService.getStoredFactoryByName(popup.component.factory.name);
-            if (factory !== undefined) {
-                popup.component.factory = factory;
-                popup.component.resolved = true;
-            }
         }
         if (popup.options !== undefined && popup.id !== undefined) {
             if (popup.options.once === true && this._opened.has(popup.id)) {

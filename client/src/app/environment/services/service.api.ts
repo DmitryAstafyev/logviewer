@@ -7,8 +7,8 @@ class ServiceAPI implements IService {
 	private _transport: Transport | undefined;
 
 	constructor() {
-		//this._transport = new Tauri();
-		this._transport = new Debug();
+		this._transport = new Tauri();
+		// this._transport = new Debug();
 	}
 
 	public init(): Promise<void> {

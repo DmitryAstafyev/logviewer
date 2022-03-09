@@ -16,42 +16,44 @@ import { MatFormField, MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ScrollBoxModule } from '../scrollbox/module';
 
 const entryComponents = [
-    ViewSearchComponent,
-    ViewSearchOutputComponent,
-    ViewSearchControlsComponent,
-    MatFormField,
-    MatAutocomplete,
+	ViewSearchComponent,
+	ViewSearchOutputComponent,
+	ViewSearchControlsComponent,
+	MatFormField,
+	MatAutocomplete,
 ];
 const components = [
-    ViewSearchComponent,
-    ViewSearchComponent,
-    ViewSearchOutputComponent,
-    ViewSearchControlsComponent,
+	ViewSearchComponent,
+	ViewSearchComponent,
+	ViewSearchOutputComponent,
+	ViewSearchControlsComponent,
 ];
 
 @NgModule({
-    entryComponents: [...entryComponents],
-    imports: [
-        CommonModule,
-        ScrollingModule,
-        PrimitiveModule,
-        ContainersModule,
-        ComplexModule,
-        FormsModule,
-        ReactiveFormsModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatAutocompleteModule,
-        MatOptionModule,
-        AppDirectiviesModule,
-        MatProgressBarModule,
-        MatIconModule,
-    ],
-    declarations: [...components],
-    exports: [...components],
+	entryComponents: [...entryComponents],
+	imports: [
+		CommonModule,
+		ScrollingModule,
+		PrimitiveModule,
+		ContainersModule,
+		ComplexModule,
+		FormsModule,
+		ReactiveFormsModule,
+		MatFormFieldModule,
+		MatInputModule,
+		MatAutocompleteModule,
+		MatOptionModule,
+		AppDirectiviesModule,
+		MatProgressBarModule,
+		MatIconModule,
+		ScrollBoxModule,
+	],
+	declarations: [...components],
+	exports: [...components],
 })
 export class ViewSearchModule {
-    constructor() {}
+	constructor() {}
 }

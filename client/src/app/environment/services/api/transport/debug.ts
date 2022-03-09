@@ -7,6 +7,9 @@ interface IEventDesc {
 	subject: Subject<any>;
 	ref: new (...args: any[]) => any;
 }
+
+const ROWS_COUNT: number = 10000;
+
 export class Debug extends Transport {
 	private _log: Logger = new Logger('TauriAPITransport');
 	private _subjects: Map<string, IEventDesc> = new Map();
@@ -21,13 +24,11 @@ export class Debug extends Transport {
 		responseConstructorRef: ResponseConstructor<Response> & ISignatureRequirement,
 	): Promise<Response> {
 		return new Promise((resolve, reject) => {
-			this._log.info(
-				`Sending ${request.getSignature()}; expected response: ${responseConstructorRef.getSignature()}`,
-			);
+			// this._log.info(
+			// 	`Sending ${request.getSignature()}; expected response: ${responseConstructorRef.getSignature()}`,
+			// );
 			const signature = request.getSignature();
 			const body = request.getBody();
-			let response;
-			console.log(`>>>>>>>>>>>>>>>>>>>>>>> REQUESTED: ${signature}`);
 			switch (signature) {
 				case 'Init':
 					return resolve(new responseConstructorRef({ error: null }));
@@ -43,8 +44,8 @@ export class Debug extends Transport {
 							payload: {
 								StreamUpdated: {
 									guid: '0000-0000-0000-0000-0000',
-									length: 1000000,
-									rowsCount: 1000000,
+									length: ROWS_COUNT,
+									rowsCount: ROWS_COUNT,
 								},
 							},
 						});
@@ -62,8 +63,8 @@ export class Debug extends Transport {
 							data,
 							start: (body as any).start,
 							end: (body as any).end,
-							length: 10360721,
-							rows: 10360721,
+							length: ROWS_COUNT,
+							rows: ROWS_COUNT,
 						}),
 					);
 			}

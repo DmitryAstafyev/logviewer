@@ -22,14 +22,8 @@ import {
 	ILoadedRange,
 } from '../../../controller/session/dependencies/output/controller.session.tab.stream.output';
 import { ControllerComponentsDragDropFiles } from '../../../controller/components/controller.components.dragdrop.files';
-import {
-	IDataAPI,
-	IRange,
-	IRowsPacket,
-	IStorageInformation,
-	ComplexScrollBoxComponent,
-	IScrollBoxSelection,
-} from 'chipmunk-client-material';
+import { ComplexScrollBoxComponent, IScrollBoxSelection } from 'chipmunk-client-material';
+import { IAPI, IRowsPacket, IRange, IStorageInformation } from '../scrollarea/controllers/api';
 import { ViewOutputRowComponent, IScope } from '../row/component';
 import {
 	NotificationsService,
@@ -46,7 +40,6 @@ import { copyTextToClipboard } from '../../../controller/helpers/clipboard';
 import { fullClearRowStr } from '../../../controller/helpers/row.helpers';
 import { IRow } from '../../../controller/session/dependencies/row/controller.row.api';
 
-import PluginsService from '../../../services/service.plugins';
 import ContextMenuService from '../../../services/standalone/service.contextmenu';
 import SelectionParsersService from '../../../services/standalone/service.selection.parsers';
 import OutputExportsService from '../../../services/standalone/service.output.exports';
@@ -76,7 +69,7 @@ export class ViewOutputComponent implements OnDestroy, AfterViewInit, AfterConte
 
 	@Input() public session: Session | undefined;
 
-	public _ng_outputAPI: IDataAPI;
+	public _ng_outputAPI: IAPI;
 	public _ng_injections: {
 		bottom: Map<string, Toolkit.IComponentInjection>;
 		top: Map<string, Toolkit.IComponentInjection>;
@@ -96,6 +89,13 @@ export class ViewOutputComponent implements OnDestroy, AfterViewInit, AfterConte
 	} = {
 		keepScrollDown: true,
 	};
+	private _subjects: {
+		onStorageUpdated: Subject<IStorageInformation>;
+		onRows: Subject<IRowsPacket>;
+	} = {
+		onStorageUpdated: new Subject<IStorageInformation>(),
+		onRows: new Subject<IRowsPacket>(),
+	};
 
 	constructor(
 		private _cdRef: ChangeDetectorRef,
@@ -106,15 +106,15 @@ export class ViewOutputComponent implements OnDestroy, AfterViewInit, AfterConte
 			getLastFrame: this._api_getLastFrame.bind(this),
 			getComponentFactory: this._api_getComponentFactory.bind(this),
 			getItemHeight: this._api_getItemHeight.bind(this),
-			getRange: this._api_getRange.bind(this),
+			setFrame: this._api_setFrame.bind(this),
 			getStorageInfo: this._api_getStorageInfo.bind(this),
 			updatingDone: this._api_updatingDone.bind(this),
 			cleanUpClipboard: this._api_cleanUpClipboard.bind(this),
 			onSourceUpdated: new Subject<void>(),
-			onStorageUpdated: new Subject<IStorageInformation>(),
+			onStorageUpdated: this._subjects.onStorageUpdated.asObservable(),
 			onScrollTo: new Subject<number>(),
 			onScrollUntil: new Subject<number>(),
-			onRowsDelivered: new Subject<IRowsPacket>(),
+			onRows: this._subjects.onRows.asObservable(),
 			onRerequest: new Subject<void>(),
 			onRedraw: new Subject<void>(),
 		};
@@ -676,18 +676,12 @@ export class ViewOutputComponent implements OnDestroy, AfterViewInit, AfterConte
 		return this._output.getFrame();
 	}
 
-	private _api_getRange(range: IRange, antiLoopCounter: number = 0): IRowsPacket {
-		const rows: IRow[] | Error = this._output.getRange(range);
-		if (rows instanceof Error) {
-			if (antiLoopCounter > 1000) {
-				throw rows;
-			}
-			return this._api_getRange(range, antiLoopCounter + 1);
-		}
-		return {
-			range: range,
-			rows: rows,
-		};
+	private _api_getRange(range: IRange) {
+		this._output.getRange(range);
+	}
+
+	private _api_setFrame(range: IRange) {
+		this._output.setFrame(range);
 	}
 
 	private _api_getStorageInfo(): IStorageInformation {
@@ -716,20 +710,20 @@ export class ViewOutputComponent implements OnDestroy, AfterViewInit, AfterConte
 	}
 
 	private _onReset() {
-		this._ng_outputAPI.onStorageUpdated.next({
+		this._subjects.onStorageUpdated.next({
 			count: 0,
 		});
 	}
 
 	private _onStateUpdated(state: IStreamState) {
-		this._ng_outputAPI.onStorageUpdated.next({
+		this._subjects.onStorageUpdated.next({
 			count: state.count,
 		});
 		this._keepScrollDown();
 	}
 
 	private _onRangeLoaded(packet: ILoadedRange) {
-		this._ng_outputAPI.onRowsDelivered.next({
+		this._subjects.onRows.next({
 			range: packet.range,
 			rows: packet.rows,
 		});
@@ -853,19 +847,8 @@ export class ViewOutputComponent implements OnDestroy, AfterViewInit, AfterConte
 			return;
 		}
 		// Check factory
-		if (typeof event.injection.factory.name === 'string') {
-			// This reference to component, but not factory of it (check plugins)
-			const factory = PluginsService.getStoredFactoryByName(event.injection.factory.name);
-			if (factory !== undefined) {
-				event.injection.factory = factory;
-				event.injection.resolved = true;
-			} else {
-				event.injection.resolved = false;
-			}
-		} else {
-			// Will try to use as it is
-			event.injection.resolved = false;
-		}
+		// Will try to use as it is
+		event.injection.resolved = false;
 		if (event.injection.factory === undefined) {
 			return;
 		}

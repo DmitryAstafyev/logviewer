@@ -26,6 +26,8 @@
       "@chipmunk/logs/*": ["src/app/environment/utils/logs/*"],
       "@chipmunk/utils/*": ["src/app/environment/utils/*"],
       "@chipmunk/service/*": ["src/app/environment/services/*"],
+      "@chipmunk/injectable/*": ["src/app/environment/services.injectable/*"],
+      "@chipmunk/theme/*": ["src/app/environment/theme/*"],
       "@chipmunk/controller/*": ["src/app/environment/controller/*"],
       "@chipmunk/interfaces/*": ["src/app/environment/interfaces/*"],
       "@chipmunk/ipc/electron/*": ["src/app/environment/interfaces/ipc/electron.ipc.messages/*"],

@@ -1,8 +1,6 @@
 import { setSharedServices } from './shared.services.sidebar';
 
 import ServiceElectronIpc, { IPC } from './service.electron.ipc';
-import PluginsIPCService from './service.plugins.ipc';
-import PluginsService from './service.plugins';
 import SourcesService from './service.sources';
 import FileOptionsService from './service.file.options';
 import FilterOpenerService from './service.filter.opener';
@@ -22,13 +20,14 @@ import TabSelectionParserService from './tabs/service.tab.selection.parser';
 import ReleaseNotesService from './service.release.notes';
 import RenderStateService from './service.render.state';
 import ElectronEnvService from './service.electron.env';
+import { ServiceGlobalStyles } from './service.styles';
 
 import * as Defaults from '../states/state.default';
 import * as Toolkit from 'chipmunk.client.toolkit';
 
 const InitializeStages = [
 	// Stage #0
-	[ServiceElectronIpc],
+	[ServiceGlobalStyles, ServiceElectronIpc],
 	// Stage #1
 	[ElectronEnvService],
 	// Stage #2
@@ -38,10 +37,8 @@ const InitializeStages = [
 	// Stage #4
 	[SettingsDefaultsService],
 	// Stage #5
-	[PluginsService, SourcesService],
+	[SourcesService],
 	// Stage #6
-	[PluginsIPCService],
-	// Stage #7
 	[
 		TabsSessionsService,
 		TabsCustomService,
@@ -56,7 +53,7 @@ const InitializeStages = [
 		ConnectionsService,
 		RenderStateService,
 	],
-	// Stage #8
+	// Stage #7
 	[TabSelectionParserService, ReleaseNotesService],
 ];
 

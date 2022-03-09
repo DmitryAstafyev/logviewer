@@ -1,7 +1,6 @@
 import HotkeysService from '../../services/service.hotkeys';
 import LayoutStateService from '../../services/standalone/service.layout.state';
 
-import PluginsService, { IPluginData } from '../../services/service.plugins';
 import ServiceElectronIpc, {
     IPC,
     Subscription as IPCSubscription,
@@ -105,7 +104,6 @@ export class Session {
             HotkeysService.getObservable().openSearchFiltersTab.subscribe(
                 this._onOpenSearchFiltersTab.bind(this),
             );
-        PluginsService.fire().onSessionOpen(this._sessionId);
     }
 
     public init(): Promise<void> {
@@ -220,7 +218,6 @@ export class Session {
                             ),
                         );
                     }
-                    PluginsService.fire().onSessionClose(this._sessionId);
                     this._viewportEventsHub.destroy();
                     Promise.all(
                         Object.keys(this._dependencies).map((key: string) => {
@@ -369,19 +366,6 @@ export class Session {
         type: Toolkit.EViewsTypes,
     ): Map<string, Toolkit.IComponentInjection> {
         const injections: Map<string, Toolkit.IComponentInjection> = new Map();
-        PluginsService.getAvailablePlugins().forEach((plugin: IPluginData) => {
-            if (plugin.factories[type] === undefined) {
-                return;
-            }
-            injections.set(plugin.name, {
-                id: Toolkit.guid(),
-                factory: plugin.factories[type],
-                inputs: {
-                    ipc: plugin.ipc,
-                    session: this._sessionId,
-                },
-            });
-        });
         return injections;
     }
 
@@ -434,7 +418,6 @@ export class Session {
     }
 
     public setActive() {
-        PluginsService.fire().onSessionChange(this._sessionId);
     }
 
     public setTabAPI(api: ITabAPI | undefined) {

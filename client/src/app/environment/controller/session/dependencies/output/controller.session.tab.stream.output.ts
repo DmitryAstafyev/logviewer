@@ -298,10 +298,7 @@ export class ControllerSessionTabStreamOutput implements Dependency {
 			return;
 		}
 		this._state.frame = { start: range.start, end: range.end };
-		if (!this._load()) {
-			// No need to make request, but check buffer
-			// this._buffer();
-		}
+		this._load(Object.assign({}, range));
 	}
 
 	public getRank(): number {
@@ -410,41 +407,10 @@ export class ControllerSessionTabStreamOutput implements Dependency {
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Internal methods / helpers
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	private _load(): boolean {
-		if (this._state.lastLoadingRequestId !== undefined) {
-			return false;
-		}
-		// First step: drop previos request
-		clearTimeout(this._state.lastLoadingRequestId);
-		// Check: do we need to load something at all
-		const frame = Object.assign({}, this._state.frame);
-		const stored = this._state.stored;
-		if (stored.start <= frame.start && stored.end >= frame.end) {
-			// Frame in borders of stored data. No need to request
-			return false;
-		}
-		const request: IRange = { start: -1, end: -1 };
-		// Calculate data, which should be requested
-		if (frame.end - frame.start + 1 <= 0) {
-			return false;
-		}
-		const distance = {
-			toStart: frame.start,
-			toEnd: this._state.count - 1 - frame.end,
-		};
-		if (distance.toStart > Settings.maxRequestCount / 2) {
-			request.start = distance.toStart - Settings.maxRequestCount / 2;
-		} else {
-			request.start = 0;
-		}
-		if (distance.toEnd > Settings.maxRequestCount / 2) {
-			request.end = frame.end + Settings.maxRequestCount / 2;
-		} else {
-			request.end = this._state.count - 1;
-		}
+	private _load(frame: { start: number; end: number }): boolean {
 		this._state.lastLoadingRequestId = setTimeout(() => {
 			this._state.lastLoadingRequestId = undefined;
-			this._requestData(request.start, request.end)
+			this._requestData(frame.start, frame.end)
 				.then((message: IPC.IValidStreamChunk) => {
 					// Check: do we already have other request
 					if (this._state.lastLoadingRequestId !== undefined) {
@@ -458,28 +424,90 @@ export class ControllerSessionTabStreamOutput implements Dependency {
 					this._lastRequestedRows = [];
 					// Parse and accept rows
 					this._parse(message.data, message.start);
-					// Check again last requested frame
-					if (stored.start <= frame.start && stored.end >= frame.end) {
-						// Send notification about update
-						this._subjects.onRangeLoaded.next({
-							range: { start: frame.start, end: frame.end },
-							rows: this._getRowsSliced(frame.start, frame.end + 1),
-						});
-						return;
-					} else {
-						this._logger.warn(
-							`Requested frame isn't in scope of stored data. Request - rows from ${request.start} to ${request.end}.`,
-						);
-					}
+					// Send notification about update
+					this._subjects.onRangeLoaded.next({
+						range: { start: frame.start, end: frame.end },
+						rows: this._getRowsSliced(frame.start, frame.end + 1),
+					});
 				})
 				.catch((error: Error) => {
 					this._logger.error(
-						`Error during requesting data (rows from ${request.start} to ${request.end}): ${error.message}`,
+						`Error during requesting data (rows from ${frame.start} to ${frame.end}): ${error.message}`,
 					);
 				});
 		}, Settings.requestDelay);
 		return true;
 	}
+	// private _load(): boolean {
+	// 	if (this._state.lastLoadingRequestId !== undefined) {
+	// 		return false;
+	// 	}
+	// 	// First step: drop previos request
+	// 	clearTimeout(this._state.lastLoadingRequestId);
+	// 	// Check: do we need to load something at all
+	// 	const frame = Object.assign({}, this._state.frame);
+	// 	const stored = this._state.stored;
+	// 	if (stored.start <= frame.start && stored.end >= frame.end) {
+	// 		// Frame in borders of stored data. No need to request
+	// 		return false;
+	// 	}
+	// 	const request: IRange = { start: -1, end: -1 };
+	// 	// Calculate data, which should be requested
+	// 	if (frame.end - frame.start + 1 <= 0) {
+	// 		return false;
+	// 	}
+	// 	const distance = {
+	// 		toStart: frame.start,
+	// 		toEnd: this._state.count - 1 - frame.end,
+	// 	};
+	// 	if (distance.toStart > Settings.maxRequestCount / 2) {
+	// 		request.start = distance.toStart - Settings.maxRequestCount / 2;
+	// 	} else {
+	// 		request.start = 0;
+	// 	}
+	// 	if (distance.toEnd > Settings.maxRequestCount / 2) {
+	// 		request.end = frame.end + Settings.maxRequestCount / 2;
+	// 	} else {
+	// 		request.end = this._state.count - 1;
+	// 	}
+	// 	this._state.lastLoadingRequestId = setTimeout(() => {
+	// 		this._state.lastLoadingRequestId = undefined;
+	// 		this._requestData(request.start, request.end)
+	// 			.then((message: IPC.IValidStreamChunk) => {
+	// 				// Check: do we already have other request
+	// 				if (this._state.lastLoadingRequestId !== undefined) {
+	// 					// No need to parse - new request was created
+	// 					this._lastRequestedRows = [];
+	// 					this._parse(message.data, message.start, this._lastRequestedRows, frame);
+	// 					return;
+	// 				}
+	// 				// Update size of whole stream (real size - count of rows in stream file)
+	// 				this._setTotalStreamCount(message.rows);
+	// 				this._lastRequestedRows = [];
+	// 				// Parse and accept rows
+	// 				this._parse(message.data, message.start);
+	// 				// Check again last requested frame
+	// 				if (stored.start <= frame.start && stored.end >= frame.end) {
+	// 					// Send notification about update
+	// 					this._subjects.onRangeLoaded.next({
+	// 						range: { start: frame.start, end: frame.end },
+	// 						rows: this._getRowsSliced(frame.start, frame.end + 1),
+	// 					});
+	// 					return;
+	// 				} else {
+	// 					this._logger.warn(
+	// 						`Requested frame isn't in scope of stored data. Request - rows from ${request.start} to ${request.end}.`,
+	// 					);
+	// 				}
+	// 			})
+	// 			.catch((error: Error) => {
+	// 				this._logger.error(
+	// 					`Error during requesting data (rows from ${request.start} to ${request.end}): ${error.message}`,
+	// 				);
+	// 			});
+	// 	}, Settings.requestDelay);
+	// 	return true;
+	// }
 
 	// private _preload(range: IRange): Promise<IRange | null> {
 	// 	return new Promise((resolve, reject) => {
@@ -571,7 +599,6 @@ export class ControllerSessionTabStreamOutput implements Dependency {
 
 	private _getPendingPackets(first: number, last: number): IRow[] {
 		const rows: IRow[] = Array.from({ length: last - first }).map((_, i) => {
-			console.log(`>>>>>>>>>>>>>>>>>> _lastRequestedRows: ${this._lastRequestedRows.length}`);
 			return {
 				pluginId:
 					this._lastRequestedRows[i] === undefined

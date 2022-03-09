@@ -40,15 +40,12 @@ class ElectronIpcService implements IService {
 
 	public init(): Promise<void> {
 		return new Promise((resolve, reject) => {
-			console.log(`>>>>>>>>>>>>>>>>>>>> initing API Service`);
 			Init.get()
 				.send()
 				.then(() => {
-					console.log(`>>>>>>>>>>>>>>>>>>>> API Service inited`);
 					resolve();
 				})
 				.catch((err: Error) => {
-					console.error(`>>>>>>>>>>>>>>>>>>>> Fail to init API service: ${err.message}`);
 					//reject(err);
 					resolve();
 				});
@@ -129,7 +126,7 @@ class ElectronIpcService implements IService {
 		return new Promise((resolve, reject) => {
 			this._sendWithResponse<Response>({ message: message, sequence: guid(), expected })
 				.then((res: Response) => {
-					console.log(`>>>>>>>> ${message.signature}: ${Date.now() - start}ms`);
+					//console.log(`>>>>>>>> ${message.signature}: ${Date.now() - start}ms`);
 					resolve(res);
 				})
 				.catch(reject);
@@ -141,7 +138,6 @@ class ElectronIpcService implements IService {
 		// 	throw new Error(this._logger.error('Incorrect reference to message class.', message));
 		// }
 		const signature: string = (message as any).signature;
-		console.log(`>>>>>>>>>>>>>>>> subscribe: ${signature}`);
 		const subscription = this._api
 			.subscribeDirect(signature, message as new (...args: any[]) => any)
 			.subscribe(handler);
@@ -258,7 +254,6 @@ class ElectronIpcService implements IService {
 				message: params.message,
 				sequence: params.sequence,
 			});
-			debugger;
 			const signature: string = params.message.signature;
 			// this._pending.set(params.sequence, {
 			// 	resolver: resolve,

@@ -1,6 +1,5 @@
 import * as Toolkit from 'chipmunk.client.toolkit';
 import ElectronIpcService, { IPC, Subscription } from './service.electron.ipc';
-import PluginsService, { IPluginData } from './service.plugins';
 import { IService } from '@chipmunk/interfaces/interface.service';
 
 export type TSourceId = number;
@@ -74,14 +73,6 @@ export class SourcesService implements IService {
 			return undefined;
 		}
 		return data.shadow;
-	}
-
-	public getRelatedPlugin(id: TSourceId): IPluginData | undefined {
-		const data = this._sources.get(id);
-		if (data === undefined) {
-			return undefined;
-		}
-		return PluginsService.getPluginById(id);
 	}
 
 	public getCountOfSource(session: string): number {

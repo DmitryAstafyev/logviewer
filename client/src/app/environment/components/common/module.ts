@@ -5,11 +5,11 @@ import { ComColorSelectorComponent } from './color.selector/component';
 import { ComTooltipComponent } from './tooltip/component';
 
 @NgModule({
-    entryComponents: [ComColorSelectorComponent, ComTooltipComponent],
-    imports: [CommonModule],
-    declarations: [ComColorSelectorComponent, ComTooltipComponent],
-    exports: [ComColorSelectorComponent, ComTooltipComponent],
+	entryComponents: [ComColorSelectorComponent, ComTooltipComponent],
+	imports: [CommonModule],
+	declarations: [ComColorSelectorComponent, ComTooltipComponent],
+	exports: [ComColorSelectorComponent, ComTooltipComponent],
 })
 export class EnvironmentCommonModule {
-    constructor() {}
+	constructor() {}
 }

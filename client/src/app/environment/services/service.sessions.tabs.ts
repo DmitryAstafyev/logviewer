@@ -13,7 +13,6 @@ import EventsSessionService from './standalone/service.events.session';
 import ServiceElectronIpc, { IPC } from './service.electron.ipc';
 import SourcesService from './service.sources';
 import HotkeysService from './service.hotkeys';
-import PluginsService from './service.plugins';
 import PopupsService from './standalone/service.popups';
 import OutputRedirectionsService from './standalone/service.output.redirections';
 import LayoutStateService from './standalone/service.layout.state';
@@ -70,10 +69,6 @@ export class TabsSessionsService implements IService {
 	};
 
 	constructor() {
-		this.getPluginAPI = this.getPluginAPI.bind(this);
-		// Delivering API getter into Plugin Service here to escape from circular dependencies
-		// (which will happen if try to access to this service from Plugin Service)
-		PluginsService.setPluginAPIGetter(this.getPluginAPI);
 		// Listen stream events
 		this._subscriptions['onStreamUpdated'] = ServiceElectronIpc.subscribe(
 			IPC.StreamUpdated,
@@ -374,11 +369,7 @@ export class TabsSessionsService implements IService {
 				pluginId === undefined
 					? () => undefined
 					: () => {
-							const plugin = PluginsService.getPluginById(pluginId);
-							if (plugin === undefined) {
-								return undefined;
-							}
-							return plugin.ipc;
+							return undefined;
 					  },
 			getSettingsAPI: () => {
 				return SettingsService.getPluginsAPI();

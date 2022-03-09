@@ -5,21 +5,20 @@ import { ViewOutputModule } from './output/module';
 import { ViewSearchModule } from './search/module';
 import { ViewChartModule } from './chart/module';
 import { ViewMeasurementModule } from './measurement/module';
-
 const components = [ViewLoaderComponent];
 
 @NgModule({
-    entryComponents: [...components],
-    imports: [CommonModule],
-    declarations: [...components],
-    exports: [
-        ViewOutputModule,
-        ViewSearchModule,
-        ViewChartModule,
-        ViewMeasurementModule,
-        ...components,
-    ],
+	entryComponents: [...components],
+	imports: [CommonModule],
+	declarations: [...components],
+	exports: [
+		ViewOutputModule,
+		ViewSearchModule,
+		ViewChartModule,
+		ViewMeasurementModule,
+		...components,
+	],
 })
 export class EnvironmentViewsModule {
-    constructor() {}
+	constructor() {}
 }

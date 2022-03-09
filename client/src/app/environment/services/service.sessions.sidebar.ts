@@ -2,7 +2,6 @@ import { TabsService, IComponentDesc, ITab } from 'chipmunk-client-material';
 import { Subscription, Subject, Observable } from 'rxjs';
 import { IService } from '@chipmunk/interfaces/interface.service';
 import { Session } from '../controller/session/session';
-import { IPluginData } from '../services/service.plugins';
 import { getSharedServices } from './shared.services.sidebar';
 import {
     DefaultSidebarApps,
@@ -13,8 +12,6 @@ import { IPC } from '../services/service.electron.ipc';
 
 import EventsSessionService from './standalone/service.events.session';
 import TabsSessionsService from './service.sessions.tabs';
-import ControllerPluginIPC from '../controller/controller.plugin.ipc';
-import PluginsService from '../services/service.plugins';
 import ElectronIpcService from '../services/service.electron.ipc';
 import LayoutStateService from '../services/standalone/service.layout.state';
 
@@ -26,7 +23,6 @@ export interface ISidebarPluginInfo {
     id: number;
     name: string;
     factory: any;
-    ipc: ControllerPluginIPC;
 }
 
 export class SidebarSessionsService implements IService {
@@ -246,21 +242,6 @@ export class SidebarSessionsService implements IService {
                 }
             }
         }
-        // Check before plugins factories
-        if (
-            comp !== undefined &&
-            comp.factory !== undefined &&
-            typeof comp.factory.name === 'string'
-        ) {
-            // If it's plugin, we should have stored factory of component (it was created in stored in PluginsService
-            // during intialization of plugin). If it is - we should put instead component reference, reference to factory
-            // and set it is "resolved"
-            const factory = PluginsService.getStoredFactoryByName(comp.factory.name);
-            if (factory !== undefined) {
-                comp.factory = factory;
-                comp.resolved = true;
-            }
-        }
         this._injected = comp;
         this._subjects.injection.next(comp);
     }
@@ -304,27 +285,6 @@ export class SidebarSessionsService implements IService {
                 // Add tab to sidebar
                 this._add(tab, session, index === 0);
             }
-        });
-        // Detect tabs related to transports (plugins)
-        PluginsService.getAvailablePlugins().forEach((plugin: IPluginData) => {
-            if (plugin.factories[Toolkit.EViewsTypes.sidebarVertical] === undefined) {
-                return;
-            }
-            // Add to storage
-            tabs.set(plugin.name, {
-                guid: plugin.name,
-                name: plugin.displayName,
-                active: false,
-                content: {
-                    factory: plugin.factories[Toolkit.EViewsTypes.sidebarVertical],
-                    resolved: true,
-                    inputs: {
-                        session: session,
-                        api: TabsSessionsService.getPluginAPI(plugin.id),
-                        sessions: plugin.controllers.sessions,
-                    },
-                },
-            });
         });
         this._tabs.set(session, tabs);
     }

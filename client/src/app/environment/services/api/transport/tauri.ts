@@ -27,7 +27,6 @@ export class Tauri extends Transport {
 			this._log.info(
 				`Sending ${request.getSignature()}; expected response: ${responseConstructorRef.getSignature()}`,
 			);
-			console.log(`>>>>>>>> invoke: called`);
 			invoke('api', {
 				request: {
 					[request.getSignature()]: request.getBody(),
@@ -63,11 +62,7 @@ export class Tauri extends Transport {
 						}.`,
 					);
 					reject(err);
-				})
-				.finally(() => {
-					console.log(`>>>>>>>> invoke: done`);
 				});
-			console.log(`>>>>>>>> invoke: after`);
 		});
 	}
 
