@@ -12,7 +12,7 @@ use sources::{
     factory::{ParserType, SourceType, Transport},
     pcap,
     producer::MessageProducer,
-    raw, socket, ByteSource,
+    raw, serial, socket, ByteSource,
 };
 use std::fs::File;
 use tokio::{
@@ -276,6 +276,27 @@ async fn listen_from_source<T: LogMessage, P: Parser<T>>(
                                 e
                             )),
                         })?,
+                ),
+                None,
+            )
+            .await
+        }
+        Transport::Serial(config) => {
+            listen(
+                operation_api,
+                state,
+                MessageProducer::new(
+                    parser,
+                    serial::serialport::SerialSource::new(&config.path, config.baud_rate).map_err(
+                        |e| NativeError {
+                            severity: Severity::ERROR,
+                            kind: NativeErrorKind::Interrupted,
+                            message: Some(format!(
+                                "Fail to create serial source due error: {:?}",
+                                e
+                            )),
+                        },
+                    )?,
                 ),
                 None,
             )
