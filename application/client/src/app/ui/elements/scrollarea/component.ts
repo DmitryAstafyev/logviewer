@@ -22,6 +22,7 @@ import { RemoveHandler } from '@ui/service/styles';
 import { Ilc, IlcInterface } from '@env/decorators/component';
 import { stop } from '@ui/env/dom';
 import { unique } from '@platform/env/sequence';
+import { SelectionTracker } from './controllers/select';
 
 export interface IScrollBoxSelection {
     selection: string;
@@ -69,6 +70,12 @@ export class ScrollAreaComponent extends ChangesDetector implements OnDestroy, A
         this.keyboard.stop();
     }
 
+    @HostListener('selectstart', ['$event']) onSelectStart(event: Event) {
+        console.log(`>>>>>>>>>>>>>> selectstart`);
+        this.selection.handlers().start();
+        return stop(event);
+    }
+
     @HostListener('focus') onFocus() {
         this.keyboard.focus();
         this.service.focus().in();
@@ -82,8 +89,9 @@ export class ScrollAreaComponent extends ChangesDetector implements OnDestroy, A
     public rows: Row[] = [];
     public readonly holder: Holder = new Holder();
     public readonly frame: Frame = new Frame();
-    public readonly selecting: Selecting = new Selecting();
     public readonly keyboard: Keyboard = new Keyboard();
+    public selecting: Selecting = new Selecting(); //<-------- Rudement
+    public selection!: SelectionTracker;
     public selectionDirection = SelectionDirection;
 
     constructor(changeDetectorRef: ChangeDetectorRef, private elRef: ElementRef<HTMLElement>) {
@@ -94,7 +102,7 @@ export class ScrollAreaComponent extends ChangesDetector implements OnDestroy, A
         this.detauchChangesDetector();
         this.holder.destroy();
         this.frame.destroy();
-        this.selecting.destroy();
+        this.selection.destroy();
         this._subscriber.unsubscribe();
     }
 
@@ -102,8 +110,9 @@ export class ScrollAreaComponent extends ChangesDetector implements OnDestroy, A
         this.holder.bind(this._nodeHolder);
         this.frame.bind(this.service, this.holder);
         this.service.bind(this.frame, this.elRef.nativeElement);
-        this.selecting.bind(this._nodeHolder.nativeElement, this.frame, this.service);
         this.keyboard.bind(this.frame);
+        this.selection = new SelectionTracker(this._nodeHolder.nativeElement, this.frame);
+
         this._subscriber.register(
             this.frame.onFrameChange((rows: Row[]) => {
                 const exists = this.rows.length;
@@ -120,11 +129,11 @@ export class ScrollAreaComponent extends ChangesDetector implements OnDestroy, A
                     });
                 }
                 this.detectChanges();
-                this.selecting.restore();
+                // this.selection.restore();
             }),
         );
         this._subscriber.register(
-            this.selecting.onSelectionStart(() => {
+            this.selection.subjects.get().start.subscribe(() => {
                 this._removeGlobalStyleHandler = this.ilc().services.ui.styles
                     .add(`:not(*[id="${this._id}"] *) {
                 	user-select: none;
@@ -133,7 +142,7 @@ export class ScrollAreaComponent extends ChangesDetector implements OnDestroy, A
             }),
         );
         this._subscriber.register(
-            this.selecting.onSelectionFinish(() => {
+            this.selection.subjects.get().finish.subscribe(() => {
                 if (typeof this._removeGlobalStyleHandler === 'function') {
                     this._removeGlobalStyleHandler();
                     this._removeGlobalStyleHandler = undefined;
@@ -162,9 +171,9 @@ export class ScrollAreaComponent extends ChangesDetector implements OnDestroy, A
                 if (!this.service.focus().get()) {
                     return;
                 }
-                this.selecting.copyToClipboard().catch((err: Error) => {
-                    this.log().error(`Fail to copy content into clipboard: ${err.message}`);
-                });
+                // this.selection.copyToClipboard().catch((err: Error) => {
+                //     this.log().error(`Fail to copy content into clipboard: ${err.message}`);
+                // });
             }),
         );
         this.frame.init();
@@ -196,7 +205,11 @@ export class ScrollAreaComponent extends ChangesDetector implements OnDestroy, A
     }
 
     public onMouseMoveSelectionDetector(_direction: SelectionDirection) {
-        this.selecting.drop();
+        // this.selection.drop();
+    }
+
+    public onContentMouseDown(event: MouseEvent) {
+        console.log(`>>>>>>>>>>>>>> mousedown`);
     }
 }
 export interface ScrollAreaComponent extends IlcInterface {}

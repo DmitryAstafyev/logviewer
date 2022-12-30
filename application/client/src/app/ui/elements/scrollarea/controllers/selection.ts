@@ -44,10 +44,10 @@ export class Selecting {
         end: undefined,
     };
     private _subjects: {
-        from: Subject<void>;
+        start: Subject<void>;
         finish: Subject<void>;
     } = {
-        from: new Subject(),
+        start: new Subject(),
         finish: new Subject(),
     };
 
@@ -174,7 +174,7 @@ export class Selecting {
     }
 
     public onSelectionStart(handler: () => void): Subscription {
-        return this._subjects.from.subscribe(handler);
+        return this._subjects.start.subscribe(handler);
     }
 
     public onSelectionFinish(handler: () => void): Subscription {
@@ -298,7 +298,7 @@ export class Selecting {
         document.addEventListener('selectionchange', this._onSelectionChange);
         this.drop();
         this._progress = true;
-        this._subjects.from.emit();
+        this._subjects.start.emit();
         this._holder.focus();
     }
 

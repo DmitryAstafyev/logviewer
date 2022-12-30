@@ -21,6 +21,12 @@ export interface RestorableNodeInfo {
 }
 
 export class NodeInfo {
+    public static Focus(): NodeInfo {
+        return new NodeInfo(Target.Focus);
+    }
+    public static Anchor(): NodeInfo {
+        return new NodeInfo(Target.Anchor);
+    }
     public row: number | undefined;
     public path: string | undefined;
     public offset: number | undefined;
