@@ -70,9 +70,8 @@ export class ScrollAreaComponent extends ChangesDetector implements OnDestroy, A
         this.keyboard.stop();
     }
 
-    @HostListener('selectstart', ['$event']) onSelectStart(event: Event) {
+    @HostListener('selectstart', ['$event']) onSelectStart(event: MouseEvent) {
         console.log(`>>>>>>>>>>>>>> selectstart`);
-        this.selection.handlers().start();
         return stop(event);
     }
 
@@ -209,7 +208,11 @@ export class ScrollAreaComponent extends ChangesDetector implements OnDestroy, A
     }
 
     public onContentMouseDown(event: MouseEvent) {
-        console.log(`>>>>>>>>>>>>>> mousedown`);
+        this.selection.handlers().start(event);
+    }
+
+    public onContentMouseMove(event: MouseEvent) {
+        this.selection.handlers().select(event);
     }
 }
 export interface ScrollAreaComponent extends IlcInterface {}

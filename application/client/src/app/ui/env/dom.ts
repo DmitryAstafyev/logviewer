@@ -16,15 +16,17 @@ export function findParentByTag(
     if (target === null || target === undefined) {
         return undefined;
     }
-    if (typeof (target as any).tagName !== 'string') {
-        return undefined;
-    }
-    const targetTag = (target as any).tagName.toLowerCase();
-    if (tag.includes(targetTag)) {
-        return target;
-    }
-    if (targetTag === 'body') {
-        return undefined;
+    if (target.nodeName !== '#text') {
+        if (typeof (target as any).tagName !== 'string') {
+            return undefined;
+        }
+        const targetTag = (target as any).tagName.toLowerCase();
+        if (tag.includes(targetTag)) {
+            return target;
+        }
+        if (targetTag === 'body') {
+            return undefined;
+        }
     }
     return findParentByTag(target.parentNode, tag);
 }

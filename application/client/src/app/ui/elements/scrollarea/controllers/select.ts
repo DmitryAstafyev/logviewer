@@ -1,6 +1,5 @@
-import { Frame, ChangesInitiator } from './frame';
-import { Subject, Subscription, Subjects } from '@platform/env/subscription';
-
+import { Frame } from './frame';
+import { Subject, Subjects } from '@platform/env/subscription';
 import { CurrentSelection } from './select.selection';
 
 export class SelectionTracker {
@@ -27,22 +26,22 @@ export class SelectionTracker {
     }
 
     public handlers(): {
-        start(): void;
-        select(): void;
+        start(event: MouseEvent): void;
+        select(event: MouseEvent): void;
         finish(): void;
     } {
         return {
-            start: (): void => {
+            start: (event: MouseEvent): void => {
                 this.selection?.destroy();
-                this.selection = CurrentSelection.create(this.holder);
+                this.selection = CurrentSelection.create(this.holder, event);
                 if (this.selection === undefined) {
                     return;
                 }
-                console.log(`>>>>>>>>>>>>>>>>>>>>>> CREATED`);
-                console.log(this.selection);
                 this.subjects.get().start.emit();
             },
-            select: (): void => {},
+            select: (event: MouseEvent): void => {
+                this.selection?.move(event);
+            },
             finish: (): void => {
                 this.subjects.get().finish.emit();
             },
