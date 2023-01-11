@@ -38,6 +38,10 @@ export class SelectionNode {
         return node;
     }
 
+    public static getSelector(row: number): string {
+        return `li[${ROW_INDEX_ATTR}="${row}"]`;
+    }
+
     public static getRowInfo(node: Node | null, path: string = ''): IRowNodeInfo | undefined {
         if (node === null) {
             return undefined;
@@ -134,10 +138,10 @@ export class SelectionNode {
     }
 
     protected readonly holder: HTMLElement;
-    public readonly row: number;
-    public readonly path: string;
-    public readonly offset: number;
-    protected node: Node | null = null;
+    public row: number;
+    public path: string;
+    public offset: number;
+    protected last: Node | null = null;
 
     constructor(holder: HTMLElement, row: number, path: string, offset: number) {
         this.holder = holder;
@@ -146,7 +150,18 @@ export class SelectionNode {
         this.offset = offset;
     }
 
-    public getNode(): Node | null {
-        return SelectionNode.select(this.holder, this.path);
+    public node(): Node | null {
+        this.last = SelectionNode.select(this.holder, this.path);
+        return this.last;
+    }
+
+    public setToRow(row: number) {
+        this.row = row;
+        this.path = SelectionNode.getSelector(row);
+        this.offset = 0;
+    }
+
+    public isMatch(node: Node | null): boolean {
+        return this.last === node;
     }
 }

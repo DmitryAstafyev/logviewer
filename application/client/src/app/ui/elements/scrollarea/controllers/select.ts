@@ -1,4 +1,4 @@
-import { Frame } from './frame';
+import { Frame, ChangesInitiator } from './frame';
 import { Subject, Subjects } from '@platform/env/subscription';
 import { CurrentSelection } from './select.selection';
 
@@ -25,26 +25,54 @@ export class SelectionTracker {
         this.subjects.destroy();
     }
 
-    public handlers(): {
-        start(event: MouseEvent): void;
-        select(event: MouseEvent): void;
+    public handlers(event: MouseEvent | undefined = undefined): {
+        start(): void;
+        select(): void;
         finish(): void;
+        up(): void;
+        down(): void;
     } {
         return {
-            start: (event: MouseEvent): void => {
+            start: (): void => {
+                if (event === undefined) {
+                    return;
+                }
                 this.selection?.destroy();
-                this.selection = CurrentSelection.create(this.holder, event);
+                this.selection = CurrentSelection.create(this.frame, this.holder, event);
                 if (this.selection === undefined) {
                     return;
                 }
                 this.subjects.get().start.emit();
             },
-            select: (event: MouseEvent): void => {
-                this.selection?.move(event);
+            select: (): void => {
+                if (event === undefined) {
+                    return;
+                }
+                this.selection?.move().view(event, false);
             },
             finish: (): void => {
+                if (event === undefined) {
+                    return;
+                }
+                this.selection?.move().view(event, true);
                 this.subjects.get().finish.emit();
             },
+            up: (): void => {
+                this.frame.offsetToByRows(-1, ChangesInitiator.Selecting);
+                this.selection?.move().focusTo(this.frame.get().from);
+            },
+            down: (): void => {
+                this.frame.offsetToByRows(1, ChangesInitiator.Selecting);
+                this.selection?.move().focusTo(this.frame.get().to);
+            },
         };
+    }
+
+    public check() {
+        this.selection?.check();
+    }
+
+    public render() {
+        this.selection?.render();
     }
 }
