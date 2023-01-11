@@ -39,6 +39,11 @@ export class SelectionTracker {
                 }
                 this.selection?.destroy();
                 this.selection = CurrentSelection.create(this.frame, this.holder, event);
+                console.log(
+                    `>>>>>>>>>>>>>>>>>>> SELECTION IS: ${
+                        this.selection !== undefined ? 'created' : 'NOT created'
+                    }`,
+                );
                 if (this.selection === undefined) {
                     return;
                 }

@@ -43,6 +43,9 @@ export class CurrentSelection {
                 const focus = Focus.create(this.holder, event);
                 if (focus !== undefined) {
                     this.focus = focus;
+                    console.log(`>>>>>>>>>>>>>>>>>>>>>> FOCUS: ${focus.row}:${focus.offset}`);
+                } else {
+                    console.log(`>>>>>>>>>>>>>>>>>>>>>> FAIL TO GET FOCUS`);
                 }
                 if (finish) {
                     this.finished = true;
@@ -62,34 +65,31 @@ export class CurrentSelection {
 
     public check() {
         if (this.anchor === undefined || this.focus === undefined) {
+            console.log(`>>>>>>>>>>>>>>>>>>>> check: no anchor or focus`);
             return;
         }
         const selection = document.getSelection();
         if (selection === null) {
+            console.log(`>>>>>>>>>>>>>>>>>>>> check: no selection`);
             return;
         }
         if (
             !this.anchor.isMatch(selection.anchorNode) &&
             !this.anchor.isMatch(selection.focusNode)
         ) {
-            selection.removeAllRanges();
+            console.log(`>>>>>>>>>>>>>>>>>>>> check: correction because anchor`);
+            this.render();
             return;
         }
         if (!this.focus.isMatch(selection.anchorNode) && !this.focus.isMatch(selection.focusNode)) {
-            selection.removeAllRanges();
+            console.log(`>>>>>>>>>>>>>>>>>>>> check: correction because focus`);
+            this.render();
             return;
         }
+        console.log(`>>>>>>>>>>>>>>>>>>>> check: no changes`);
     }
 
     public render() {
-        if (this.anchor === undefined || this.focus === undefined) {
-            return;
-        }
-        const selection = document.getSelection();
-        if (selection === null) {
-            return;
-        }
-        selection.removeAllRanges();
         const getMaxOffset = (node: Node): number => {
             if (node.nodeType === Node.TEXT_NODE) {
                 return node.textContent === null ? 0 : node.textContent.length - 1;
@@ -99,12 +99,20 @@ export class CurrentSelection {
                 return 0;
             }
         };
+        if (this.anchor === undefined || this.focus === undefined) {
+            console.log(`>>>>>>>>>>>>>>>>>>>> no anchor or focus`);
+            return;
+        }
+        const selection = document.getSelection();
+        if (selection === null) {
+            console.log(`>>>>>>>>>>>>>>>>>>>> no selection`);
+            return;
+        }
         const frame = this.frame.get();
         let anchorOffset: number = -1;
         let focusOffset: number = -1;
         let anchorPath: string = '';
         let focusPath: string = '';
-        let reverse: boolean = false;
         if (this.focus.row === this.anchor.row) {
             anchorOffset = this.anchor.offset;
             focusOffset = this.focus.offset;
@@ -130,13 +138,19 @@ export class CurrentSelection {
                 this.focus.row < frame.from
                     ? SelectionNode.getSelector(frame.from)
                     : this.focus.path;
-            reverse = this.anchor.row > frame.to;
+            // reverse = this.anchor.row > frame.to;
         }
         const anchorNode = SelectionNode.select(this.holder, anchorPath);
         const focusNode = SelectionNode.select(this.holder, focusPath);
         if (anchorNode === null || focusNode === null) {
+            console.log(
+                `>>>>>>>>>>>>>>>>>>>>>>>> FAIL TO GET NODES: ${focusNode === null ? 'focus' : ''} ${
+                    anchorNode === null ? 'anchor' : ''
+                }`,
+            );
             return;
         }
+        selection.removeAllRanges();
         if (
             !isFinite(anchorOffset) ||
             (typeof anchorNode.textContent === 'string' &&
@@ -153,12 +167,13 @@ export class CurrentSelection {
         }
         try {
             // console.log(`>>>>>>>>>>>>>>>>>>>>>> render: f::${focusPath} - a::${anchorPath}`);
-            if (reverse) {
-                console.log(`>>>>>>>>>>>>>>>>>>> reversed`);
-                selection.setBaseAndExtent(focusNode, focusOffset, anchorNode, anchorOffset);
-            } else {
-                selection.setBaseAndExtent(anchorNode, anchorOffset, focusNode, focusOffset);
-            }
+            // if (this.anchor.row <= this.focus.row) {
+            //     console.log(`>>>>>>>>>>>>>>>>>>> reversed`);
+            //     selection.setBaseAndExtent(focusNode, focusOffset, anchorNode, anchorOffset);
+            // } else {
+            //     selection.setBaseAndExtent(anchorNode, anchorOffset, focusNode, focusOffset);
+            // }
+            selection.setBaseAndExtent(anchorNode, anchorOffset, focusNode, focusOffset);
         } catch (e) {
             let details: string = 'Error with restoring selection:';
             details += `\n\t-\tanchorPath: ${anchorPath}`;

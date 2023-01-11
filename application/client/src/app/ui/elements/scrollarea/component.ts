@@ -85,8 +85,8 @@ export class ScrollAreaComponent extends ChangesDetector implements OnDestroy, A
     }
     @HostListener('document:selectionchange', ['$event']) onDocSelectionChange(event: MouseEvent) {
         console.log(`>>>>>>>>>>>>>> doc: selectionchange`);
-        this.selection.check();
-        return stop(event);
+        // this.selection.check();
+        // return stop(event);
     }
 
     @HostListener('selectstart', ['$event']) onSelectStart(event: MouseEvent) {
