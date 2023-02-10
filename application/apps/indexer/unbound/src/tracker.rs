@@ -1,16 +1,12 @@
-use crate::{signal::Signal, UnboundJobError};
-use serde::{Deserialize, Serialize};
+use crate::{error::OperationError, signal::Signal};
 use std::collections::HashMap;
-use thiserror::Error;
 use tokio::{
-    join,
     sync::{
         mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
         oneshot,
     },
     task,
 };
-use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 pub enum TrackerAPI {
@@ -73,36 +69,36 @@ impl Tracker {
         Tracker { tx }
     }
 
-    pub async fn insert(&self) -> Result<(Uuid, Signal), UnboundJobError> {
+    pub async fn insert(&self) -> Result<(Uuid, Signal), OperationError> {
         let (tx, rx): (
             oneshot::Sender<(Uuid, Signal)>,
             oneshot::Receiver<(Uuid, Signal)>,
         ) = oneshot::channel();
         self.tx.send(TrackerAPI::CreateSignal(tx)).map_err(|_| {
-            UnboundJobError::Channels(String::from("Fail to send TrackerAPI::CreateSignal"))
+            OperationError::Channels(String::from("Fail to send TrackerAPI::CreateSignal"))
         })?;
         rx.await.map_err(|_| {
-            UnboundJobError::Channels(String::from(
+            OperationError::Channels(String::from(
                 "Fail to get response from TrackerAPI::CreateSignal",
             ))
         })
     }
 
-    pub async fn remove(&self, uuid: Uuid) -> Result<bool, UnboundJobError> {
+    pub async fn remove(&self, uuid: Uuid) -> Result<bool, OperationError> {
         let (tx, rx): (oneshot::Sender<bool>, oneshot::Receiver<bool>) = oneshot::channel();
         self.tx
             .send(TrackerAPI::RemoveSignal((uuid, tx)))
             .map_err(|_| {
-                UnboundJobError::Channels(String::from("Fail to send TrackerAPI::RemoveSignal"))
+                OperationError::Channels(String::from("Fail to send TrackerAPI::RemoveSignal"))
             })?;
         rx.await.map_err(|_| {
-            UnboundJobError::Channels(String::from(
+            OperationError::Channels(String::from(
                 "Fail to get response from TrackerAPI::RemoveSignal",
             ))
         })
     }
 
-    pub async fn get(&self, uuid: Uuid) -> Result<Option<Signal>, UnboundJobError> {
+    pub async fn get(&self, uuid: Uuid) -> Result<Option<Signal>, OperationError> {
         let (tx, rx): (
             oneshot::Sender<Option<Signal>>,
             oneshot::Receiver<Option<Signal>>,
@@ -110,22 +106,22 @@ impl Tracker {
         self.tx
             .send(TrackerAPI::GetSignal((uuid, tx)))
             .map_err(|_| {
-                UnboundJobError::Channels(String::from("Fail to send TrackerAPI::GetSignal"))
+                OperationError::Channels(String::from("Fail to send TrackerAPI::GetSignal"))
             })?;
         rx.await.map_err(|_| {
-            UnboundJobError::Channels(String::from(
+            OperationError::Channels(String::from(
                 "Fail to get response from TrackerAPI::GetSignal",
             ))
         })
     }
 
-    pub async fn shutdown(&self) -> Result<(), UnboundJobError> {
+    pub async fn shutdown(&self) -> Result<(), OperationError> {
         let (tx, rx): (oneshot::Sender<()>, oneshot::Receiver<()>) = oneshot::channel();
         self.tx.send(TrackerAPI::Shutdown(tx)).map_err(|_| {
-            UnboundJobError::Channels(String::from("Fail to send TrackerAPI::Shutdown"))
+            OperationError::Channels(String::from("Fail to send TrackerAPI::Shutdown"))
         })?;
         rx.await.map_err(|_| {
-            UnboundJobError::Channels(String::from(
+            OperationError::Channels(String::from(
                 "Fail to get response from TrackerAPI::Shutdown",
             ))
         })

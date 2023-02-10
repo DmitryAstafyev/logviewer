@@ -1,22 +1,14 @@
-use serde::Serialize;
-use thiserror::Error;
-use tokio::task;
+use tokio::{sync::oneshot, task};
 use uuid::Uuid;
 
+mod error;
 mod jobs;
 mod signal;
 mod tracker;
 
+use error::OperationError;
 use jobs::Job;
 use tracker::Tracker;
-
-#[derive(Error, Debug, Serialize)]
-pub enum UnboundJobError {
-    #[error("Fail to find job ({0})")]
-    NoJob(String),
-    #[error("{0}")]
-    Channels(String),
-}
 
 pub struct UnboundJobs {
     tracker: Tracker,
@@ -29,22 +21,22 @@ impl UnboundJobs {
         }
     }
 
-    pub async fn shutdown(&self) -> Result<(), UnboundJobError> {
+    pub async fn shutdown(&self) -> Result<(), OperationError> {
         self.tracker.shutdown().await
     }
 
-    pub async fn abort(&mut self, uuid: &Uuid) -> Result<(), UnboundJobError> {
+    pub async fn abort(&mut self, uuid: &Uuid) -> Result<(), OperationError> {
         let signal = self
             .tracker
             .get(*uuid)
             .await?
-            .ok_or(UnboundJobError::NoJob(uuid.to_string()))?;
+            .ok_or(OperationError::NoJob(uuid.to_string()))?;
         signal.abort().await;
         self.tracker.remove(*uuid).await?;
         Ok(())
     }
 
-    pub async fn run(&mut self, job: Job) -> Result<Uuid, UnboundJobError> {
+    async fn run(&mut self, job: Job) -> Result<Uuid, OperationError> {
         let (uuid, signal) = self.tracker.insert().await?;
         let tracker = self.tracker.clone();
         task::spawn(async move {
@@ -62,6 +54,16 @@ impl UnboundJobs {
             }
         });
         Ok(uuid)
+    }
+
+    pub async fn some<F: Fn(String) + Send + 'static>(
+        &mut self,
+        cb: F,
+        num: u64,
+    ) -> Result<u64, OperationError> {
+        let (tx, rx) = oneshot::channel();
+        cb(self.run(jobs::Job::SomeJob((tx, num))).await?.to_string());
+        rx.await.map_err(|_| OperationError::Feedback)?
     }
 }
 
