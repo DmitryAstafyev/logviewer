@@ -56,13 +56,17 @@ impl UnboundJobs {
         Ok(uuid)
     }
 
+    // We are using cb to delivery back to NodeJS a UUID of operation
+    // to make possible to trigger cancelation of it from NodeJS.
     pub async fn some<F: Fn(String) + Send + 'static>(
         &mut self,
         cb: F,
         num: u64,
     ) -> Result<u64, OperationError> {
         let (tx, rx) = oneshot::channel();
+        // Execute oparation and send back uuid of it
         cb(self.run(jobs::Job::SomeJob((tx, num))).await?.to_string());
+        // Waiting for results of operation
         rx.await.map_err(|_| OperationError::Feedback)?
     }
 }
