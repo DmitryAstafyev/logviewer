@@ -11,4 +11,10 @@ pub enum OperationError {
     Executing(String),
     #[error("Fail to get response from operation runner")]
     Feedback,
+    #[error("{0}")]
+    Other(String),
+    #[error("Session isn't inited")]
+    SessionUnavailable,
+    #[error("Tasks loop doesn't exists")]
+    TasksLoop,
 }

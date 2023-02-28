@@ -6,6 +6,7 @@ import * as Logs from '../util/logging';
 
 export interface IRustModuleExports {
     RustSession: any;
+    Jobs: any;
     Dlt: any;
     Serial: any;
     Files: any;

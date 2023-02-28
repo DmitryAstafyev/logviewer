@@ -7,7 +7,6 @@ use crate::{
     },
     logging::targets,
 };
-use async_trait::async_trait;
 use events::CallbackEventWrapper;
 use log::{debug, error, info, warn};
 use node_bindgen::derive::node_bindgen;
@@ -20,40 +19,7 @@ use session::{
 };
 use std::{convert::TryFrom, ops::RangeInclusive, path::PathBuf, thread};
 use tokio::{runtime::Runtime, sync::oneshot};
-use tokio_util::sync::CancellationToken;
-use unbound::Unbound;
 use uuid::Uuid;
-
-#[async_trait]
-trait RustUnbound {
-    type Job: Unbound;
-    #[node_bindgen(mt)]
-    async fn run(&mut self) -> Result<(), String> {
-        Ok(())
-    }
-}
-struct Scanner {
-    cancel: CancellationToken,
-}
-
-#[async_trait]
-impl Unbound for Scanner {
-    type Arguments = u8;
-    type JobResult = u64;
-
-    fn get_cancellation_token(&self) -> &CancellationToken {
-        &self.cancel
-    }
-
-    async fn job(&mut self, args: u8) -> Result<u64, String> {
-        Ok(64u64)
-    }
-}
-
-#[async_trait]
-impl RustUnbound for Scanner {
-    type Job = Scanner;
-}
 
 struct RustSession {
     session: Option<Session>,

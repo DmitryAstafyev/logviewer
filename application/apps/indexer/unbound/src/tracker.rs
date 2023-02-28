@@ -22,10 +22,12 @@ pub struct Tracker {
 
 impl Tracker {
     pub fn new() -> Self {
+        println!(">>>>>>>>>>>>>>>> Creating tracker...");
         let (tx, mut rx): (UnboundedSender<TrackerAPI>, UnboundedReceiver<TrackerAPI>) =
             unbounded_channel();
         task::spawn(async move {
             let mut signals: HashMap<Uuid, Signal> = HashMap::new();
+            println!(">>>>>>>>>>>>>>>> Tracker loop: started");
             while let Some(msg) = rx.recv().await {
                 match msg {
                     TrackerAPI::CreateSignal(tx) => {
@@ -65,7 +67,9 @@ impl Tracker {
                     }
                 }
             }
+            println!(">>>>>>>>>>>>>>>> Tracker loop: finished");
         });
+        println!(">>>>>>>>>>>>>>>> Tracker is created...");
         Tracker { tx }
     }
 

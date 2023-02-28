@@ -43,6 +43,8 @@ export * as tools from './native/native.tools';
 export * as serial from './native/native.serial';
 export * as regex from './native/native.regex';
 
+export { Jobs } from './native/native.jobs';
+
 export { Units, Events, Interfaces };
 
 setUuidGenerator(v4);

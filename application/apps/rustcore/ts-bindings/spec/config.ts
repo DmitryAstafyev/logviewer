@@ -44,6 +44,9 @@ export interface IConfiguration {
         indexes: {
             regular: IRegularTests;
         };
+        jobs: {
+            regular: IRegularTests;
+        };
         concat: {
             regular: IRegularTests;
         };

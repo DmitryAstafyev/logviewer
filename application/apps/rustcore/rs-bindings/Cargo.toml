@@ -37,4 +37,3 @@ tokio = { version = "1.24", features = ["full"] }
 tokio-serial = "5.4"
 tokio-util = "0.7"
 uuid = { version = "1.2", features = ["serde", "v4"] }
-async-trait = "0.1"
