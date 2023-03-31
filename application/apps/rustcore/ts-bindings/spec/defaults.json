@@ -49,10 +49,12 @@
             "regular": {
                 "execute_only": [],
                 "list": {
-                    "2": "Test 2. Folder Example"
+                    "1": "Test 1. Cancelation testing",
+                    "2": "Test 2. Wrong sequence test",
+                    "3": "Test 3. Folder Example"
                 },
                 "files": {
-                    "path": "/Users/oliver.mueller/tmp/logviewer_usecases/merging"
+                    "path": "/home/dmitry"
                 }
             }
         },

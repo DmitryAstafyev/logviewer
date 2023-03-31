@@ -25,6 +25,8 @@ export {
     ISearchValuesUpdated,
 } from './api/session';
 
+export { Jobs } from './api/jobs';
+
 export {
     IGrabbedElement,
     IExtractDTFormatOptions,
@@ -45,8 +47,6 @@ export * as regex from './native/native.regex';
 export * as shells from './native/native.shells';
 
 export { Units, Events, Interfaces };
-
-export { Jobs } from './native/native.jobs';
 
 setUuidGenerator(v4);
 import { ProgressTrackerNoType } from "./native/native";
