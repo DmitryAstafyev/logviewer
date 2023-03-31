@@ -300,6 +300,8 @@ pub enum ComputationError {
     IoOperation(String),
     #[error("Invalid data error")]
     InvalidData,
+    #[error("Invalid arguments")]
+    InvalidArgs(String),
     #[error("Error during processing: ({0})")]
     Process(String),
     #[error("Wrong usage of API: ({0})")]

@@ -3,7 +3,7 @@ mod folder;
 
 use crate::events::ComputationError;
 
-use log::trace;
+use log::{error, trace};
 use serde::{Deserialize, Serialize};
 use tokio::sync::oneshot;
 use uuid::Uuid;
@@ -58,15 +58,26 @@ impl std::fmt::Display for Command {
 }
 
 pub async fn process(command: Command, signal: Signal) {
-    match command {
+    let cmd = command.to_string();
+    trace!("Processing command: {cmd}");
+    if match command {
         Command::FolderContent(path, tx) => {
-            trace!("process command: FolderContent");
-            let res = folder::get_folder_content(&path, signal);
-            trace!("done with command: FolderContent, sending back results");
-            let _ = tx.send(res);
+            tx.send(folder::get_folder_content(&path, signal)).is_err()
         }
-        Command::CancelTest(a, b, tx) => {
-            let _ = tx.send(cancel_test::cancel_test(a, b, signal).await);
-        }
+        Command::CancelTest(a, b, tx) => tx
+            .send(cancel_test::cancel_test(a, b, signal).await)
+            .is_err(),
+    } {
+        error!("Fail to send response for command: {cmd}");
+    }
+}
+
+pub async fn err(command: Command, err: ComputationError) {
+    let cmd = command.to_string();
+    if match command {
+        Command::FolderContent(_path, tx) => tx.send(Err(err)).is_err(),
+        Command::CancelTest(_a, _b, tx) => tx.send(Err(err)).is_err(),
+    } {
+        error!("Fail to send error response for command: {cmd}");
     }
 }

@@ -1,5 +1,5 @@
 use crate::js::session::events::ComputationErrorWrapper;
-use log::{debug, error, trace};
+use log::{debug, error};
 use node_bindgen::{
     core::{val::JsEnv, NjError, TryIntoJs},
     derive::node_bindgen,
@@ -8,10 +8,9 @@ use node_bindgen::{
 use serde::Serialize;
 use session::{
     events::ComputationError,
-    operations,
     unbound::{api::UnboundSessionAPI, commands::CommandOutcome, UnboundSession},
 };
-use std::thread;
+use std::{convert::TryFrom, thread};
 use tokio::runtime::Runtime;
 use tokio_util::sync::CancellationToken;
 
@@ -32,6 +31,14 @@ impl<T: Serialize> TryIntoJs for CommandOutcomeWrapper<T> {
             ))),
         }
     }
+}
+
+fn id_from_i64(id: i64) -> Result<u64, ComputationErrorWrapper> {
+    u64::try_from(id).map_err(|_| {
+        ComputationErrorWrapper(ComputationError::InvalidArgs(String::from(
+            "ID of job is invalid",
+        )))
+    })
 }
 
 #[node_bindgen]
@@ -82,53 +89,42 @@ impl UnboundJobs {
 
     /// Cancel given operation/task
     #[node_bindgen]
-    async fn abort(&self, operation_uuid: String) -> Result<(), ComputationErrorWrapper> {
+    async fn abort(&self, id: i64) -> Result<(), ComputationErrorWrapper> {
         self.api
             .as_ref()
             .ok_or(ComputationError::SessionUnavailable)?
-            .cancel_job(
-                &operations::uuid_from_str(&operation_uuid).map_err(ComputationErrorWrapper)?,
-            )
+            .cancel_job(&id_from_i64(id)?)
             .await
             .map_err(ComputationErrorWrapper)
     }
 
     // Custom methods (jobs)
     #[node_bindgen]
-    async fn list_folder_content<F: Fn(String) + Send + 'static>(
+    async fn list_folder_content(
         &self,
-        send_operation_uuid: F,
+        id: i64,
         path: String,
     ) -> Result<CommandOutcomeWrapper<String>, ComputationErrorWrapper> {
-        trace!("rs_bindings: list_folder_content");
-        let (job_future, job_uuid) = self
-            .api
+        self.api
             .as_ref()
             .ok_or(ComputationError::SessionUnavailable)?
-            .list_folder_content(path);
-        send_operation_uuid(job_uuid.to_string());
-
-        job_future
+            .list_folder_content(id_from_i64(id)?, path)
             .await
             .map_err(ComputationErrorWrapper)
             .map(CommandOutcomeWrapper)
     }
 
     #[node_bindgen]
-    async fn job_cancel_test<F: Fn(String) + Send + 'static>(
+    async fn job_cancel_test(
         &self,
-        send_operation_uuid: F,
+        id: i64,
         custom_arg_a: i64,
         custom_arg_b: i64,
     ) -> Result<CommandOutcomeWrapper<i64>, ComputationErrorWrapper> {
-        let (job_future, job_uuid) = self
-            .api
+        self.api
             .as_ref()
             .ok_or(ComputationError::SessionUnavailable)?
-            .cancel_test(custom_arg_a, custom_arg_b);
-        send_operation_uuid(job_uuid.to_string());
-
-        job_future
+            .cancel_test(id_from_i64(id)?, custom_arg_a, custom_arg_b)
             .await
             .map_err(ComputationErrorWrapper)
             .map(CommandOutcomeWrapper)
