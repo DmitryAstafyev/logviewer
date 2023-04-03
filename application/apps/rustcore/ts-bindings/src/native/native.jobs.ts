@@ -14,7 +14,11 @@ export abstract class JobsNative {
 
     public abstract jobCancelTest(sequence: number, num_a: number, num_b: number): Promise<string>;
 
-    public abstract listFolderContent(sequence: number, path: string): Promise<string>;
+    public abstract listFolderContent(
+        sequence: number,
+        depth: number,
+        path: string,
+    ): Promise<string>;
 }
 
 interface Job {
@@ -132,12 +136,12 @@ export class Base {
         return this.queue.sequence();
     }
 
-    protected execute<T>(
-        validate: (result: T) => boolean,
+    protected execute<Input, Output>(
+        convert: (input: Input) => Output | Error,
         task: Promise<string>,
         sequence: number,
         alias: string,
-    ): CancelablePromise<T> {
+    ): CancelablePromise<Output> {
         return new CancelablePromise((resolve, reject, cancel, refCancel, self) => {
             if (this._state !== State.inited) {
                 return reject(new Error(`Session isn't inited`));
@@ -150,13 +154,16 @@ export class Base {
             });
             task.then((income: string) => {
                 try {
-                    const result: JobResult<T> = JSON.parse(income);
+                    const result: JobResult<Input> = JSON.parse(income);
                     if (result === 'Cancelled') {
                         cancel();
-                    } else if (validate(result.Finished)) {
-                        resolve(result.Finished);
+                        return;
+                    }
+                    const converted: Output | Error = convert(result.Finished);
+                    if (converted instanceof Error) {
+                        reject(converted);
                     } else {
-                        reject(new Error(`Fail to parse results: ${income}`));
+                        resolve(converted);
                     }
                 } catch (e) {
                     reject(new Error(`Fail to parse results (${income}): ${error(e)}`));

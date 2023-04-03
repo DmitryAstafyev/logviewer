@@ -41,6 +41,14 @@ fn id_from_i64(id: i64) -> Result<u64, ComputationErrorWrapper> {
     })
 }
 
+fn usize_from_i64(id: i64) -> Result<usize, ComputationErrorWrapper> {
+    usize::try_from(id).map_err(|_| {
+        ComputationErrorWrapper(ComputationError::InvalidArgs(String::from(
+            "Fail to conver i64 to usize",
+        )))
+    })
+}
+
 #[node_bindgen]
 impl UnboundJobs {
     // Self methods
@@ -103,12 +111,13 @@ impl UnboundJobs {
     async fn list_folder_content(
         &self,
         id: i64,
+        depth: i64,
         path: String,
     ) -> Result<CommandOutcomeWrapper<String>, ComputationErrorWrapper> {
         self.api
             .as_ref()
             .ok_or(ComputationError::SessionUnavailable)?
-            .list_folder_content(id_from_i64(id)?, path)
+            .list_folder_content(id_from_i64(id)?, usize_from_i64(depth)?, path)
             .await
             .map_err(ComputationErrorWrapper)
             .map(CommandOutcomeWrapper)

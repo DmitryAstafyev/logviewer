@@ -4,9 +4,9 @@
 /// <reference path="../node_modules/@types/jasmine/index.d.ts" />
 /// <reference path="../node_modules/@types/node/index.d.ts" />
 
-import * as fs from 'fs';
-import { Session, Observe } from '../src/api/session';
-import { createTracker, Jobs } from '../src/index';
+import * as os from 'os';
+
+import { Jobs } from '../src/index';
 import { getLogger } from '../src/util/logging';
 import { readConfigurationFile } from './config';
 import { finish } from './common';
@@ -90,7 +90,7 @@ describe('Jobs', function () {
 
     it(config.regular.list[2], async function (done) {
         const testName = config.regular.list[2];
-        if (ingore(1, done)) {
+        if (ingore(2, done)) {
             return;
         }
         console.log(`\nStarting: ${testName}`);
@@ -116,6 +116,46 @@ describe('Jobs', function () {
                         : undefined,
                 ).toBe(100);
                 finish(undefined, done);
+            })
+            .catch((err: Error) => {
+                finish(undefined, done, err);
+            });
+    });
+
+    it(config.regular.list[3], async function (done) {
+        const testName = config.regular.list[3];
+        if (ingore(3, done)) {
+            return;
+        }
+        console.log(`\nStarting: ${testName}`);
+        const logger = getLogger(testName);
+        const jobs = await Jobs.create();
+        const path = os.homedir();
+        jobs.listContent(1, path)
+            .then((ls) => {
+                expect(typeof ls).toEqual('object');
+                const job = jobs
+                    .listContent(10, path)
+                    .then((_res) => {
+                        finish(
+                            undefined,
+                            done,
+                            new Error(`This job should be cancelled, but not done`),
+                        );
+                    })
+                    .canceled(async () => {
+                        jobs.destroy()
+                            .then(() => {
+                                finish(undefined, done);
+                            })
+                            .catch((err: Error) => {
+                                finish(undefined, done, err);
+                            });
+                    })
+                    .catch((err: Error) => {
+                        finish(undefined, done, err);
+                    });
+                job.abort();
             })
             .catch((err: Error) => {
                 finish(undefined, done, err);
