@@ -103,7 +103,7 @@ pub fn get_folder_content(
         .max_depth(depth)
         .contents_first(false)
     {
-        if signal.is_cancelled() {
+        if signal.is_cancelling() {
             return Ok(CommandOutcome::Cancelled);
         }
         if let Ok(dir_entry) = dir_entry {
