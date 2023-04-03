@@ -80,10 +80,15 @@ impl UnboundSessionAPI {
     pub async fn list_folder_content(
         &self,
         id: u64,
+        depth: usize,
         path: String,
     ) -> Result<CommandOutcome<String>, ComputationError> {
         let (tx_results, rx_results) = oneshot::channel();
-        self.process_command(id, rx_results, Command::FolderContent(path, tx_results))
-            .await
+        self.process_command(
+            id,
+            rx_results,
+            Command::FolderContent(path, depth, tx_results),
+        )
+        .await
     }
 }

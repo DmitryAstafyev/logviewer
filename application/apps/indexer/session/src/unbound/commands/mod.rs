@@ -35,6 +35,7 @@ impl<T: Serialize> CommandOutcome<T> {
 pub enum Command {
     FolderContent(
         String,
+        usize,
         oneshot::Sender<Result<CommandOutcome<String>, ComputationError>>,
     ),
     CancelTest(
@@ -51,7 +52,7 @@ impl std::fmt::Display for Command {
             "{}",
             match self {
                 Command::CancelTest(_, _, _) => "CancelTest",
-                Command::FolderContent(_, _) => "FolderContent",
+                Command::FolderContent(_, _, _) => "FolderContent",
             }
         )
     }
@@ -61,9 +62,9 @@ pub async fn process(command: Command, signal: Signal) {
     let cmd = command.to_string();
     trace!("Processing command: {cmd}");
     if match command {
-        Command::FolderContent(path, tx) => {
-            tx.send(folder::get_folder_content(&path, signal)).is_err()
-        }
+        Command::FolderContent(path, depth, tx) => tx
+            .send(folder::get_folder_content(&path, depth, signal))
+            .is_err(),
         Command::CancelTest(a, b, tx) => tx
             .send(cancel_test::cancel_test(a, b, signal).await)
             .is_err(),
@@ -75,7 +76,7 @@ pub async fn process(command: Command, signal: Signal) {
 pub async fn err(command: Command, err: ComputationError) {
     let cmd = command.to_string();
     if match command {
-        Command::FolderContent(_path, tx) => tx.send(Err(err)).is_err(),
+        Command::FolderContent(_path, _depth, tx) => tx.send(Err(err)).is_err(),
         Command::CancelTest(_a, _b, tx) => tx.send(Err(err)).is_err(),
     } {
         error!("Fail to send error response for command: {cmd}");

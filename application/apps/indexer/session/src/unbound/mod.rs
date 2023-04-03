@@ -66,7 +66,7 @@ impl UnboundSession {
                             crate::unbound::commands::err(
                                 job,
                                 ComputationError::InvalidArgs(String::from(
-                                    "Job has id. Id already exists.",
+                                    "Job has invalid id. Id already exists.",
                                 )),
                             )
                             .await;
