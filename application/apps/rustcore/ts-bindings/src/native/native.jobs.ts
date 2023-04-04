@@ -19,6 +19,22 @@ export abstract class JobsNative {
         depth: number,
         path: string,
     ): Promise<string>;
+
+    public abstract spawnProcess(sequence: number, path: string, args: string[]): Promise<void>;
+    public abstract getFileChecksum(sequence: number, path: string): Promise<string>;
+    public abstract getDltStats(sequence: number, files: string[]): Promise<string>;
+    public abstract getShellProfiles(sequence: number): Promise<string>;
+    public abstract getContextEnvvars(sequence: number): Promise<string>;
+    public abstract getSerialPortsList(sequence: number): Promise<string[]>;
+    public abstract getRegexError(
+        sequence: number,
+        filter: {
+            value: string;
+            is_regex: boolean;
+            ignore_case: boolean;
+            is_word: boolean;
+        },
+    ): Promise<string | undefined | null>;
 }
 
 interface Job {
@@ -47,6 +63,8 @@ export class Queue {
 }
 
 export type JobResult<T> = { Finished: T } | 'Cancelled';
+
+export type ConvertCallback<Input, Output> = (input: Input) => Output | Error;
 
 enum State {
     destroyed,
@@ -137,8 +155,8 @@ export class Base {
     }
 
     protected execute<Input, Output>(
-        convert: (input: Input) => Output | Error,
-        task: Promise<string>,
+        convert: undefined | ConvertCallback<Input, Output>,
+        task: Promise<any>,
         sequence: number,
         alias: string,
     ): CancelablePromise<Output> {
@@ -152,25 +170,27 @@ export class Base {
                     this.logger.error(`Fail to cancel ${error(err)}`);
                 });
             });
-            task.then((income: string) => {
+            task.then((nativeOutput: string) => {
                 try {
-                    const result: JobResult<Input> = JSON.parse(income);
+                    const result: JobResult<Input> = JSON.parse(nativeOutput);
                     if (result === 'Cancelled') {
                         cancel();
-                        return;
-                    }
-                    const converted: Output | Error = convert(result.Finished);
-                    if (converted instanceof Error) {
-                        reject(converted);
+                    } else if (convert === undefined) {
+                        resolve(result.Finished as unknown as Output);
                     } else {
-                        resolve(converted);
+                        const converted: Output | Error = convert(result.Finished);
+                        if (converted instanceof Error) {
+                            reject(converted);
+                        } else {
+                            resolve(converted);
+                        }
                     }
                 } catch (e) {
-                    reject(new Error(`Fail to parse results (${income}): ${error(e)}`));
+                    reject(new Error(`Fail to parse results (${nativeOutput}): ${error(e)}`));
                 }
             })
                 .catch((err: Error) => {
-                    this.logger.error(`Fail to do "some" operation due error: ${error(err)}`);
+                    this.logger.error(`Fail to do "${alias}" operation due error: ${error(err)}`);
                     reject(new Error(error(err)));
                 })
                 .finally(() => {

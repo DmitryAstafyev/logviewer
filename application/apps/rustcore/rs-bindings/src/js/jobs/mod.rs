@@ -1,4 +1,6 @@
-use crate::js::session::events::ComputationErrorWrapper;
+use crate::js::{
+    converting::filter::WrappedSearchFilter, session::events::ComputationErrorWrapper,
+};
 use log::{debug, error};
 use node_bindgen::{
     core::{val::JsEnv, NjError, TryIntoJs},
@@ -118,6 +120,109 @@ impl UnboundJobs {
             .as_ref()
             .ok_or(ComputationError::SessionUnavailable)?
             .list_folder_content(id_from_i64(id)?, usize_from_i64(depth)?, path)
+            .await
+            .map_err(ComputationErrorWrapper)
+            .map(CommandOutcomeWrapper)
+    }
+
+    #[node_bindgen]
+    async fn spawn_process(
+        &self,
+        id: i64,
+        path: String,
+        args: Vec<String>,
+    ) -> Result<CommandOutcomeWrapper<()>, ComputationErrorWrapper> {
+        self.api
+            .as_ref()
+            .ok_or(ComputationError::SessionUnavailable)?
+            .spawn_process(id_from_i64(id)?, path, args)
+            .await
+            .map_err(ComputationErrorWrapper)
+            .map(CommandOutcomeWrapper)
+    }
+
+    #[node_bindgen]
+    async fn get_file_checksum(
+        &self,
+        id: i64,
+        path: String,
+    ) -> Result<CommandOutcomeWrapper<String>, ComputationErrorWrapper> {
+        self.api
+            .as_ref()
+            .ok_or(ComputationError::SessionUnavailable)?
+            .get_file_checksum(id_from_i64(id)?, path)
+            .await
+            .map_err(ComputationErrorWrapper)
+            .map(CommandOutcomeWrapper)
+    }
+
+    #[node_bindgen]
+    async fn get_dlt_stats(
+        &self,
+        id: i64,
+        files: Vec<String>,
+    ) -> Result<CommandOutcomeWrapper<String>, ComputationErrorWrapper> {
+        self.api
+            .as_ref()
+            .ok_or(ComputationError::SessionUnavailable)?
+            .get_dlt_stats(id_from_i64(id)?, files)
+            .await
+            .map_err(ComputationErrorWrapper)
+            .map(CommandOutcomeWrapper)
+    }
+
+    #[node_bindgen]
+    async fn get_shell_profiles(
+        &self,
+        id: i64,
+    ) -> Result<CommandOutcomeWrapper<String>, ComputationErrorWrapper> {
+        self.api
+            .as_ref()
+            .ok_or(ComputationError::SessionUnavailable)?
+            .get_shell_profiles(id_from_i64(id)?)
+            .await
+            .map_err(ComputationErrorWrapper)
+            .map(CommandOutcomeWrapper)
+    }
+
+    #[node_bindgen]
+    async fn get_context_envvars(
+        &self,
+        id: i64,
+    ) -> Result<CommandOutcomeWrapper<String>, ComputationErrorWrapper> {
+        self.api
+            .as_ref()
+            .ok_or(ComputationError::SessionUnavailable)?
+            .get_context_envvars(id_from_i64(id)?)
+            .await
+            .map_err(ComputationErrorWrapper)
+            .map(CommandOutcomeWrapper)
+    }
+
+    #[node_bindgen]
+    async fn get_serial_ports_list(
+        &self,
+        id: i64,
+    ) -> Result<CommandOutcomeWrapper<Vec<String>>, ComputationErrorWrapper> {
+        self.api
+            .as_ref()
+            .ok_or(ComputationError::SessionUnavailable)?
+            .get_serial_ports_list(id_from_i64(id)?)
+            .await
+            .map_err(ComputationErrorWrapper)
+            .map(CommandOutcomeWrapper)
+    }
+
+    #[node_bindgen]
+    async fn get_regex_error(
+        &self,
+        id: i64,
+        filter: WrappedSearchFilter,
+    ) -> Result<CommandOutcomeWrapper<Option<String>>, ComputationErrorWrapper> {
+        self.api
+            .as_ref()
+            .ok_or(ComputationError::SessionUnavailable)?
+            .get_regex_error(id_from_i64(id)?, filter.as_filter())
             .await
             .map_err(ComputationErrorWrapper)
             .map(CommandOutcomeWrapper)
