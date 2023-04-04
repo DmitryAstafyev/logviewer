@@ -1,4 +1,5 @@
 use crate::events::ComputationError;
+use processor::search::filter::SearchFilter;
 use serde::Serialize;
 use tokio::sync::{mpsc::UnboundedSender, oneshot};
 
@@ -90,5 +91,77 @@ impl UnboundSessionAPI {
             Command::FolderContent(path, depth, tx_results),
         )
         .await
+    }
+
+    pub async fn spawn_process(
+        &self,
+        id: u64,
+        path: String,
+        args: Vec<String>,
+    ) -> Result<CommandOutcome<()>, ComputationError> {
+        let (tx_results, rx_results) = oneshot::channel();
+        self.process_command(
+            id,
+            rx_results,
+            Command::SpawnProcess(path, args, tx_results),
+        )
+        .await
+    }
+
+    pub async fn get_file_checksum(
+        &self,
+        id: u64,
+        path: String,
+    ) -> Result<CommandOutcome<String>, ComputationError> {
+        let (tx_results, rx_results) = oneshot::channel();
+        self.process_command(id, rx_results, Command::Checksum(path, tx_results))
+            .await
+    }
+
+    pub async fn get_dlt_stats(
+        &self,
+        id: u64,
+        files: Vec<String>,
+    ) -> Result<CommandOutcome<String>, ComputationError> {
+        let (tx_results, rx_results) = oneshot::channel();
+        self.process_command(id, rx_results, Command::GetDltStats(files, tx_results))
+            .await
+    }
+
+    pub async fn get_shell_profiles(
+        &self,
+        id: u64,
+    ) -> Result<CommandOutcome<String>, ComputationError> {
+        let (tx_results, rx_results) = oneshot::channel();
+        self.process_command(id, rx_results, Command::GetShellProfiles(tx_results))
+            .await
+    }
+
+    pub async fn get_context_envvars(
+        &self,
+        id: u64,
+    ) -> Result<CommandOutcome<String>, ComputationError> {
+        let (tx_results, rx_results) = oneshot::channel();
+        self.process_command(id, rx_results, Command::GetContextEnvvars(tx_results))
+            .await
+    }
+
+    pub async fn get_serial_ports_list(
+        &self,
+        id: u64,
+    ) -> Result<CommandOutcome<Vec<String>>, ComputationError> {
+        let (tx_results, rx_results) = oneshot::channel();
+        self.process_command(id, rx_results, Command::SerialPortsList(tx_results))
+            .await
+    }
+
+    pub async fn get_regex_error(
+        &self,
+        id: u64,
+        filter: SearchFilter,
+    ) -> Result<CommandOutcome<Option<String>>, ComputationError> {
+        let (tx_results, rx_results) = oneshot::channel();
+        self.process_command(id, rx_results, Command::GetRegexError(filter, tx_results))
+            .await
     }
 }

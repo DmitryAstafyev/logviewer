@@ -161,4 +161,64 @@ describe('Jobs', function () {
                 finish(undefined, done, err);
             });
     });
+
+    it(config.regular.list[4], async function (done) {
+        const testName = config.regular.list[4];
+        if (ingore(4, done)) {
+            return;
+        }
+        console.log(`\nStarting: ${testName}`);
+        const logger = getLogger(testName);
+        const jobs = await Jobs.create();
+        (async () => {
+            try {
+                const profiles = await jobs.getShellProfiles();
+                expect(profiles.length > 0).toBe(true);
+                await jobs.destroy();
+                finish(undefined, done, undefined);
+                return Promise.resolve();
+            } catch (err) {
+                return Promise.reject(err instanceof Error ? err : new Error(`${err}`));
+            }
+        })().catch((err: Error) => {
+            finish(
+                undefined,
+                done,
+                new Error(
+                    `Fail to finish test due error: ${err instanceof Error ? err.message : err}`,
+                ),
+            );
+        });
+    });
+    it(config.regular.list[5], async function (done) {
+        const testName = config.regular.list[5];
+        if (ingore(5, done)) {
+            return;
+        }
+        console.log(`\nStarting: ${testName}`);
+        const logger = getLogger(testName);
+        const jobs = await Jobs.create();
+        (async () => {
+            try {
+                const envvars = await jobs.getContextEnvvars();
+                expect(envvars.size > 0).toBe(true);
+                expect(envvars.has('PATH') || envvars.has('path') || envvars.has('Path')).toBe(
+                    true,
+                );
+                await jobs.destroy();
+                finish(undefined, done, undefined);
+                return Promise.resolve();
+            } catch (err) {
+                return Promise.reject(err instanceof Error ? err : new Error(`${err}`));
+            }
+        })().catch((err: Error) => {
+            finish(
+                undefined,
+                done,
+                new Error(
+                    `Fail to finish test due error: ${err instanceof Error ? err.message : err}`,
+                ),
+            );
+        });
+    });
 });
