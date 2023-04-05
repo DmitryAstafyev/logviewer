@@ -8,13 +8,6 @@ export interface IRustModuleExports {
     RustSession: any;
     UnboundJobs: any;
     RustProgressTracker: any;
-    getFilterError: (filter: {
-        value: string;
-        is_regex: boolean;
-        ignore_case: boolean;
-        is_word: boolean;
-    }) => string | undefined;
-    execute: (filename: string, args: string[]) => Promise<void>;
 }
 
 export function getNativeModule(): IRustModuleExports {
@@ -23,7 +16,8 @@ export function getNativeModule(): IRustModuleExports {
     return require(modulePath);
 }
 
-const { RustSession: RustSessionNoType, RustProgressTracker: ProgressTrackerNoType } = getNativeModule();
+const { RustSession: RustSessionNoType, RustProgressTracker: ProgressTrackerNoType } =
+    getNativeModule();
 
 export { RustSessionNoType, ProgressTrackerNoType };
 

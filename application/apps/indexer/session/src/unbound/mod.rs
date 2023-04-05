@@ -3,12 +3,12 @@ pub mod commands;
 mod signal;
 
 use crate::{
-    events::{ComputationError, LifecycleTransition},
+    events::ComputationError,
+    progress::ProgressProviderAPI,
     unbound::{
         api::{UnboundSessionAPI, API},
         signal::Signal,
     },
-    TRACKER_CHANNEL,
 };
 use log::{debug, error, warn};
 use std::collections::HashMap;
@@ -39,14 +39,7 @@ impl UnboundSession {
     pub async fn init(&mut self) -> Result<(), ComputationError> {
         let finished = self.finished.clone();
         let mut rx = self.rx.take().ok_or(ComputationError::SessionUnavailable)?; // Error: session already running
-        let tracker_tx = TRACKER_CHANNEL
-            .lock()
-            .map(|channels| channels.0.clone())
-            .map_err(|e| {
-                ComputationError::Process(format!(
-                    "Could not start an unbound session, tracker_tx unavailable {e}"
-                ))
-            })?;
+        let progress = ProgressProviderAPI::new()?;
         let session_api = self.session_api.clone();
         tokio::spawn(async move {
             let mut jobs: HashMap<u64, Signal> = HashMap::new();
@@ -55,7 +48,7 @@ impl UnboundSession {
                 jobs.retain(|id, signal| {
                     let cancelled = signal.is_cancelled();
                     if cancelled {
-                        UnboundSession::stopped(&tracker_tx, &mut uuids, id);
+                        UnboundSession::stopped(&progress, &mut uuids, id);
                     }
                     !cancelled
                 });
@@ -73,7 +66,7 @@ impl UnboundSession {
                             continue;
                         }
                         jobs.insert(id, signal.clone());
-                        UnboundSession::started(&tracker_tx, &mut uuids, &id);
+                        UnboundSession::started(&progress, job.to_string(), &mut uuids, &id);
                         let api = session_api.clone();
                         tokio::spawn(async move {
                             debug!("Job {job} has been called");
@@ -96,7 +89,7 @@ impl UnboundSession {
                         });
                         for (id, signal) in jobs.iter() {
                             signal.confirmed().await;
-                            UnboundSession::stopped(&tracker_tx, &mut uuids, id);
+                            UnboundSession::stopped(&progress, &mut uuids, id);
                         }
                         jobs.clear();
                         if tx.send(()).is_err() {
@@ -106,7 +99,7 @@ impl UnboundSession {
                     }
                     API::Remove(id) => {
                         if jobs.remove(&id).is_some() {
-                            UnboundSession::stopped(&tracker_tx, &mut uuids, &id);
+                            UnboundSession::stopped(&progress, &mut uuids, &id);
                         }
                     }
                 }
@@ -117,26 +110,19 @@ impl UnboundSession {
     }
 
     fn started(
-        tx: &UnboundedSender<LifecycleTransition>,
+        progress: &ProgressProviderAPI,
+        alias: String,
         uuids: &mut HashMap<u64, Uuid>,
         id: &u64,
     ) {
         let uuid = Uuid::new_v4();
         uuids.insert(*id, uuid);
-        if tx.send(LifecycleTransition::Started(uuid)).is_err() {
-            error!("Fail to send LifecycleTransition::Started to operations tracker");
-        }
+        progress.started(&alias, &uuid);
     }
 
-    fn stopped(
-        tx: &UnboundedSender<LifecycleTransition>,
-        uuids: &mut HashMap<u64, Uuid>,
-        id: &u64,
-    ) {
+    fn stopped(progress: &ProgressProviderAPI, uuids: &mut HashMap<u64, Uuid>, id: &u64) {
         if let Some(uuid) = uuids.get(id) {
-            if tx.send(LifecycleTransition::Stopped(*uuid)).is_err() {
-                error!("Fail to send LifecycleTransition::Stopped to operations tracker");
-            }
+            progress.stopped(uuid);
         } else {
             error!("Fail to find UUID for operation id={id}");
         }

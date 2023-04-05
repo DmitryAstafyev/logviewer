@@ -6,7 +6,7 @@
 
 import * as os from 'os';
 
-import { Jobs } from '../src/index';
+import { Jobs, Tracker } from '../src/index';
 import { getLogger } from '../src/util/logging';
 import { readConfigurationFile } from './config';
 import { finish } from './common';
@@ -27,26 +27,6 @@ function ingore(id: string | number, done: () => void) {
 }
 
 describe('Jobs', function () {
-    // it(config.regular.list[2], async function (done) {
-    //     const testName = config.regular.list[2];
-    //     console.log(`\nStarting: ${testName}`);
-    //     const tracker = createTracker();
-    //     const path = config.regular.files['path'];
-    //     if (!fs.existsSync(path)) {
-    //         console.log(`Path ${path} doesn't exist, test skipped`);
-    //         done();
-    //         return;
-    //     }
-    //     const jobs = new Jobs();
-    //     await jobs.init();
-    //     jobs.jobListContent(path).then((res) => {
-    //         console.log("listing: " + res);
-    //     })
-    //     await new Promise(r => setTimeout(r, 10));
-    //     await tracker.shutdown();
-    //     done();
-    // });
-
     it(config.regular.list[1], async function (done) {
         const testName = config.regular.list[1];
         if (ingore(1, done)) {
@@ -55,6 +35,14 @@ describe('Jobs', function () {
         console.log(`\nStarting: ${testName}`);
         const logger = getLogger(testName);
         const jobs = await Jobs.create();
+        const tracker = await Tracker.create();
+        const operations: Map<string, boolean> = new Map();
+        tracker.provider.getEvents().Started.subscribe((event) => {
+            operations.set(event.uuid, true);
+        });
+        tracker.provider.getEvents().Stopped.subscribe((uuid) => {
+            operations.set(uuid, false);
+        });
         jobs.cancelTest(50, 50)
             .then((a) => {
                 // Job is resolved, but not cancelled
@@ -63,28 +51,27 @@ describe('Jobs', function () {
                 const job = jobs
                     .cancelTest(50, 50)
                     .then((_res) => {
+                        expect(operations.size).toBe(2);
+                        expect(
+                            Array.from(operations.values()).filter((running) => running === false)
+                                .length,
+                        ).toBe(0);
                         finish(
-                            undefined,
+                            [jobs, tracker],
                             done,
                             new Error(`This job should be cancelled, but not done`),
                         );
                     })
                     .canceled(async () => {
-                        jobs.destroy()
-                            .then(() => {
-                                finish(undefined, done);
-                            })
-                            .catch((err: Error) => {
-                                finish(undefined, done, err);
-                            });
+                        finish([jobs, tracker], done);
                     })
                     .catch((err: Error) => {
-                        finish(undefined, done, err);
+                        finish([jobs, tracker], done, err);
                     });
                 job.abort();
             })
             .catch((err: Error) => {
-                finish(undefined, done, err);
+                finish([jobs, tracker], done, err);
             });
     });
 
@@ -106,7 +93,7 @@ describe('Jobs', function () {
                     (res[0].status === 'rejected' && res[1].status === 'rejected') ||
                     (res[0].status !== 'rejected' && res[1].status !== 'rejected')
                 ) {
-                    finish(undefined, done, new Error(`Only one task should be rejected`));
+                    finish(jobs, done, new Error(`Only one task should be rejected`));
                 }
                 expect(
                     res[0].status !== 'rejected'
@@ -115,10 +102,10 @@ describe('Jobs', function () {
                         ? res[1].value
                         : undefined,
                 ).toBe(100);
-                finish(undefined, done);
+                finish(jobs, done);
             })
             .catch((err: Error) => {
-                finish(undefined, done, err);
+                finish(jobs, done, err);
             });
     });
 
@@ -137,28 +124,18 @@ describe('Jobs', function () {
                 const job = jobs
                     .listContent(10, path)
                     .then((_res) => {
-                        finish(
-                            undefined,
-                            done,
-                            new Error(`This job should be cancelled, but not done`),
-                        );
+                        finish(jobs, done, new Error(`This job should be cancelled, but not done`));
                     })
                     .canceled(async () => {
-                        jobs.destroy()
-                            .then(() => {
-                                finish(undefined, done);
-                            })
-                            .catch((err: Error) => {
-                                finish(undefined, done, err);
-                            });
+                        finish(jobs, done);
                     })
                     .catch((err: Error) => {
-                        finish(undefined, done, err);
+                        finish(jobs, done, err);
                     });
                 job.abort();
             })
             .catch((err: Error) => {
-                finish(undefined, done, err);
+                finish(jobs, done, err);
             });
     });
 
@@ -174,15 +151,14 @@ describe('Jobs', function () {
             try {
                 const profiles = await jobs.getShellProfiles();
                 expect(profiles.length > 0).toBe(true);
-                await jobs.destroy();
-                finish(undefined, done, undefined);
+                finish(jobs, done);
                 return Promise.resolve();
             } catch (err) {
                 return Promise.reject(err instanceof Error ? err : new Error(`${err}`));
             }
         })().catch((err: Error) => {
             finish(
-                undefined,
+                jobs,
                 done,
                 new Error(
                     `Fail to finish test due error: ${err instanceof Error ? err.message : err}`,
@@ -190,6 +166,7 @@ describe('Jobs', function () {
             );
         });
     });
+
     it(config.regular.list[5], async function (done) {
         const testName = config.regular.list[5];
         if (ingore(5, done)) {
@@ -205,15 +182,14 @@ describe('Jobs', function () {
                 expect(envvars.has('PATH') || envvars.has('path') || envvars.has('Path')).toBe(
                     true,
                 );
-                await jobs.destroy();
-                finish(undefined, done, undefined);
+                finish(jobs, done);
                 return Promise.resolve();
             } catch (err) {
                 return Promise.reject(err instanceof Error ? err : new Error(`${err}`));
             }
         })().catch((err: Error) => {
             finish(
-                undefined,
+                jobs,
                 done,
                 new Error(
                     `Fail to finish test due error: ${err instanceof Error ? err.message : err}`,

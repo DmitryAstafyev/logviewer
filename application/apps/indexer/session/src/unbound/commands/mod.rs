@@ -79,14 +79,14 @@ impl std::fmt::Display for Command {
             "{}",
             match self {
                 Command::CancelTest(_, _, _) => "CancelTest",
-                Command::SpawnProcess(_, _, _) => "SpawnProcess",
-                Command::FolderContent(_, _, _) => "FolderContent",
-                Command::GetShellProfiles(_) => "GetShellProfiles",
-                Command::GetContextEnvvars(_) => "GetContextEnvvars",
-                Command::SerialPortsList(_) => "SerialPortsList",
-                Command::Checksum(_, _) => "Checksum",
-                Command::GetDltStats(_, _) => "GetDltStats",
-                Command::GetRegexError(_, _) => "GetRegexError",
+                Command::SpawnProcess(_, _, _) => "Spawning process",
+                Command::FolderContent(_, _, _) => "Getting folder's content",
+                Command::GetShellProfiles(_) => "Getting shell profiles",
+                Command::GetContextEnvvars(_) => "Getting context envvars",
+                Command::SerialPortsList(_) => "Getting serial ports list",
+                Command::Checksum(_, _) => "Calculating file's checksum",
+                Command::GetDltStats(_, _) => "Getting dlt stats",
+                Command::GetRegexError(_, _) => "Checking regex",
             }
         )
     }

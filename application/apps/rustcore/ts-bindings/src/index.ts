@@ -26,6 +26,7 @@ export {
 } from './api/session';
 
 export { Jobs } from './api/jobs';
+export { Tracker } from './api/tracker';
 
 export {
     IGrabbedElement,
@@ -42,18 +43,3 @@ export {
 export { Units, Events, Interfaces };
 
 setUuidGenerator(v4);
-import { ProgressTrackerNoType } from "./native/native";
-export function createTracker() : any|Error {
-    console.log(ProgressTrackerNoType);
-    const tracker = new ProgressTrackerNoType();
-    try {
-        tracker.init((event: any) => {
-            console.log("Progress Tracker:: event " + event);
-        });
-        return tracker;
-    } catch(error) {
-        console.log(error);
-        return new Error(error as string);
-    }
-
-}
