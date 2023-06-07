@@ -20,13 +20,13 @@ export * as Serial from './serial';
 export * as Tcp from './tcp';
 export * as Udp from './udp';
 
-export type Reference = ReferenceDesc<IDeclaration, Declaration, Alias>;
+export type Reference = ReferenceDesc<IDeclaration, Declaration, Source>;
 
 export abstract class Support {
     public abstract getSupportedStream(): Reference[];
 }
 
-export enum Alias {
+export enum Source {
     Tcp = 'Tcp',
     Udp = 'Udp',
     Serial = 'Serial',
@@ -46,22 +46,22 @@ export type Declaration =
     | Udp.Configuration;
 
 export interface IConfiguration {
-    [Alias.Serial]?: Serial.IConfiguration;
-    [Alias.Process]?: Process.IConfiguration;
-    [Alias.Tcp]?: Tcp.IConfiguration;
-    [Alias.Udp]?: Udp.IConfiguration;
+    [Source.Serial]?: Serial.IConfiguration;
+    [Source.Process]?: Process.IConfiguration;
+    [Source.Tcp]?: Tcp.IConfiguration;
+    [Source.Udp]?: Udp.IConfiguration;
 }
 
 export const REGISTER = {
-    [Alias.Process]: Process.Configuration,
-    [Alias.Serial]: Serial.Configuration,
-    [Alias.Tcp]: Tcp.Configuration,
-    [Alias.Udp]: Udp.Configuration,
+    [Source.Process]: Process.Configuration,
+    [Source.Serial]: Serial.Configuration,
+    [Source.Tcp]: Tcp.Configuration,
+    [Source.Udp]: Udp.Configuration,
 };
 
 export const DEFAULT = Tcp.Configuration;
 
-export function getByAlias(alias: Alias): Declaration {
+export function getByAlias(alias: Source): Declaration {
     const Ref: Reference = REGISTER[alias];
     if (Ref === undefined) {
         throw new Error(`Unknown stream: ${alias}`);
@@ -81,7 +81,7 @@ export class Configuration
     static validate(configuration: IConfiguration): Error | IConfiguration {
         if (
             Object.keys(REGISTER)
-                .map((k) => configuration[k as Alias])
+                .map((k) => configuration[k as Source])
                 .filter((v) => v !== undefined).length === 0
         ) {
             return new Error(`Stream transport isn't defined`);
@@ -91,11 +91,11 @@ export class Configuration
             if (error instanceof Error) {
                 return;
             }
-            const config: any = configuration[key as Alias];
+            const config: any = configuration[key as Source];
             if (config === undefined) {
                 return;
             }
-            const err = REGISTER[key as Alias].validate(config);
+            const err = REGISTER[key as Source].validate(config);
             if (err instanceof Error) {
                 error = err;
             } else {
@@ -119,11 +119,11 @@ export class Configuration
             if (instance !== undefined) {
                 return;
             }
-            const config: any = configuration[key as Alias];
+            const config: any = configuration[key as Source];
             if (config === undefined) {
                 return;
             }
-            const Ref: any = REGISTER[key as Alias];
+            const Ref: any = REGISTER[key as Source];
             instance = new Ref(config, Ref);
         });
         if (instance === undefined) {

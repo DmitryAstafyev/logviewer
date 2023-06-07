@@ -1,5 +1,5 @@
 import { error } from '../../../../../log/utils';
-import { Alias } from '../index';
+import { Source } from '../index';
 import { Configuration as Base, ConfigurationStaticDesc } from '../../../configuration';
 import { OriginDetails, IOriginDetails, IList } from '../../../description';
 import { Statics } from '../../../../../env/decorators';
@@ -17,9 +17,9 @@ export interface IConfiguration {
     stop_bits: number;
 }
 
-@Statics<ConfigurationStaticDesc<IConfiguration, Alias>>()
+@Statics<ConfigurationStaticDesc<IConfiguration, Source>>()
 export class Configuration
-    extends Base<IConfiguration, Configuration, Alias>
+    extends Base<IConfiguration, Configuration, Source>
     implements OriginDetails, Sde.Support
 {
     static desc(): IList {
@@ -30,8 +30,8 @@ export class Configuration
         };
     }
 
-    static alias(): Alias {
-        return Alias.Serial;
+    static alias(): Source {
+        return Source.Serial;
     }
 
     static validate(configuration: IConfiguration): Error | IConfiguration {

@@ -4,7 +4,7 @@ import {
     ConfigurationStatic,
     Reference as ReferenceBase,
 } from '../configuration';
-import { Alias, SourceUuid } from './index';
+import { Context, SourceUuid } from './index';
 import { OriginDetails, IOriginDetails } from '../description';
 import { Statics } from '../../../env/decorators';
 import { unique } from '../../../env/sequence';
@@ -22,13 +22,13 @@ export * as Sde from '../sde';
 
 export type IConfiguration = [SourceUuid, Stream.IConfiguration];
 
-@Statics<ConfigurationStatic<IConfiguration, Alias>>()
+@Statics<ConfigurationStatic<IConfiguration, Context>>()
 export class Configuration
-    extends Base<IConfiguration, Configuration, Alias>
+    extends Base<IConfiguration, Configuration, Context>
     implements OriginDetails, Sde.Support, Parser.Support
 {
-    static alias(): Alias {
-        return Alias.Stream;
+    static alias(): Context {
+        return Context.Stream;
     }
 
     static validate(configuration: IConfiguration): Error | IConfiguration {
@@ -42,7 +42,7 @@ export class Configuration
                 return error instanceof Error ? error : configuration;
             } else {
                 throw new Error(
-                    `Source "${Alias.Stream}" should be represented as an array, len = 2.`,
+                    `Source "${Context.Stream}" should be represented as an array, len = 2.`,
                 );
             }
         } catch (e) {
@@ -67,7 +67,7 @@ export class Configuration
 
     constructor(
         configuration: IConfiguration,
-        ref: ReferenceBase<IConfiguration, Configuration, Alias>,
+        ref: ReferenceBase<IConfiguration, Configuration, Context>,
     ) {
         super(configuration, ref);
         this.setInstance();

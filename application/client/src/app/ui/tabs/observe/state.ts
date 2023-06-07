@@ -10,9 +10,9 @@ import * as Origin from '@platform/types/observe/origin/index';
 
 export class State {
     public parsers: Parser.Reference[] = [];
-    public parser: Parser.Alias | undefined;
+    public parser: Parser.Protocol | undefined;
     public streams: Streams.Reference[] = [];
-    public stream: Streams.Alias | undefined;
+    public stream: Streams.Source | undefined;
     public updates: Subjects<{
         parser: Subject<void>;
         stream: Subject<void>;

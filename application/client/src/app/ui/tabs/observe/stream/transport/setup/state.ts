@@ -11,7 +11,7 @@ export class State {
     public tcp: TcpState | undefined;
     public serial: SerialState | undefined;
     public process: ProcessState | undefined;
-    public alias: Stream.Alias = Stream.Alias.Tcp;
+    public alias: Stream.Source = Stream.Source.Tcp;
     public updated: Subject<void> = new Subject();
 
     private _backup: {
@@ -26,7 +26,7 @@ export class State {
         process: new ProcessState(),
     };
 
-    constructor(alias?: Stream.Alias) {
+    constructor(alias?: Stream.Source) {
         if (alias !== undefined) {
             this.alias = alias;
         }
@@ -38,33 +38,33 @@ export class State {
     }
 
     public from(configuration: Stream.IConfiguration) {
-        if (configuration[Stream.Alias.Udp] !== undefined) {
+        if (configuration[Stream.Source.Udp] !== undefined) {
             this.udp = this._backup.udp;
-            this.udp.from(configuration[Stream.Alias.Udp]);
-            this.switch(Stream.Alias.Udp);
+            this.udp.from(configuration[Stream.Source.Udp]);
+            this.switch(Stream.Source.Udp);
             return;
         }
-        if (configuration[Stream.Alias.Tcp] !== undefined) {
+        if (configuration[Stream.Source.Tcp] !== undefined) {
             this.tcp = this._backup.tcp;
-            this.tcp.from(configuration[Stream.Alias.Tcp]);
-            this.switch(Stream.Alias.Tcp);
+            this.tcp.from(configuration[Stream.Source.Tcp]);
+            this.switch(Stream.Source.Tcp);
             return;
         }
-        if (configuration[Stream.Alias.Serial] !== undefined) {
+        if (configuration[Stream.Source.Serial] !== undefined) {
             this.serial = this._backup.serial;
-            this.serial.from(configuration[Stream.Alias.Serial]);
-            this.switch(Stream.Alias.Serial);
+            this.serial.from(configuration[Stream.Source.Serial]);
+            this.switch(Stream.Source.Serial);
             return;
         }
-        if (configuration[Stream.Alias.Process] !== undefined) {
+        if (configuration[Stream.Source.Process] !== undefined) {
             this.process = this._backup.process;
-            this.process.from(configuration[Stream.Alias.Process]);
-            this.switch(Stream.Alias.Process);
+            this.process.from(configuration[Stream.Source.Process]);
+            this.switch(Stream.Source.Process);
             return;
         }
     }
 
-    public switch(alias?: Stream.Alias) {
+    public switch(alias?: Stream.Source) {
         this._backup.udp = this.udp === undefined ? this._backup.udp : this.udp;
         this._backup.tcp = this.tcp === undefined ? this._backup.tcp : this.tcp;
         this._backup.serial = this.serial === undefined ? this._backup.serial : this.serial;
@@ -73,25 +73,25 @@ export class State {
             this.alias = alias;
         }
         switch (alias === undefined ? this.alias : alias) {
-            case Stream.Alias.Udp:
+            case Stream.Source.Udp:
                 this.udp = this._backup.udp;
                 this.tcp = undefined;
                 this.serial = undefined;
                 this.process = undefined;
                 break;
-            case Stream.Alias.Tcp:
+            case Stream.Source.Tcp:
                 this.tcp = this._backup.tcp;
                 this.udp = undefined;
                 this.serial = undefined;
                 this.process = undefined;
                 break;
-            case Stream.Alias.Serial:
+            case Stream.Source.Serial:
                 this.serial = this._backup.serial;
                 this.tcp = undefined;
                 this.udp = undefined;
                 this.process = undefined;
                 break;
-            case Stream.Alias.Process:
+            case Stream.Source.Process:
                 this.process = this._backup.process;
                 this.tcp = undefined;
                 this.udp = undefined;
@@ -103,10 +103,10 @@ export class State {
 
     public configuration(): Stream.IConfiguration {
         return {
-            [Stream.Alias.Udp]: this.udp?.accept().configuration(),
-            [Stream.Alias.Tcp]: this.tcp?.accept().configuration(),
-            [Stream.Alias.Process]: this.process?.accept().configuration(),
-            [Stream.Alias.Serial]: this.serial?.accept().configuration(),
+            [Stream.Source.Udp]: this.udp?.accept().configuration(),
+            [Stream.Source.Tcp]: this.tcp?.accept().configuration(),
+            [Stream.Source.Process]: this.process?.accept().configuration(),
+            [Stream.Source.Serial]: this.serial?.accept().configuration(),
         };
     }
 }

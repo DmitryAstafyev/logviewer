@@ -617,44 +617,4 @@ export class DataSource {
             parser: this.parser,
         });
     }
-
-    public parsers(): {
-        suitable(): ParserName[] | Error;
-        change(parser: Parser): undefined | Error;
-    } {
-        return {
-            suitable: (): ParserName[] | Error => {
-                if (this.origin.File !== undefined) {
-                    switch (this.origin.File[1]) {
-                        case FileType.Binary:
-                            return [ParserName.Dlt, ParserName.SomeIp];
-                        case FileType.PcapNG:
-                            return [ParserName.Dlt, ParserName.SomeIp];
-                        case FileType.Text:
-                            return [ParserName.Text];
-                    }
-                } else if (this.origin.Concat !== undefined) {
-                    if (this.origin.Concat.length === 0) {
-                        return new Error(`No files for Concat Origin`);
-                    }
-                    switch (this.origin.Concat[0][1]) {
-                        case FileType.Binary:
-                            return [ParserName.Dlt, ParserName.SomeIp];
-                        case FileType.PcapNG:
-                            return [ParserName.Dlt, ParserName.SomeIp];
-                        case FileType.Text:
-                            return [ParserName.Text];
-                    }
-                } else if (this.origin.Stream !== undefined) {
-                    return [ParserName.Text, ParserName.Dlt, ParserName.SomeIp];
-                } else {
-                    return new Error(`Origin isn't defined`);
-                }
-            },
-            change: (parser: Parser): undefined | Error => {
-                // TODO: check is parser suitable or not
-                return undefined;
-            },
-        };
-    }
 }

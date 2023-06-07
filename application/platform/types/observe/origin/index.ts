@@ -16,7 +16,7 @@ import * as Stream from './stream';
 import * as Parser from '../parser';
 import * as Sde from '../sde';
 
-export enum Alias {
+export enum Context {
     File = 'File',
     Concat = 'Concat',
     Stream = 'Stream',
@@ -25,15 +25,15 @@ export enum Alias {
 export type SourceUuid = string;
 
 export interface IConfiguration {
-    [Alias.File]?: File.IConfiguration;
-    [Alias.Concat]?: Concat.IConfiguration;
-    [Alias.Stream]?: Stream.IConfiguration;
+    [Context.File]?: File.IConfiguration;
+    [Context.Concat]?: Concat.IConfiguration;
+    [Context.Stream]?: Stream.IConfiguration;
 }
 
 export const REGISTER = {
-    [Alias.File]: File.Configuration,
-    [Alias.Concat]: Concat.Configuration,
-    [Alias.Stream]: Stream.Configuration,
+    [Context.File]: File.Configuration,
+    [Context.Concat]: Concat.Configuration,
+    [Context.Stream]: Stream.Configuration,
 };
 
 export const DEFAULT = File.Configuration;
@@ -52,7 +52,7 @@ export class Configuration
     static validate(configuration: IConfiguration): Error | IConfiguration {
         if (
             Object.keys(REGISTER)
-                .map((k) => configuration[k as Alias])
+                .map((k) => configuration[k as Context])
                 .filter((v) => v !== undefined).length === 0
         ) {
             return new Error(`Origin isn't defined`);
@@ -62,11 +62,11 @@ export class Configuration
             if (error instanceof Error) {
                 return;
             }
-            const config = configuration[key as Alias];
+            const config = configuration[key as Context];
             if (config === undefined) {
                 return;
             }
-            const err = REGISTER[key as Alias].validate(config as any);
+            const err = REGISTER[key as Context].validate(config as any);
             if (err instanceof Error) {
                 error = err;
             } else {
@@ -90,11 +90,11 @@ export class Configuration
             if (instance !== undefined) {
                 return;
             }
-            const config = configuration[key as Alias];
+            const config = configuration[key as Context];
             if (config === undefined) {
                 return;
             }
-            const Ref = REGISTER[key as Alias];
+            const Ref = REGISTER[key as Context];
             instance = new Ref(config as any, Ref as any);
         });
         if (instance === undefined) {

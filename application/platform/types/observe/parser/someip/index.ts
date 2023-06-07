@@ -1,5 +1,5 @@
 import { error } from '../../../../log/utils';
-import { Alias } from '../index';
+import { Protocol } from '../index';
 import { Configuration as Base, ConfigurationStaticDesc } from '../../configuration';
 import { Statics } from '../../../../env/decorators';
 import { List, IList } from '../../description';
@@ -12,9 +12,9 @@ export interface IConfiguration {
     fibex_file_paths: string[] | undefined;
 }
 
-@Statics<ConfigurationStaticDesc<IConfiguration, Alias>>()
+@Statics<ConfigurationStaticDesc<IConfiguration, Protocol>>()
 export class Configuration
-    extends Base<IConfiguration, Configuration, Alias>
+    extends Base<IConfiguration, Configuration, Protocol>
     implements List, Stream.Support, Files.Support
 {
     static desc(): IList {
@@ -25,8 +25,8 @@ export class Configuration
         };
     }
 
-    static alias(): Alias {
-        return Alias.SomeIp;
+    static alias(): Protocol {
+        return Protocol.SomeIp;
     }
 
     static validate(configuration: IConfiguration): Error | IConfiguration {

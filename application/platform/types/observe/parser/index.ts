@@ -18,13 +18,13 @@ export * as Text from './text';
 import * as Stream from '../origin/stream/index';
 import * as Files from '../types/file';
 
-export type Reference = ReferenceDesc<IDeclaration, Declaration, Alias>;
+export type Reference = ReferenceDesc<IDeclaration, Declaration, Protocol>;
 
 export abstract class Support {
     public abstract getSupportedParsers(): Reference[];
 }
 
-export enum Alias {
+export enum Protocol {
     Dlt = 'Dlt',
     SomeIp = 'SomeIp',
     Text = 'Text',
@@ -35,20 +35,20 @@ export type IDeclaration = Text.IConfiguration | Dlt.IConfiguration | SomeIp.ICo
 export type Declaration = Text.Configuration | Dlt.Configuration | SomeIp.Configuration;
 
 export interface IConfiguration {
-    [Alias.Dlt]?: Dlt.IConfiguration;
-    [Alias.SomeIp]?: SomeIp.IConfiguration;
-    [Alias.Text]?: Text.IConfiguration;
+    [Protocol.Dlt]?: Dlt.IConfiguration;
+    [Protocol.SomeIp]?: SomeIp.IConfiguration;
+    [Protocol.Text]?: Text.IConfiguration;
 }
 
 const REGISTER = {
-    [Alias.Dlt]: Dlt.Configuration,
-    [Alias.SomeIp]: SomeIp.Configuration,
-    [Alias.Text]: Text.Configuration,
+    [Protocol.Dlt]: Dlt.Configuration,
+    [Protocol.SomeIp]: SomeIp.Configuration,
+    [Protocol.Text]: Text.Configuration,
 };
 
 const DEFAULT = Text.Configuration;
 
-export function getByAlias(alias: Alias): Declaration {
+export function getByAlias(alias: Protocol): Declaration {
     const Ref: Reference = REGISTER[alias];
     if (Ref === undefined) {
         throw new Error(`Unknown parser: ${alias}`);
@@ -68,7 +68,7 @@ export class Configuration
     static validate(configuration: IConfiguration): Error | IConfiguration {
         if (
             Object.keys(REGISTER)
-                .map((k) => configuration[k as Alias])
+                .map((k) => configuration[k as Protocol])
                 .filter((v) => v !== undefined).length === 0
         ) {
             return new Error(`Stream transport isn't defined`);
@@ -78,12 +78,12 @@ export class Configuration
             if (error instanceof Error) {
                 return;
             }
-            const config: any = configuration[key as Alias];
+            const config: any = configuration[key as Protocol];
             if (config === undefined) {
                 return;
             }
             // Error with "never" comes because text parser has settings NULL
-            const err = REGISTER[key as Alias].validate(config as never);
+            const err = REGISTER[key as Protocol].validate(config as never);
             if (err instanceof Error) {
                 error = err;
             } else {
@@ -107,11 +107,11 @@ export class Configuration
             if (instance !== undefined) {
                 return;
             }
-            const config: any = configuration[key as Alias];
+            const config: any = configuration[key as Protocol];
             if (config === undefined) {
                 return;
             }
-            const Ref: any = REGISTER[key as Alias];
+            const Ref: any = REGISTER[key as Protocol];
             instance = new Ref(config, Ref);
         });
         if (instance === undefined) {

@@ -1,6 +1,6 @@
 import { error } from '../../../log/utils';
 import { Configuration as Base, ConfigurationStaticDesc } from '../configuration';
-import { Alias, SourceUuid } from './index';
+import { Context, SourceUuid } from './index';
 import { OriginDetails, IOriginDetails, IList } from '../description';
 import { filename, basefolder } from '../../../env/str';
 import { Statics } from '../../../env/decorators';
@@ -13,9 +13,9 @@ import * as Sde from '../sde';
 
 export type IConfiguration = [SourceUuid, Types.File.FileType, Types.File.FileName];
 
-@Statics<ConfigurationStaticDesc<IConfiguration, Alias>>()
+@Statics<ConfigurationStaticDesc<IConfiguration, Context>>()
 export class Configuration
-    extends Base<IConfiguration, Configuration, Alias>
+    extends Base<IConfiguration, Configuration, Context>
     implements OriginDetails, Sde.Support, Parser.Support
 {
     static desc(): IList {
@@ -26,8 +26,8 @@ export class Configuration
         };
     }
 
-    static alias(): Alias {
-        return Alias.File;
+    static alias(): Context {
+        return Context.File;
     }
 
     static validate(configuration: IConfiguration): Error | IConfiguration {
@@ -46,7 +46,7 @@ export class Configuration
                 }
             } else {
                 throw new Error(
-                    `Source "${Alias.File}" should be represented as an array, len = 3.`,
+                    `Source "${Context.File}" should be represented as an array, len = 3.`,
                 );
             }
             return configuration;

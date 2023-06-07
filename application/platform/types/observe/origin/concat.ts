@@ -2,7 +2,7 @@ import { error } from '../../../log/utils';
 import { Configuration as Base, ConfigurationStaticDesc } from '../configuration';
 import { OriginDetails, IOriginDetails, IList } from '../description';
 import { Configuration as ConfigurationFile } from './file';
-import { Alias, SourceUuid } from './index';
+import { Context, SourceUuid } from './index';
 import { basefolder } from '../../../env/str';
 import { Statics } from '../../../env/decorators';
 
@@ -12,9 +12,9 @@ import * as Sde from '../sde';
 
 export type IConfiguration = [SourceUuid, Types.File.FileType, Types.File.FileName][];
 
-@Statics<ConfigurationStaticDesc<IConfiguration, Alias>>()
+@Statics<ConfigurationStaticDesc<IConfiguration, Context>>()
 export class Configuration
-    extends Base<IConfiguration, Configuration, Alias>
+    extends Base<IConfiguration, Configuration, Context>
     implements OriginDetails, Sde.Support, Parser.Support
 {
     static desc(): IList {
@@ -25,15 +25,15 @@ export class Configuration
         };
     }
 
-    static alias(): Alias {
-        return Alias.Concat;
+    static alias(): Context {
+        return Context.Concat;
     }
 
     static validate(configuration: IConfiguration): Error | IConfiguration {
         try {
             if (!(configuration instanceof Array) || configuration.length === 0) {
                 throw new Error(
-                    `Source "${Alias.Concat}" should be represented as a not empty array.`,
+                    `Source "${Context.Concat}" should be represented as a not empty array.`,
                 );
             } else {
                 configuration.forEach((file) => {
