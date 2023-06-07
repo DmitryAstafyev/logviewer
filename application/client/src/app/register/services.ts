@@ -46,6 +46,10 @@ export const services: { [key: string]: Inputs } = {
         name: 'Opener',
         uuid: v4(),
     },
+    prelude: {
+        name: 'Prelude',
+        uuid: v4(),
+    },
     tabs: {
         name: 'Tabs',
         uuid: v4(),
