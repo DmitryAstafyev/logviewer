@@ -305,6 +305,21 @@ export class DataSource {
         };
     }
 
+    protected getChilds(): DataSource[] {
+        if (this.origin.Concat !== undefined) {
+            return this.origin.Concat.map((file) => {
+                return new DataSource(
+                    {
+                        origin: { File: file },
+                        parser: this.parser,
+                    },
+                    this,
+                );
+            });
+        }
+        return [];
+    }
+
     constructor(opt: ISource, parent?: DataSource) {
         this.origin = opt.origin;
         this.parser = opt.parser;
@@ -389,24 +404,17 @@ export class DataSource {
     }
 
     public getParserName(): ParserName | Error {
-        const parser: Parser | Error = (() => {
-            if (this.parser !== undefined) {
-                return this.parser;
-            } else {
-                return new Error(`Not File, not Stream aren't defined in DataSource`);
-            }
-        })();
-        if (parser instanceof Error) {
-            return parser;
+        if (this.parser === undefined || this.parser === null || typeof this.parser !== 'object') {
+            return new Error(`Parser isn't defined in DataSource`);
         }
-        if (parser.Dlt !== undefined) {
+        if (this.parser.Dlt !== undefined) {
             return ParserName.Dlt;
-        } else if (parser.SomeIp !== undefined) {
+        } else if (this.parser.SomeIp !== undefined) {
             return ParserName.SomeIp;
-        } else if (parser.Text !== undefined) {
+        } else if (this.parser.Text !== undefined) {
             return ParserName.Text;
         } else {
-            return new Error(`Unknown parser`);
+            return new Error(`Unknown parser: ${Object.keys(this.parser).join(',')}`);
         }
     }
 
@@ -455,21 +463,6 @@ export class DataSource {
         } else {
             return new Error(`Unknown source`);
         }
-    }
-
-    protected getChilds(): DataSource[] {
-        if (this.origin.Concat !== undefined) {
-            return this.origin.Concat.map((file) => {
-                return new DataSource(
-                    {
-                        origin: { File: file },
-                        parser: this.parser,
-                    },
-                    this,
-                );
-            });
-        }
-        return [];
     }
 
     public desc(): SourceDescription | Error {
@@ -623,5 +616,45 @@ export class DataSource {
             origin: this.origin,
             parser: this.parser,
         });
+    }
+
+    public parsers(): {
+        suitable(): ParserName[] | Error;
+        change(parser: Parser): undefined | Error;
+    } {
+        return {
+            suitable: (): ParserName[] | Error => {
+                if (this.origin.File !== undefined) {
+                    switch (this.origin.File[1]) {
+                        case FileType.Binary:
+                            return [ParserName.Dlt, ParserName.SomeIp];
+                        case FileType.PcapNG:
+                            return [ParserName.Dlt, ParserName.SomeIp];
+                        case FileType.Text:
+                            return [ParserName.Text];
+                    }
+                } else if (this.origin.Concat !== undefined) {
+                    if (this.origin.Concat.length === 0) {
+                        return new Error(`No files for Concat Origin`);
+                    }
+                    switch (this.origin.Concat[0][1]) {
+                        case FileType.Binary:
+                            return [ParserName.Dlt, ParserName.SomeIp];
+                        case FileType.PcapNG:
+                            return [ParserName.Dlt, ParserName.SomeIp];
+                        case FileType.Text:
+                            return [ParserName.Text];
+                    }
+                } else if (this.origin.Stream !== undefined) {
+                    return [ParserName.Text, ParserName.Dlt, ParserName.SomeIp];
+                } else {
+                    return new Error(`Origin isn't defined`);
+                }
+            },
+            change: (parser: Parser): undefined | Error => {
+                // TODO: check is parser suitable or not
+                return undefined;
+            },
+        };
     }
 }

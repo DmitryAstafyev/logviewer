@@ -16,18 +16,6 @@ export interface IDLTOptions {
     tz?: string;
 }
 
-export interface IIndexDltParams {
-    dltFile: string;
-    filterConfig: DltFilterConf;
-    fibex: IFibexConfig;
-    tag: string;
-    out: string;
-    chunk_size?: number;
-    append: boolean;
-    stdout: boolean;
-    statusUpdates: boolean;
-}
-
 export enum DltLogLevel {
     Fatal = 0x1 << 4,
     Error = 0x2 << 4,
@@ -58,14 +46,10 @@ export interface LevelDistribution {
 }
 
 export interface StatisticInfo {
-    app_ids: Array<[string, LevelDistribution]>;
-    context_ids: Array<[string, LevelDistribution]>;
-    ecu_ids: Array<[string, LevelDistribution]>;
+    app_ids: [string, LevelDistribution][];
+    context_ids: [string, LevelDistribution][];
+    ecu_ids: [string, LevelDistribution][];
     contained_non_verbose: boolean;
-}
-
-export interface IFibexConfig {
-    fibex_file_paths: Array<string>;
 }
 
 export enum EMTIN {
@@ -97,16 +81,16 @@ export enum EMTIN {
 
 export interface DltFilterConf {
     min_log_level: DltLogLevel | undefined;
-    app_ids: Array<string> | undefined;
-    ecu_ids: Array<string> | undefined;
-    context_ids: Array<string> | undefined;
+    app_ids: string[] | undefined;
+    ecu_ids: string[] | undefined;
+    context_ids: string[] | undefined;
     app_id_count: number;
     context_id_count: number;
 }
 
 export interface DltParserSettings {
     filter_config: DltFilterConf | undefined;
-    fibex_file_paths: Array<string> | undefined;
+    fibex_file_paths: string[] | undefined;
     with_storage_header: boolean;
 }
 

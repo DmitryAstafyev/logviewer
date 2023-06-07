@@ -44,3 +44,9 @@ export function methodDecoratorFactory(injector: MethodDecoratorInjector) {
         };
     };
 }
+
+export function Statics<T>() {
+    return <U extends T>(constructor: U) => {
+        constructor;
+    };
+}
