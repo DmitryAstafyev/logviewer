@@ -15,7 +15,8 @@ export class Dlt extends FileOpener<IDLTOptions, { dlt: IDLTOptions }> {
         | undefined {
         return {
             name: 'Opening DLT file',
-            component: 'app-tabs-source-dltfile',
+            // component: 'app-tabs-source-dltfile',
+            component: 'app-tabs-observe',
         };
     }
     public getNamedOptions(options: IDLTOptions): { dlt: IDLTOptions } {
