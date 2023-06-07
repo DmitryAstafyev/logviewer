@@ -18,10 +18,11 @@ export class State {
         { value: Dlt.LogLevel.Debug, caption: 'Debug' },
         { value: Dlt.LogLevel.Verbose, caption: 'Verbose' },
     ];
-    public configuration: Dlt.IConfiguration = Dlt.Configuration.initial();
     public fibex: File[] = [];
     public timezone: Timezone | undefined;
     public logLevel: Dlt.LogLevel = Dlt.LogLevel.Verbose;
+
+    constructor(public configuration: Dlt.IConfiguration) {}
 
     public from(configuration: Dlt.IConfiguration) {
         this.configuration = configuration;

@@ -5,6 +5,8 @@ import { ChangesDetector } from '@ui/env/extentions/changes';
 import { bytesToStr, timestampToUTC } from '@env/str';
 import { State } from './state';
 
+import * as Dlt from '@platform/types/observe/parser/dlt';
+
 @Component({
     selector: 'app-el-dlt-general',
     templateUrl: './template.html',
@@ -13,7 +15,9 @@ import { State } from './state';
 @Initial()
 @Ilc()
 export class DltGeneralConfiguration extends ChangesDetector implements AfterContentInit {
-    @Input() state!: State;
+    @Input() configuration!: Dlt.IConfiguration;
+
+    protected state!: State;
 
     public bytesToStr = bytesToStr;
     public timestampToUTC = timestampToUTC;
@@ -23,6 +27,7 @@ export class DltGeneralConfiguration extends ChangesDetector implements AfterCon
     }
 
     public ngAfterContentInit(): void {
+        this.state = new State(this.configuration);
         this.state.bind(this);
     }
 }
