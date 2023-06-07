@@ -1,0 +1,52 @@
+@import '../../styles/variables.less';
+
+
+:host {
+    position: absolute;
+    display: block;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    & div.preset-container {
+        top: 32px;
+        bottom: 0px;
+        height: auto;
+    }
+    & div.title {
+        & div.entity {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            left:0;
+            right: 0;
+            padding: 0 8px;
+            background: @scheme-color-5;
+            height: 32px;
+            p.info {
+                color: @scheme-color-2;
+                white-space: nowrap;
+            }
+        }
+        position: absolute;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        left:0;
+        right: 0;
+        padding: 0 8px;
+        background: @scheme-color-5;
+        box-shadow: 0 3px 3px @scheme-color-7;
+        height: 32px;
+        overflow: hidden;
+        & > * {
+            margin: 0 8px;
+        }
+        span.filler {
+            flex:auto;
+            width: 100%;
+            margin: 0;
+        }
+    }
+}

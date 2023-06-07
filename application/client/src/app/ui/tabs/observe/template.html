@@ -1,0 +1,44 @@
+<div class="title">
+    <span class="filler"></span>
+    <!-- <div class="container" *ngIf="state.transport !== undefined">
+        <p class="t-normal info">Stream From:</p>
+        <mat-form-field class="material-mofication-normal black">
+            <mat-select [(ngModel)]="state.transport" (ngModelChange)="state.change().transport()">
+                <mat-option *ngFor="let transport of state.transports" [value]="transport.ref">
+                    {{transport.name}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>    
+    </div>
+    <div class="container" *ngIf="state.file !== undefined">
+        <p class="t-normal info">Open:</p>
+        <p class="t-normal info">{{state.file.name}}<span>{{bytesToStr(state.file.stat.size)}}</span></p>
+    </div> -->
+    <div class="entity" *ngIf="state.stream !== undefined">
+        <p class="t-normal info">Stream From:</p>
+        <mat-form-field class="material-mofication-normal black">
+            <mat-select [(ngModel)]="state.stream" (ngModelChange)="state.change().stream()">
+                <mat-option *ngFor="let stream of state.streams" [value]="stream.alias()">
+                    {{stream.desc().major}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>    
+    </div>
+    <div class="entity">
+        <p class="t-normal info">Used Parser:</p>
+        <mat-form-field class="material-mofication-normal black">
+            <mat-select [(ngModel)]="state.parser" (ngModelChange)="state.change().parser()">
+              <mat-option *ngFor="let parser of state.parsers" [value]="parser.alias()">
+                {{parser.desc().major}}
+              </mat-option>
+            </mat-select>
+        </mat-form-field> 
+    </div>
+</div>
+<div class="preset-container">
+    <div class="preset-container-content w-1400">
+        <app-tabs-observe-file *ngIf="observe.origin.get().File !== undefined" [state]="state"></app-tabs-observe-file>
+        <app-tabs-observe-concat *ngIf="observe.origin.get().Concat !== undefined" [state]="state"></app-tabs-observe-concat>
+        <app-tabs-observe-stream *ngIf="observe.origin.get().Stream !== undefined" [state]="state"></app-tabs-observe-stream>    
+    </div>
+</div>

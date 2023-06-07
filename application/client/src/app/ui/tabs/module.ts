@@ -4,6 +4,7 @@ import { TabSourceDltFileModule } from '@tabs/sources/dltfile/module';
 import { TabSourcePcapFileModule } from '@tabs/sources/pcapfile/module';
 import { TabSourceDltStreamModule } from '@tabs/sources/dltstream/module';
 import { TabSourceTextStreamModule } from '@tabs/sources/textstream/module';
+import { ObserveModule } from '@ui/tabs/observe/module';
 import { TimezoneSelectorModule } from '@elements/timezones/module';
 import { PairsModule } from '@elements/pairs/module';
 import { TabSourceMultipleFilesModule } from '@ui/tabs/sources/multiplefiles/module';
@@ -14,6 +15,7 @@ import { SettingsModule } from '@ui/tabs/settings/module';
     imports: [CommonModule, TimezoneSelectorModule],
     declarations: [],
     exports: [
+        ObserveModule,
         TabSourceDltFileModule,
         TabSourcePcapFileModule,
         TabSourceDltStreamModule,
@@ -28,11 +30,12 @@ import { SettingsModule } from '@ui/tabs/settings/module';
         TabSourcePcapFileModule,
         TabSourceDltStreamModule,
         TimezoneSelectorModule,
+        ObserveModule,
         PairsModule,
         TabSourceTextStreamModule,
         TabSourceMultipleFilesModule,
         DialogsModule,
         SettingsModule,
-    ]
+    ],
 })
 export class TabsModule {}
