@@ -5,6 +5,7 @@ import {
 } from '../configuration';
 import { Statics } from '../../../env/decorators';
 import { Mutable } from '../../unity/mutable';
+import { Alias } from '../../env/types';
 
 export * as File from './file';
 export * as Concat from './concat';
@@ -124,5 +125,9 @@ export class Configuration
 
     public getSupportedParsers(): Parser.Reference[] {
         return this.instance.getSupportedParsers();
+    }
+
+    public as<T>(Ref: { new (...args: any[]): Declaration } & Alias<unknown>): T | undefined {
+        return this.instance.alias() === Ref.alias() ? (this.instance as T) : undefined;
     }
 }

@@ -1,4 +1,3 @@
-import { Base } from './state';
 import { bridge } from '@service/bridge';
 import { scope } from '@platform/env/scope';
 import { Subject } from '@platform/env/subscription';
@@ -58,20 +57,15 @@ const PARITY = [
 ];
 const STOP_BITS = [1, 2];
 
-export class State extends Base<Stream.Serial.IConfiguration> {
+export class State extends Stream.Serial.Configuration {
+
     public errors: {
         baudRate: Errors.ErrorState;
     };
-    public baudRate: number | string = 9600;
-    public dataBits: number = 8;
-    public flowControl: number = 0;
-    public parity: number = 0;
-    public path: string = '';
-    public stopBits: number = 1;
-    public baudRateProxy: number | string = 9600;
 
     public ports: string[] = [];
     public changed: Subject<void> = new Subject<void>();
+    public baudRateProxy: number | string = 9600;
 
     public BAUD_RATE = BAUD_RATE;
     public DATA_BITS = DATA_BITS;
@@ -83,34 +77,18 @@ export class State extends Base<Stream.Serial.IConfiguration> {
     protected states: Map<string, Stream.Serial.IConfiguration> = new Map();
     protected prev: string = '';
 
-    constructor() {
-        super();
+    constructor(configuration: Stream.Serial.IConfiguration) {
+        super(configuration, Stream.Serial.Configuration);
         this.errors = {
             baudRate: new Errors.ErrorState(Errors.Field.baudRate, () => {
-                this.update();
+                // this.update();
             }),
         };
         this.history().load();
     }
 
     public from(opt: Stream.Serial.IConfiguration) {
-        this.baudRate = opt.baud_rate;
-        this.dataBits = opt.data_bits;
-        this.flowControl = opt.flow_control;
-        this.parity = opt.parity;
-        this.path = opt.path;
-        this.stopBits = opt.stop_bits;
-    }
-
-    public configuration(): Stream.Serial.IConfiguration {
-        return {
-            baud_rate: this.baudRate as number,
-            data_bits: this.dataBits,
-            flow_control: this.flowControl,
-            parity: this.parity,
-            path: this.path,
-            stop_bits: this.stopBits,
-        };
+        this.set(opt);
     }
 
     public scan(): {
@@ -132,12 +110,13 @@ export class State extends Base<Stream.Serial.IConfiguration> {
                             return;
                         }
                         this.ports = ports;
-                        if (this.ports.includes(this.path)) {
+                        if (this.ports.includes(this.configuration.path)) {
                             return;
                         }
-                        this.path = this.ports[0] === undefined ? '' : this.ports[0];
-                        this.path !== '' && this.history().restore(this.path);
-                        this.prev = this.path;
+                        this.configuration.path = this.ports[0] === undefined ? '' : this.ports[0];
+                        this.configuration.path !== '' &&
+                            this.history().restore(this.configuration.path);
+                        this.prev = this.configuration.path;
                         this.changed.emit();
                     })
                     .catch((err: Error) => {
@@ -174,7 +153,7 @@ export class State extends Base<Stream.Serial.IConfiguration> {
         return {
             update: (path: string): void => {
                 if (this.prev !== '') {
-                    this.states.set(this.prev, this.configuration());
+                    this.states.set(this.prev, this.get());
                 }
                 this.history().restore(path);
                 this.prev = path;
@@ -189,7 +168,7 @@ export class State extends Base<Stream.Serial.IConfiguration> {
                     this.from(state);
                 }
                 this.baudRateProxtUpdate();
-                this.path = path;
+                this.configuration.path = path;
             },
             load: (): void => {
                 bridge
@@ -211,7 +190,8 @@ export class State extends Base<Stream.Serial.IConfiguration> {
                                     this.states.set(pair[0], pair[1]);
                                 }
                             });
-                            this.path !== '' && this.history().restore(this.path);
+                            this.configuration.path !== '' &&
+                                this.history().restore(this.configuration.path);
                         } catch (e) {
                             logger.warn(`Fail to parse history: ${error(e)}`);
                         }
@@ -240,30 +220,35 @@ export class State extends Base<Stream.Serial.IConfiguration> {
     }
 
     public baudRateChange(): void {
-        this.baudRate = typeof this.baudRateProxy === 'string' ? this.baudRate : this.baudRateProxy;
-        this.baudRate =
-            typeof this.baudRate === 'string' ? parseInt(this.baudRate, 10) : this.baudRate;
-        if (isNaN(this.baudRate) || !isFinite(this.baudRate)) {
-            this.baudRate = '';
+        this.configuration.baud_rate =
+            typeof this.baudRateProxy === 'string'
+                ? this.configuration.baud_rate
+                : this.baudRateProxy;
+        this.configuration.baud_rate =
+            typeof this.configuration.baud_rate === 'string'
+                ? parseInt(this.configuration.baud_rate, 10)
+                : this.configuration.baud_rate;
+        if (isNaN(this.configuration.baud_rate) || !isFinite(this.configuration.baud_rate)) {
+            this.configuration.baud_rate = Stream.Serial.Configuration.initial().baud_rate;
         }
         this.changed.emit();
     }
 
     public defaluts(): void {
-        const path = this.path;
+        const path = this.configuration.path;
         this.from(Stream.Serial.Configuration.initial());
-        this.path = path;
-        this.states.set(this.path, this.configuration());
+        this.configuration.path = path;
+        this.states.set(this.configuration.path, this.get());
         this.baudRateProxtUpdate();
         this.history().save();
         this.changed.emit();
     }
 
     protected baudRateProxtUpdate(): void {
-        if (this.BAUD_RATE.find((r) => r == this.baudRate) === undefined) {
+        if (this.BAUD_RATE.find((r) => r == this.configuration.baud_rate) === undefined) {
             this.baudRateProxy = CUSTOM_BAUD_RATE_REF;
         } else {
-            this.baudRateProxy = this.baudRate;
+            this.baudRateProxy = this.configuration.baud_rate;
         }
     }
 }

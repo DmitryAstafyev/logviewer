@@ -8,7 +8,6 @@ import {
     OnDestroy,
 } from '@angular/core';
 import { ChangesDetector } from '@ui/env/extentions/changes';
-import { Action } from '@ui/tabs/sources/common/actions/action';
 import { FolderInput, Options as FoldersOptions } from '@elements/folderinput/component';
 import {
     AutocompleteInput,
@@ -19,6 +18,8 @@ import { State } from '../../states/process';
 import { components } from '@env/decorators/initial';
 import { ShellProfile } from '@platform/types/shells';
 
+import * as Stream from '@platform/types/observe/origin/stream/index';
+
 @Component({
     selector: 'app-process-setup-base',
     template: '',
@@ -28,8 +29,9 @@ export class SetupBase
     extends ChangesDetector
     implements AfterContentInit, AfterViewInit, OnDestroy
 {
-    @Input() public action!: Action;
-    @Input() public state!: State;
+    @Input() public configuration!: Stream.Process.IConfiguration;
+
+    public state!: State;
 
     @ViewChild('cwd') public cwdInputRef!: FolderInput;
     @ViewChild('cmd') public cmdInputRef!: AutocompleteInput;
@@ -48,30 +50,31 @@ export class SetupBase
     }
 
     public ngOnDestroy(): void {
-        this.state.destroy();
+        // this.state.destroy();
     }
 
     public ngAfterContentInit(): void {
-        this._inputs.cmd.defaults = this.state.command;
-        this._inputs.cwd.defaults = this.state.cwd;
-        this.action.subjects.get().applied.subscribe(() => {
-            this._inputs.cmd.recent.emit(undefined);
-            this.state.cwd.trim() !== '' &&
-                this.ilc()
-                    .services.system.bridge.cwd()
-                    .set(undefined, this.state.cwd)
-                    .catch((err: Error) => {
-                        this.log().error(`Fail to set cwd path: ${err.message}`);
-                    });
-        });
-        if (this.state.command.trim() === '') {
-            this.action.setDisabled(true);
-        }
+        this.state = new State(this.configuration);
+        this._inputs.cmd.defaults = this.state.configuration.command;
+        this._inputs.cwd.defaults = this.state.configuration.cwd;
+        // this.action.subjects.get().applied.subscribe(() => {
+        //     this._inputs.cmd.recent.emit(undefined);
+        //     this.state.configuration.cwd.trim() !== '' &&
+        //         this.ilc()
+        //             .services.system.bridge.cwd()
+        //             .set(undefined, this.state.configuration.cwd)
+        //             .catch((err: Error) => {
+        //                 this.log().error(`Fail to set cwd path: ${err.message}`);
+        //             });
+        // });
+        // if (this.state.configuration.command.trim() === '') {
+        //     this.action.setDisabled(true);
+        // }
         this.ilc()
             .services.system.bridge.env()
             .get()
-            .then((env) => {
-                this.state.env = env;
+            .then((envs) => {
+                this.state.configuration.envs = envs;
             })
             .catch((err: Error) => {
                 this.log().error(`Fail to get envvars path: ${err.message}`);
@@ -121,9 +124,9 @@ export class SetupBase
     }
 
     public ngAfterViewInit(): void {
-        this.cmdInputRef.set(this.state.command);
-        this.cwdInputRef.set(this.state.cwd);
-        if (this.state.cwd.trim() !== '') {
+        this.cmdInputRef.set(this.state.configuration.command);
+        this.cwdInputRef.set(this.state.configuration.cwd);
+        if (this.state.configuration.cwd.trim() !== '') {
             return;
         }
         this.ilc()
@@ -142,11 +145,11 @@ export class SetupBase
 
     public edit(target: 'cmd' | 'cwd', value: string): void {
         if (target === 'cmd') {
-            this.state.command = value;
-            this.action.setDisabled(value.trim() === '');
+            this.state.configuration.command = value;
+            // this.action.setDisabled(value.trim() === '');
         } else {
-            this.state.cwd = value;
-            this.action.setDisabled(this.cwdInputRef.error.is());
+            this.state.configuration.cwd = value;
+            // this.action.setDisabled(this.cwdInputRef.error.is());
         }
     }
 
@@ -155,7 +158,7 @@ export class SetupBase
             return;
         }
         if (target === 'cmd') {
-            this.action.apply();
+            // this.action.apply();
             this.cmdInputRef.control.drop();
         }
         this.markChangesForCheck();

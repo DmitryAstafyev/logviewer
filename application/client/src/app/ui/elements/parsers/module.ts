@@ -1,9 +1,9 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DltModule } from './dlt/module';
+import { ParserGeneralConfigurationModule } from './general/module';
 
 @NgModule({
-    imports: [CommonModule, DltModule],
+    imports: [CommonModule, ParserGeneralConfigurationModule],
     declarations: [],
     exports: [],
     bootstrap: [],

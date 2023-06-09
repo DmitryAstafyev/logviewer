@@ -1,5 +1,3 @@
-import { Base } from './state';
-
 import * as Errors from '../bases/udp/error';
 import * as Stream from '@platform/types/observe/origin/stream/index';
 
@@ -14,32 +12,25 @@ export interface IMulticastInfo {
     };
 }
 
-export class State extends Base<Stream.Udp.IConfiguration> {
+export class State extends Stream.Udp.Configuration {
+    static source = Stream.Source.Udp;
+
     public errors: {
-        bindingAddress: Errors.ErrorState;
-        bindingPort: Errors.ErrorState;
+        address: Errors.ErrorState;
     };
-    public bindingAddress: string = '';
-    public bindingPort: string = '';
     public multicasts: IMulticastInfo[] = [];
 
-    constructor() {
-        super();
+    constructor(configuration: Stream.Udp.IConfiguration) {
+        super(configuration, Stream.Udp.Configuration);
         this.errors = {
-            bindingAddress: new Errors.ErrorState(Errors.Field.bindingAddress, () => {
-                this.update();
-            }),
-            bindingPort: new Errors.ErrorState(Errors.Field.bindingPort, () => {
-                this.update();
+            address: new Errors.ErrorState(Errors.Field.bindingAddress, () => {
+                // this.update();
             }),
         };
     }
 
     public isValid(): boolean {
-        if (!this.errors.bindingAddress.isValid()) {
-            return false;
-        }
-        if (!this.errors.bindingPort.isValid()) {
+        if (!this.errors.address.isValid()) {
             return false;
         }
         return (
@@ -50,18 +41,16 @@ export class State extends Base<Stream.Udp.IConfiguration> {
     }
 
     public drop() {
-        this.bindingAddress = '';
-        this.bindingPort = '';
-        this.multicasts = [];
+        this.configuration.bind_addr = Stream.Udp.Configuration.initial().bind_addr;
+        this.configuration.multicast = Stream.Udp.Configuration.initial().multicast;
     }
 
     public from(opt: Stream.Udp.IConfiguration) {
+        this.set(opt);
         const pair = opt.bind_addr.split(':');
         if (pair.length !== 2) {
             return;
         }
-        this.bindingAddress = pair[0];
-        this.bindingPort = pair[1];
         this.multicasts = opt.multicast.map((fields) => {
             return {
                 fields,
@@ -84,23 +73,16 @@ export class State extends Base<Stream.Udp.IConfiguration> {
         index > -1 && this.multicasts.splice(index, 1);
     }
 
-    public configuration(): Stream.Udp.IConfiguration {
-        return {
-            bind_addr: `${this.bindingAddress}:${this.bindingPort}`,
-            multicast: this.multicasts.map((m) => m.fields),
-        };
-    }
-
     protected getMulticastErrorsValidators(): {
         multiaddr: Errors.ErrorState;
         interface: Errors.ErrorState;
     } {
         return {
             multiaddr: new Errors.ErrorState(Errors.Field.multicastAddress, () => {
-                this.update();
+                // this.update();
             }),
             interface: new Errors.ErrorState(Errors.Field.multicastInterface, () => {
-                this.update();
+                // this.update();
             }),
         };
     }

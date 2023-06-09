@@ -30,9 +30,5 @@ export class Transport extends ChangesDetector implements AfterContentInit {
         );
     }
 
-    public ngOnSourceChange() {
-        this.state.switch();
-        this.action.defaults();
-    }
 }
 export interface Transport extends IlcInterface {}

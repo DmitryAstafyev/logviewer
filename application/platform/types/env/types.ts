@@ -17,3 +17,7 @@ export abstract class SelfValidate {
 export abstract class Alias<T> {
     public abstract alias(): T;
 }
+
+export abstract class Signature<T> {
+    public abstract signature(): T;
+}

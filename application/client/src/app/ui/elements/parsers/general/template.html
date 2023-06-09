@@ -1,1 +1,2 @@
-<app-el-dlt-general *ngIf="state.configuration.get().Dlt !== undefined" [configuration]?="state.configuration.get().Dlt"></app-el-dlt-general>
+<app-el-dlt-general *ngIf="state.configuration.get().Dlt; let config;" [configuration]="config"></app-el-dlt-general>
+<app-el-someip-general *ngIf="state.configuration.get().SomeIp; let config;" [configuration]="config"></app-el-someip-general>

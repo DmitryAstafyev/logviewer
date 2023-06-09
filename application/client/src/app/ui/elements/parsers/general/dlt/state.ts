@@ -2,13 +2,11 @@ import { File } from '@platform/types/files';
 import { Timezone } from '@elements/timezones/timezone';
 import { bridge } from '@service/bridge';
 import { components } from '@env/decorators/initial';
-import { IlcInterface } from '@env/decorators/component';
-import { ChangesDetector } from '@ui/env/extentions/changes';
+import { Base } from '../../state';
 
 import * as Dlt from '@platform/types/observe/parser/dlt';
 
-export class State {
-    protected ref!: IlcInterface & ChangesDetector;
+export class State extends Base<Dlt.IConfiguration> {
 
     public readonly LOG_LEVELS: { value: Dlt.LogLevel; caption: string }[] = [
         { value: Dlt.LogLevel.Fatal, caption: 'Fatal' },
@@ -22,14 +20,8 @@ export class State {
     public timezone: Timezone | undefined;
     public logLevel: Dlt.LogLevel = Dlt.LogLevel.Verbose;
 
-    constructor(public configuration: Dlt.IConfiguration) {}
-
     public from(configuration: Dlt.IConfiguration) {
         this.configuration = configuration;
-    }
-
-    public bind(ref: IlcInterface & ChangesDetector) {
-        this.ref = ref;
     }
 
     public addFibexFile() {
@@ -62,6 +54,7 @@ export class State {
                     inputs: {
                         selected: (timezone: Timezone): void => {
                             this.timezone = timezone;
+                            this.ref.markChangesForCheck();
                         },
                     },
                 },

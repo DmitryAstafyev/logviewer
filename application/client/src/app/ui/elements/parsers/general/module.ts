@@ -13,6 +13,8 @@ import { MatListModule } from '@angular/material/list';
 
 import { ParserGeneralConfiguration } from './component';
 import { DltGeneralConfigurationModule } from './dlt/module';
+import { SomeIpGeneralConfigurationModule } from './someip/module';
+
 @NgModule({
     imports: [
         CommonModule,
@@ -28,6 +30,7 @@ import { DltGeneralConfigurationModule } from './dlt/module';
         MatSelectModule,
         MatListModule,
         DltGeneralConfigurationModule,
+        SomeIpGeneralConfigurationModule,
     ],
     declarations: [ParserGeneralConfiguration],
     exports: [ParserGeneralConfiguration],

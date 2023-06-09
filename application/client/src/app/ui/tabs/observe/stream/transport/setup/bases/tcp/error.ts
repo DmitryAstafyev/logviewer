@@ -16,9 +16,7 @@ function isValidU32(value: string): boolean {
 }
 
 export enum Field {
-    bindingAddress = 'bindingAddress',
-    bindingPort = 'bindingPort',
-    multicastAddress = 'multicastAddress',
+    address = 'address',
     multicastInterface = 'multicastInterface',
 }
 
@@ -63,18 +61,17 @@ export class ErrorState implements ErrorStateMatcher {
             return false;
         }
         switch (this._alias) {
-            case Field.bindingAddress:
-            case Field.multicastAddress:
+            case Field.address:
                 return isValidIPv4(value) || isValidIPv6(value);
             case Field.multicastInterface:
                 return isValidIPv4(value) || isValidU32(value);
-            case Field.bindingPort: {
-                if (value.trim().search(/^\d{1,}$/gi) === -1) {
-                    return false;
-                }
-                const bindingPort = parseInt(value.trim(), 10);
-                return isNaN(bindingPort) ? false : !isFinite(bindingPort) ? false : true;
-            }
+            // case Field.bindingPort: {
+            //     if (value.trim().search(/^\d{1,}$/gi) === -1) {
+            //         return false;
+            //     }
+            //     const bindingPort = parseInt(value.trim(), 10);
+            //     return isNaN(bindingPort) ? false : !isFinite(bindingPort) ? false : true;
+            // }
             default:
                 throw new Error(`Unexpected Field value: ${this._alias}`);
         }
@@ -85,9 +82,7 @@ export class ErrorState implements ErrorStateMatcher {
             return true;
         }
         switch (this._alias) {
-            case Field.bindingAddress:
-            case Field.bindingPort:
-            case Field.multicastAddress:
+            case Field.address:
             case Field.multicastInterface:
                 return value.trim() === '';
         }

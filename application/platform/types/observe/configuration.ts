@@ -2,6 +2,7 @@ import { error } from '../../log/utils';
 import { JsonConvertor } from '../storage/json';
 import { Validate, SelfValidate, Alias } from '../env/types';
 import { List } from './description';
+import { Mutable } from '../unity/mutable';
 
 export interface ConfigurationStatic<T, A> extends Validate<T>, Alias<A> {
     initial(): T;
@@ -22,14 +23,14 @@ export interface ReferenceDesc<T, C, A> extends ConfigurationStaticDesc<T, A> {
 export abstract class Configuration<T, C, A>
     implements JsonConvertor<Configuration<T, C, A>>, SelfValidate
 {
-    constructor(protected configuration: T, protected ref: Reference<T, C, A>) {}
+    constructor(public readonly configuration: T, protected ref: Reference<T, C, A>) {}
 
     public get(): T {
         return this.configuration;
     }
 
     public set(configuration: T): void {
-        this.configuration = configuration;
+        (this as Mutable<Configuration<unknown, unknown, unknown>>).configuration = configuration;
     }
 
     public validate(): Error | undefined {

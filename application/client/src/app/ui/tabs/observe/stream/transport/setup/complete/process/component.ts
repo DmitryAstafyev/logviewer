@@ -54,8 +54,8 @@ export class Setup extends SetupBase implements AfterContentInit, AfterViewInit,
         this.update !== undefined &&
             this.env().subscriber.register(
                 this.update.subscribe(() => {
-                    this.cmdInputRef.set(this.state.command);
-                    this.cwdInputRef.set(this.state.cwd);
+                    this.cmdInputRef.set(this.state.configuration.command);
+                    this.cwdInputRef.set(this.state.configuration.cwd);
                 }),
             );
         super.ngAfterContentInit();

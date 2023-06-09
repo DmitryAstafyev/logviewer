@@ -74,7 +74,7 @@ export class Configuration
     }
 
     public change(stream: Stream.Declaration): void {
-        this.instance.change(stream);
+        this.instance.change().byDeclaration(stream);
     }
 
     public desc(): IOriginDetails {
@@ -87,5 +87,9 @@ export class Configuration
 
     public getSupportedParsers(): Parser.Reference[] {
         return this.instance.getSupportedParsers();
+    }
+
+    public getStreamConfiguration(): Stream.IConfiguration {
+        return this.get()[1];
     }
 }

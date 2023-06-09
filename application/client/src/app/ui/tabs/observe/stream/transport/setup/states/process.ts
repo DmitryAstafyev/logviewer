@@ -1,4 +1,3 @@
-import { Base } from './state';
 import { ShellProfile } from '@platform/types/shells';
 import { bridge } from '@service/bridge';
 
@@ -8,11 +7,7 @@ import * as Stream from '@platform/types/observe/origin/stream/index';
 const ROOTS_STORAGE_KEY = 'user_selected_profile';
 const ENTRY_KEY = 'selected_profile_path';
 
-export class State extends Base<Stream.Process.IConfiguration> {
-    public cwd: string = '';
-    public command: string = '';
-    // Previously selected envvars
-    public env: { [key: string]: string } = {};
+export class State extends Stream.Process.Configuration {
     public profiles: {
         all: ShellProfile[] | undefined;
         valid: ShellProfile[] | undefined;
@@ -24,21 +19,24 @@ export class State extends Base<Stream.Process.IConfiguration> {
     public envvars: Map<string, string> = new Map();
     public current: ShellProfile | undefined;
 
-    public from(opt: Stream.Process.IConfiguration) {
-        this.cwd = opt.cwd;
-        this.command = `${opt.command}`;
-        const safe = obj.getSafeObj(opt.envs);
-        this.env = safe instanceof Error ? {} : safe;
+    constructor(configuration: Stream.Process.IConfiguration) {
+        super(configuration, Stream.Process.Configuration);
     }
 
-    public configuration(): Stream.Process.IConfiguration {
-        const safe = obj.getSafeObj(this.env);
-        return {
-            command: this.command,
-            cwd: this.cwd,
-            envs: safe instanceof Error ? {} : safe,
-        };
+    public from(opt: Stream.Process.IConfiguration) {
+        const safe = obj.getSafeObj(opt.envs);
+        opt.envs = safe instanceof Error ? {} : safe;
+        this.set(opt);
     }
+
+    // public configuration(): Stream.Process.IConfiguration {
+    //     const safe = obj.getSafeObj(this.env);
+    //     return {
+    //         command: this.command,
+    //         cwd: this.cwd,
+    //         envs: safe instanceof Error ? {} : safe,
+    //     };
+    // }
 
     public setProfiles(profiles: ShellProfile[]): Promise<void> {
         const valid: ShellProfile[] = [];
@@ -55,7 +53,7 @@ export class State extends Base<Stream.Process.IConfiguration> {
             .then((path: string | undefined) => {
                 this.current = this.profiles.all?.find((p) => p.path === path);
                 if (this.current !== undefined && this.current.envvars !== undefined) {
-                    this.env = obj.mapToObj(this.current.envvars);
+                    this.configuration.envs = obj.mapToObj(this.current.envvars);
                 }
             });
     }
@@ -67,20 +65,20 @@ export class State extends Base<Stream.Process.IConfiguration> {
     public importEnvvarsFromShell(profile: ShellProfile | undefined): Promise<void> {
         if (profile === undefined) {
             this.current = undefined;
-            this.env = obj.mapToObj(this.envvars);
+            this.configuration.envs = obj.mapToObj(this.envvars);
             return this.storage().set(undefined);
         } else {
             if (profile.envvars === undefined) {
                 return Promise.resolve();
             }
-            this.env = obj.mapToObj(profile.envvars);
+            this.configuration.envs = obj.mapToObj(profile.envvars);
             this.current = profile;
             return this.storage().set(profile.path);
         }
     }
 
     public getSelectedEnvs(): Map<string | number | symbol, string> {
-        return obj.objToStringMap(this.env);
+        return obj.objToStringMap(this.configuration.envs);
     }
 
     public isShellSelected(profile: ShellProfile): boolean {
