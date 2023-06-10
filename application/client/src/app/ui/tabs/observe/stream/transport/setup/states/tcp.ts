@@ -7,7 +7,7 @@ export class State extends Stream.Tcp.Configuration {
     };
 
     constructor(configuration: Stream.Tcp.IConfiguration) {
-        super(configuration, Stream.Tcp.Configuration);
+        super(configuration);
         this.errors = {
             address: new Errors.ErrorState(Errors.Field.address, () => {
                 // this.update();

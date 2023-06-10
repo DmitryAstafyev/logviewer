@@ -23,7 +23,14 @@ export interface ReferenceDesc<T, C, A> extends ConfigurationStaticDesc<T, A> {
 export abstract class Configuration<T, C, A>
     implements JsonConvertor<Configuration<T, C, A>>, SelfValidate
 {
-    constructor(public readonly configuration: T, protected ref: Reference<T, C, A>) {}
+    protected ref: Reference<T, C, A>;
+
+    constructor(public readonly configuration: T) {
+        if (typeof this.constructor !== 'function') {
+            throw new Error(`Fail to get reference to Constructor`);
+        }
+        this.ref = this.constructor as Reference<T, C, A>;
+    }
 
     public get(): T {
         return this.configuration;

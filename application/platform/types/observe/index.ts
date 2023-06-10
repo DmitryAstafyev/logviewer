@@ -57,9 +57,9 @@ export class Observe
     public readonly parser: Parser.Configuration;
 
     constructor(observe: IObserve) {
-        super(observe, Observe);
-        this.origin = new Origin.Configuration(observe.origin, Origin.Configuration);
-        this.parser = new Parser.Configuration(observe.parser, Parser.Configuration);
+        super(observe);
+        this.origin = new Origin.Configuration(observe.origin);
+        this.parser = new Parser.Configuration(observe.parser);
     }
 
     public isSdeSupported(): boolean {

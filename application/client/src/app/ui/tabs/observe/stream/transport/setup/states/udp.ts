@@ -21,7 +21,7 @@ export class State extends Stream.Udp.Configuration {
     public multicasts: IMulticastInfo[] = [];
 
     constructor(configuration: Stream.Udp.IConfiguration) {
-        super(configuration, Stream.Udp.Configuration);
+        super(configuration);
         this.errors = {
             address: new Errors.ErrorState(Errors.Field.bindingAddress, () => {
                 // this.update();

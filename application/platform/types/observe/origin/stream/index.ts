@@ -1,9 +1,4 @@
-import {
-    Configuration as Base,
-    ConfigurationStatic,
-    ReferenceDesc,
-    Reference as ReferenceBase,
-} from '../../configuration';
+import { Configuration as Base, ConfigurationStatic, ReferenceDesc } from '../../configuration';
 import { OriginDetails, IOriginDetails } from '../../description';
 import { Statics } from '../../../../env/decorators';
 import { Mutable } from '../../../unity/mutable';
@@ -156,11 +151,8 @@ export class Configuration
 
     public readonly instance!: Declaration;
 
-    constructor(
-        configuration: IConfiguration,
-        ref: ReferenceBase<IConfiguration, Configuration, Origin.Context>,
-    ) {
-        super(configuration, ref);
+    constructor(configuration: IConfiguration) {
+        super(configuration);
         this.setInstance();
     }
 

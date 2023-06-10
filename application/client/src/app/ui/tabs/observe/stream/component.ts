@@ -52,10 +52,7 @@ export class TabObserveStream extends ChangesDetector implements AfterContentIni
                     return;
                 }
                 this.parser.change(
-                    new Parsers.Configuration(
-                        { [parser]: Parsers.getByAlias(parser).get() },
-                        Parsers.Configuration,
-                    ),
+                    new Parsers.Configuration({ [parser]: Parsers.getByAlias(parser).get() }),
                 );
             }),
         );

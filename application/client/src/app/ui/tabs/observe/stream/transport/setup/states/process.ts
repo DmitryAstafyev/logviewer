@@ -20,7 +20,7 @@ export class State extends Stream.Process.Configuration {
     public current: ShellProfile | undefined;
 
     constructor(configuration: Stream.Process.IConfiguration) {
-        super(configuration, Stream.Process.Configuration);
+        super(configuration);
     }
 
     public from(opt: Stream.Process.IConfiguration) {

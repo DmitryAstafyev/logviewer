@@ -10,7 +10,7 @@ export class State extends Stream.Configuration {
     public updated: Subject<void> = new Subject();
 
     constructor(configuration: Stream.IConfiguration) {
-        super(configuration, Stream.Configuration);
+        super(configuration);
         this.source = Stream.getAliasByConfiguration(configuration);
     }
 

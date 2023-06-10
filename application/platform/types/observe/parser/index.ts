@@ -1,9 +1,4 @@
-import {
-    Configuration as Base,
-    ConfigurationStatic,
-    ReferenceDesc,
-    Reference as ReferenceBase,
-} from '../configuration';
+import { Configuration as Base, ConfigurationStatic, ReferenceDesc } from '../configuration';
 import { Statics } from '../../../env/decorators';
 import { List, IList } from '../description';
 import { Mutable } from '../../unity/mutable';
@@ -122,11 +117,8 @@ export class Configuration
 
     public readonly instance!: Declaration;
 
-    constructor(
-        configuration: IConfiguration,
-        ref: ReferenceBase<IConfiguration, Configuration, undefined>,
-    ) {
-        super(configuration, ref);
+    constructor(configuration: IConfiguration) {
+        super(configuration);
         this.setInstance();
     }
 
@@ -147,3 +139,4 @@ export class Configuration
         return this.instance.getSupportedFileType();
     }
 }
+// export interface Configuration extends Signature {}

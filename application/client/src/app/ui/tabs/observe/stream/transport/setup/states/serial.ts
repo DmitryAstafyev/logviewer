@@ -58,7 +58,6 @@ const PARITY = [
 const STOP_BITS = [1, 2];
 
 export class State extends Stream.Serial.Configuration {
-
     public errors: {
         baudRate: Errors.ErrorState;
     };
@@ -78,7 +77,7 @@ export class State extends Stream.Serial.Configuration {
     protected prev: string = '';
 
     constructor(configuration: Stream.Serial.IConfiguration) {
-        super(configuration, Stream.Serial.Configuration);
+        super(configuration);
         this.errors = {
             baudRate: new Errors.ErrorState(Errors.Field.baudRate, () => {
                 // this.update();

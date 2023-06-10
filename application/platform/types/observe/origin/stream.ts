@@ -1,9 +1,5 @@
 import { error } from '../../../log/utils';
-import {
-    Configuration as Base,
-    ConfigurationStatic,
-    Reference as ReferenceBase,
-} from '../configuration';
+import { Configuration as Base, ConfigurationStatic } from '../configuration';
 import { Context, SourceUuid } from './index';
 import { OriginDetails, IOriginDetails } from '../description';
 import { Statics } from '../../../env/decorators';
@@ -56,7 +52,7 @@ export class Configuration
     }
 
     protected setInstance() {
-        const instance = new Stream.Configuration(this.get()[1], Stream.Configuration);
+        const instance = new Stream.Configuration(this.get()[1]);
         if (instance instanceof Error) {
             throw instance;
         }
@@ -65,11 +61,8 @@ export class Configuration
 
     public readonly instance!: Stream.Configuration;
 
-    constructor(
-        configuration: IConfiguration,
-        ref: ReferenceBase<IConfiguration, Configuration, Context>,
-    ) {
-        super(configuration, ref);
+    constructor(configuration: IConfiguration) {
+        super(configuration);
         this.setInstance();
     }
 

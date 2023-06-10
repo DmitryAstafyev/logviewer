@@ -1,8 +1,4 @@
-import {
-    Configuration as Base,
-    ConfigurationStatic,
-    Reference as ReferenceBase,
-} from '../configuration';
+import { Configuration as Base, ConfigurationStatic } from '../configuration';
 import { Statics } from '../../../env/decorators';
 import { Mutable } from '../../unity/mutable';
 import { Alias } from '../../env/types';
@@ -96,7 +92,7 @@ export class Configuration
                 return;
             }
             const Ref = REGISTER[key as Context];
-            instance = new Ref(config as any, Ref as any);
+            instance = new Ref(config as any);
         });
         if (instance === undefined) {
             throw new Error(`Configuration of origin doesn't have definition of known source.`);
@@ -106,11 +102,8 @@ export class Configuration
 
     public readonly instance!: Declaration;
 
-    constructor(
-        configuration: IConfiguration,
-        ref: ReferenceBase<IConfiguration, Configuration, undefined>,
-    ) {
-        super(configuration, ref);
+    constructor(configuration: IConfiguration) {
+        super(configuration);
         this.setInstance();
     }
 
