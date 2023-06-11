@@ -22,8 +22,6 @@ export interface ReferenceDesc<T, C, A> extends ConfigurationStaticDesc<T, A> {
     new (...args: any[]): C & Configuration<T, C, A>;
 }
 
-const;
-
 function observe<T>(entry: T, subject: Subject<void>): T {
     function logger() {
         return scope.getLogger('ObserveConfig');
