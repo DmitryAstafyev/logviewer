@@ -78,9 +78,9 @@ export abstract class Configuration<T, C, A>
     }
 
     public overwrite(configuration: T): void {
-        // TODO: prevent using as configuration Proxy (already observing configuration)
         (this as Mutable<Configuration<unknown, unknown, unknown>>).configuration = observe<T>(
-            configuration,
+            // We should serialize object, because it can be already Proxy
+            JSON.parse(JSON.stringify(configuration)),
             this.watcher,
         );
     }

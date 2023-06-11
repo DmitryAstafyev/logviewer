@@ -123,7 +123,6 @@ export class Configuration
     }
 
     public change(parser: Declaration): void {
-        // TODO. Here is an issue: we are sending already observed object
         this.overwrite({ [parser.alias()]: parser.configuration });
         this.setInstance();
     }
