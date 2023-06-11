@@ -22,11 +22,11 @@
         <strong>required</strong>
     </mat-error>
 </mat-form-field> -->
-<div class="mutlicasts" *ngIf="state.multicasts.length > 0">
+<div class="mutlicasts" *ngIf="state.configuration.multicast.length > 0">
     <mat-divider></mat-divider>
     <p class="t-medium">Multicasts</p>
 </div>
-<app-transport-udp-multicast *ngFor="let multicast of state.multicasts; let i = index" [multicast]="multicast" (clean)="removeMulticast(i)"></app-transport-udp-multicast>
+<app-transport-udp-multicast *ngFor="let multicast of state.configuration.multicast; let i = index" [multicast]="multicast" (clean)="removeMulticast(i)"></app-transport-udp-multicast>
 <div class="controlls">
     <button mat-stroked-button (click)="addMulticast()">Add Multicast</button>
 </div>

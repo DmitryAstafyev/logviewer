@@ -3,6 +3,7 @@ import { JsonConvertor } from '../storage/json';
 import { Validate, SelfValidate, Alias } from '../env/types';
 import { List } from './description';
 import { Mutable } from '../unity/mutable';
+import { scope } from '../../env/scope';
 import { Subject } from '../../env/subscription';
 
 export interface ConfigurationStatic<T, A> extends Validate<T>, Alias<A> {
@@ -21,25 +22,59 @@ export interface ReferenceDesc<T, C, A> extends ConfigurationStaticDesc<T, A> {
     new (...args: any[]): C & Configuration<T, C, A>;
 }
 
+function observe<T>(entry: T, subject: Subject<void>): T {
+    function logger() {
+        return scope.getLogger('ObserveConfig');
+    }
+    if (entry === null) {
+        logger().error(`Cannot observe null value`);
+        return undefined as T;
+    }
+    if (['function', 'symbol'].includes(typeof entry)) {
+        logger().error(`Cannot observe ${typeof entry} value`);
+        return undefined as T;
+    }
+    if (['string', 'number', 'boolean'].includes(typeof entry)) {
+        return entry;
+    }
+    const set = (target: any, prop: string | symbol, value: any): boolean => {
+        (target as any)[prop] = observe(value, subject);
+        subject.emit();
+        return true;
+    };
+    if (entry instanceof Array) {
+        return new Proxy(entry as object, { set }) as T;
+    } else if (entry instanceof Object) {
+        Object.keys(entry).forEach((key: string | number) => {
+            if (!entry.hasOwnProperty(key)) {
+                return;
+            }
+            const value = (entry as any)[key];
+            if (['string', 'number', 'boolean'].indexOf(typeof value) !== -1) {
+                return;
+            } else if (value instanceof Array || value instanceof Object) {
+                (entry as any)[key] = observe(value, subject);
+            }
+        });
+        return new Proxy(entry as object, { set }) as T;
+    }
+    logger().error(`Type "${typeof entry}" cannot be observed`);
+    return undefined as T;
+}
 export abstract class Configuration<T, C, A>
     implements JsonConvertor<Configuration<T, C, A>>, SelfValidate
 {
     protected ref: Reference<T, C, A>;
 
     public readonly configuration: T;
+    public readonly watcher: Subject<void> = new Subject();
 
     constructor(configuration: T) {
         if (typeof this.constructor !== 'function') {
             throw new Error(`Fail to get reference to Constructor`);
         }
         this.ref = this.constructor as Reference<T, C, A>;
-        this.configuration = new Proxy(configuration as object, {
-            set: (target, prop, value): boolean => {
-                (target as any)[prop] = value;
-                console.log(`>>>>>>>>>>>>>>>>>>> CHANGED!!! ${prop as string}`);
-                return true;
-            },
-        }) as T;
+        this.configuration = observe<T>(configuration, this.watcher);
     }
 
     public get(): T {

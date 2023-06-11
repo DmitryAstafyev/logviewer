@@ -1,6 +1,8 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Ilc, IlcInterface } from '@env/decorators/component';
-import { IMulticastInfo } from '../../../states/udp';
+import * as Errors from '../error';
+
+import * as Stream from '@platform/types/observe/origin/stream/index';
 
 @Component({
     selector: 'app-transport-udp-multicast',
@@ -9,14 +11,24 @@ import { IMulticastInfo } from '../../../states/udp';
 })
 @Ilc()
 export class Multicast {
-    @Input() public multicast!: IMulticastInfo;
+    @Input() public multicast!: Stream.Udp.Multicast;
+    public errors: {
+        multiaddr: Errors.ErrorState;
+        interface: Errors.ErrorState;
+    } = {
+        multiaddr: new Errors.ErrorState(Errors.Field.multicastAddress, () => {
+            // this.update();
+        }),
+        interface: new Errors.ErrorState(Errors.Field.multicastAddress, () => {
+            // this.update();
+        }),
+    };
     @Output() public clean: EventEmitter<void> = new EventEmitter();
 
     public onChanges() {
         if (
-            this.multicast.fields.multiaddr.trim() !== '' ||
-            (this.multicast.fields.interface !== undefined &&
-                this.multicast.fields.interface.trim() !== '')
+            this.multicast.multiaddr.trim() !== '' ||
+            (this.multicast.interface !== undefined && this.multicast.interface.trim() !== '')
         ) {
             return;
         }

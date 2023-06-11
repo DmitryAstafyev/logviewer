@@ -13,12 +13,9 @@ export interface IMulticastInfo {
 }
 
 export class State extends Stream.Udp.Configuration {
-    static source = Stream.Source.Udp;
-
     public errors: {
         address: Errors.ErrorState;
     };
-    public multicasts: IMulticastInfo[] = [];
 
     constructor(configuration: Stream.Udp.IConfiguration) {
         super(configuration);
@@ -27,17 +24,9 @@ export class State extends Stream.Udp.Configuration {
                 // this.update();
             }),
         };
-    }
-
-    public isValid(): boolean {
-        if (!this.errors.address.isValid()) {
-            return false;
-        }
-        return (
-            this.multicasts.filter(
-                (m) => !m.errors.multiaddr.isValid() || !m.errors.interface.isValid(),
-            ).length === 0
-        );
+        this.watcher.subscribe(() => {
+            console.log(`>>>>>>>>>>>>>>> UPDATED`);
+        });
     }
 
     public drop() {
@@ -51,39 +40,16 @@ export class State extends Stream.Udp.Configuration {
         if (pair.length !== 2) {
             return;
         }
-        this.multicasts = opt.multicast.map((fields) => {
-            return {
-                fields,
-                errors: this.getMulticastErrorsValidators(),
-            };
-        });
     }
 
     public addMulticast() {
-        this.multicasts.push({
-            fields: {
-                multiaddr: MULTICAST_ADDR,
-                interface: MULTUCAST_INTERFACE,
-            },
-            errors: this.getMulticastErrorsValidators(),
+        this.configuration.multicast.push({
+            multiaddr: MULTICAST_ADDR,
+            interface: MULTUCAST_INTERFACE,
         });
     }
 
-    public cleanMulticast(index: number) {
-        index > -1 && this.multicasts.splice(index, 1);
-    }
-
-    protected getMulticastErrorsValidators(): {
-        multiaddr: Errors.ErrorState;
-        interface: Errors.ErrorState;
-    } {
-        return {
-            multiaddr: new Errors.ErrorState(Errors.Field.multicastAddress, () => {
-                // this.update();
-            }),
-            interface: new Errors.ErrorState(Errors.Field.multicastInterface, () => {
-                // this.update();
-            }),
-        };
+    public removeMulticast(index: number) {
+        index > -1 && this.configuration.multicast.splice(index, 1);
     }
 }

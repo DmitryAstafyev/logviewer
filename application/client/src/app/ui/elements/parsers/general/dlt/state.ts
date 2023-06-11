@@ -7,7 +7,6 @@ import { Base } from '../../state';
 import * as Dlt from '@platform/types/observe/parser/dlt';
 
 export class State extends Base<Dlt.IConfiguration> {
-
     public readonly LOG_LEVELS: { value: Dlt.LogLevel; caption: string }[] = [
         { value: Dlt.LogLevel.Fatal, caption: 'Fatal' },
         { value: Dlt.LogLevel.Error, caption: 'Error' },

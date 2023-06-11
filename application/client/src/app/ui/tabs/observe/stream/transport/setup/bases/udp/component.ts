@@ -44,7 +44,7 @@ export class SetupBase extends ChangesDetector implements OnDestroy, AfterConten
     }
 
     public removeMulticast(index: number) {
-        this.state.cleanMulticast(index);
+        this.state.removeMulticast(index);
         this.verify();
     }
 
