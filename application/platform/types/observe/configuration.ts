@@ -22,6 +22,8 @@ export interface ReferenceDesc<T, C, A> extends ConfigurationStaticDesc<T, A> {
     new (...args: any[]): C & Configuration<T, C, A>;
 }
 
+const;
+
 function observe<T>(entry: T, subject: Subject<void>): T {
     function logger() {
         return scope.getLogger('ObserveConfig');
@@ -77,16 +79,16 @@ export abstract class Configuration<T, C, A>
         this.configuration = observe<T>(configuration, this.watcher);
     }
 
-    public get(): T {
-        return this.configuration;
-    }
-
-    public set(configuration: T): void {
-        (this as Mutable<Configuration<unknown, unknown, unknown>>).configuration = configuration;
+    public overwrite(configuration: T): void {
+        // TODO: prevent using as configuration Proxy (already observing configuration)
+        (this as Mutable<Configuration<unknown, unknown, unknown>>).configuration = observe<T>(
+            configuration,
+            this.watcher,
+        );
     }
 
     public validate(): Error | undefined {
-        const error: Error | T = this.ref.validate(this.get());
+        const error: Error | T = this.ref.validate(this.configuration);
         return error instanceof Error ? error : undefined;
     }
 
@@ -100,7 +102,7 @@ export abstract class Configuration<T, C, A>
     } {
         return {
             to: (): string => {
-                return JSON.stringify(this.get());
+                return JSON.stringify(this.configuration);
             },
             from: (str: string): Configuration<T, C, A> | Error => {
                 try {
@@ -108,7 +110,7 @@ export abstract class Configuration<T, C, A>
                     if (configuration instanceof Error) {
                         return configuration;
                     }
-                    this.set(configuration);
+                    this.overwrite(configuration);
                     return this;
                 } catch (e) {
                     return new Error(error(e));

@@ -27,6 +27,6 @@ export class State extends Stream.Tcp.Configuration {
     }
 
     public from(opt: Stream.Tcp.IConfiguration) {
-        this.set(opt);
+        this.overwrite(opt);
     }
 }

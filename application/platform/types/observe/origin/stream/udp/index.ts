@@ -59,13 +59,11 @@ export class Configuration
 
     public desc(): IOriginDetails {
         return {
-            major: this.get().bind_addr,
+            major: this.configuration.bind_addr,
             minor:
-                this.get().multicast.length === 0
+                this.configuration.multicast.length === 0
                     ? ''
-                    : this.get()
-                          .multicast.map((m) => m.multiaddr)
-                          .join(', '),
+                    : this.configuration.multicast.map((m) => m.multiaddr).join(', '),
             icon: 'network_wifi_3_bar',
             state: {
                 running: 'listening',

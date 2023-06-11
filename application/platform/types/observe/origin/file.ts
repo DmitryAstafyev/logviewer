@@ -62,8 +62,8 @@ export class Configuration
 
     public desc(): IOriginDetails {
         return {
-            major: filename(this.get()[2]),
-            minor: basefolder(this.get()[2]),
+            major: filename(this.configuration[2]),
+            minor: basefolder(this.configuration[2]),
             icon: 'insert_drive_file',
             state: {
                 running: 'tail',
@@ -77,7 +77,7 @@ export class Configuration
     }
 
     public getSupportedParsers(): Parser.Reference[] {
-        switch (this.get()[1]) {
+        switch (this.configuration[1]) {
             case Types.File.FileType.Binary:
                 return [Parser.Dlt.Configuration, Parser.SomeIp.Configuration];
             case Types.File.FileType.PcapNG:

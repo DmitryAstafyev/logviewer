@@ -26,7 +26,7 @@ export class State extends Stream.Process.Configuration {
     public from(opt: Stream.Process.IConfiguration) {
         const safe = obj.getSafeObj(opt.envs);
         opt.envs = safe instanceof Error ? {} : safe;
-        this.set(opt);
+        this.overwrite(opt);
     }
 
     // public configuration(): Stream.Process.IConfiguration {

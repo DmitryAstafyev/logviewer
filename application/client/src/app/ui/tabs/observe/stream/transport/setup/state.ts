@@ -19,14 +19,14 @@ export class State extends Stream.Configuration {
     }
 
     public from(configuration: Stream.IConfiguration) {
-        this.history.set(this.instance.alias(), this.instance.get());
+        this.history.set(this.instance.alias(), this.instance.configuration);
         this.change().byConfiguration(configuration);
         this.source = Stream.getAliasByConfiguration(configuration);
         this.updated.emit();
     }
 
     public switch(source: Stream.Source) {
-        this.history.set(this.instance.alias(), this.instance.get());
+        this.history.set(this.instance.alias(), this.instance.configuration);
         this.change().byDeclaration(Stream.getByAlias(source, this.history.get(source)));
         this.source = source;
         this.updated.emit();

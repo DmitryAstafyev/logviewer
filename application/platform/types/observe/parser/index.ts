@@ -96,7 +96,7 @@ export class Configuration
     }
 
     protected setInstance(): void {
-        const configuration = this.get();
+        const configuration = this.configuration;
         let instance: Declaration | undefined;
         Object.keys(REGISTER).forEach((key) => {
             if (instance !== undefined) {
@@ -123,7 +123,8 @@ export class Configuration
     }
 
     public change(parser: Declaration): void {
-        this.set({ [parser.alias()]: parser.get() });
+        // TODO. Here is an issue: we are sending already observed object
+        this.overwrite({ [parser.alias()]: parser.configuration });
         this.setInstance();
     }
 
@@ -139,4 +140,3 @@ export class Configuration
         return this.instance.getSupportedFileType();
     }
 }
-// export interface Configuration extends Signature {}

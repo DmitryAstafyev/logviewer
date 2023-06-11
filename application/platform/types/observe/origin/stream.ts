@@ -52,7 +52,7 @@ export class Configuration
     }
 
     protected setInstance() {
-        const instance = new Stream.Configuration(this.get()[1]);
+        const instance = new Stream.Configuration(this.configuration[1]);
         if (instance instanceof Error) {
             throw instance;
         }
@@ -83,6 +83,6 @@ export class Configuration
     }
 
     public getStreamConfiguration(): Stream.IConfiguration {
-        return this.get()[1];
+        return this.configuration[1];
     }
 }

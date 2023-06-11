@@ -81,7 +81,7 @@ export class Configuration
     }
 
     protected setInstance() {
-        const configuration = this.get();
+        const configuration = this.configuration;
         let instance: Declaration | undefined;
         Object.keys(REGISTER).forEach((key) => {
             if (instance !== undefined) {
@@ -108,7 +108,7 @@ export class Configuration
     }
 
     public change(origin: Declaration): void {
-        this.set({ [origin.alias()]: origin.get() });
+        this.overwrite({ [origin.alias()]: origin.configuration });
         this.setInstance();
     }
 

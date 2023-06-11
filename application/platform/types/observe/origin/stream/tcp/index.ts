@@ -47,7 +47,7 @@ export class Configuration
 
     public desc(): IOriginDetails {
         return {
-            major: this.get().bind_addr,
+            major: this.configuration.bind_addr,
             minor: '',
             icon: 'network_wifi_3_bar',
             state: {

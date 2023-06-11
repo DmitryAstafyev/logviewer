@@ -53,9 +53,9 @@ export class Configuration
     }
 
     public desc(): IOriginDetails {
-        const first = this.get()[0];
+        const first = this.configuration[0];
         return {
-            major: `Concating ${this.get().length} files`,
+            major: `Concating ${this.configuration.length} files`,
             minor: first !== undefined ? basefolder(first[2]) : '',
             icon: 'insert_drive_file',
             state: {
@@ -70,10 +70,10 @@ export class Configuration
     }
 
     public getSupportedParsers(): Parser.Reference[] {
-        if (this.get().length === 0) {
+        if (this.configuration.length === 0) {
             throw new Error(`No available files for concat operation; fail to get list of parsers`);
         }
-        switch (this.get()[0][1]) {
+        switch (this.configuration[0][1]) {
             case Types.File.FileType.Binary:
                 return [Parser.Dlt.Configuration, Parser.SomeIp.Configuration];
             case Types.File.FileType.PcapNG:

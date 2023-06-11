@@ -37,8 +37,8 @@
 </div>
 <div class="preset-container">
     <div class="preset-container-content w-1400">
-        <app-tabs-observe-file *ngIf="observe.origin.get().File !== undefined" [state]="state"></app-tabs-observe-file>
-        <app-tabs-observe-concat *ngIf="observe.origin.get().Concat !== undefined" [state]="state"></app-tabs-observe-concat>
-        <app-tabs-observe-stream *ngIf="observe.origin.get().Stream !== undefined" [state]="state"></app-tabs-observe-stream>    
+        <app-tabs-observe-file *ngIf="observe.origin.configuration.File !== undefined" [state]="state"></app-tabs-observe-file>
+        <app-tabs-observe-concat *ngIf="observe.origin.configuration.Concat !== undefined" [state]="state"></app-tabs-observe-concat>
+        <app-tabs-observe-stream *ngIf="observe.origin.configuration.Stream !== undefined" [state]="state"></app-tabs-observe-stream>    
     </div>
 </div>

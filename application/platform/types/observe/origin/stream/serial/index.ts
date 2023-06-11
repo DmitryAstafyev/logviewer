@@ -62,8 +62,8 @@ export class Configuration
 
     public desc(): IOriginDetails {
         return {
-            major: this.get().path,
-            minor: `Baud Rate: ${this.get().baud_rate}`,
+            major: this.configuration.path,
+            minor: `Baud Rate: ${this.configuration.baud_rate}`,
             icon: 'import_export',
             state: {
                 running: 'listening',

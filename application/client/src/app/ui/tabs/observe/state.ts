@@ -40,7 +40,7 @@ export class State {
         return {
             stream: (): void => {
                 const prev = this.stream;
-                if (this.observe.origin.get().Stream === undefined) {
+                if (this.observe.origin.configuration.Stream === undefined) {
                     this.streams = [];
                     this.stream = undefined;
                 } else {

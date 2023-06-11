@@ -35,7 +35,7 @@ export class State extends Stream.Udp.Configuration {
     }
 
     public from(opt: Stream.Udp.IConfiguration) {
-        this.set(opt);
+        this.overwrite(opt);
         const pair = opt.bind_addr.split(':');
         if (pair.length !== 2) {
             return;

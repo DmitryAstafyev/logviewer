@@ -53,8 +53,8 @@ export class Configuration
 
     public desc(): IOriginDetails {
         return {
-            major: `${this.get().command}`,
-            minor: this.get().cwd === '' ? 'no defined cwd' : this.get().cwd,
+            major: `${this.configuration.command}`,
+            minor: this.configuration.cwd === '' ? 'no defined cwd' : this.configuration.cwd,
             icon: 'web_asset',
             state: {
                 running: 'spawning',

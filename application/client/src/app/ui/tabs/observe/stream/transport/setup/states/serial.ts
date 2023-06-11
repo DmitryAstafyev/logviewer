@@ -87,7 +87,7 @@ export class State extends Stream.Serial.Configuration {
     }
 
     public from(opt: Stream.Serial.IConfiguration) {
-        this.set(opt);
+        this.overwrite(opt);
     }
 
     public scan(): {
@@ -152,7 +152,7 @@ export class State extends Stream.Serial.Configuration {
         return {
             update: (path: string): void => {
                 if (this.prev !== '') {
-                    this.states.set(this.prev, this.get());
+                    this.states.set(this.prev, this.configuration);
                 }
                 this.history().restore(path);
                 this.prev = path;
@@ -237,7 +237,7 @@ export class State extends Stream.Serial.Configuration {
         const path = this.configuration.path;
         this.from(Stream.Serial.Configuration.initial());
         this.configuration.path = path;
-        this.states.set(this.configuration.path, this.get());
+        this.states.set(this.configuration.path, this.configuration);
         this.baudRateProxtUpdate();
         this.history().save();
         this.changed.emit();

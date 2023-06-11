@@ -130,7 +130,7 @@ export class Configuration
     }
 
     protected setInstance() {
-        const configuration = this.get();
+        const configuration = this.configuration;
         let instance: Declaration | undefined;
         Object.keys(REGISTER).forEach((key) => {
             if (instance !== undefined) {
@@ -162,11 +162,11 @@ export class Configuration
     } {
         return {
             byConfiguration: (configuration: IConfiguration): void => {
-                this.set(configuration);
+                this.overwrite(configuration);
                 this.setInstance();
             },
             byDeclaration: (stream: Declaration): void => {
-                this.set({ [stream.alias()]: stream.get() });
+                this.overwrite({ [stream.alias()]: stream.configuration });
                 this.setInstance();
             },
         };
