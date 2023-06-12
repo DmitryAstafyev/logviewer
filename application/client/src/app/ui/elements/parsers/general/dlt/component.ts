@@ -4,8 +4,7 @@ import { Initial } from '@env/decorators/initial';
 import { ChangesDetector } from '@ui/env/extentions/changes';
 import { bytesToStr, timestampToUTC } from '@env/str';
 import { State } from './state';
-
-import * as Dlt from '@platform/types/observe/parser/dlt';
+import { Observe } from '@platform/types/observe/index';
 
 @Component({
     selector: 'app-el-dlt-general',
@@ -15,7 +14,7 @@ import * as Dlt from '@platform/types/observe/parser/dlt';
 @Initial()
 @Ilc()
 export class DltGeneralConfiguration extends ChangesDetector implements AfterContentInit {
-    @Input() configuration!: Dlt.IConfiguration;
+    @Input() observe!: Observe;
 
     protected state!: State;
 
@@ -27,7 +26,7 @@ export class DltGeneralConfiguration extends ChangesDetector implements AfterCon
     }
 
     public ngAfterContentInit(): void {
-        this.state = new State(this.configuration);
+        this.state = new State(this.observe);
         this.state.bind(this);
     }
 }

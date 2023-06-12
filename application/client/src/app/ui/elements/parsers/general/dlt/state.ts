@@ -2,11 +2,11 @@ import { File } from '@platform/types/files';
 import { Timezone } from '@elements/timezones/timezone';
 import { bridge } from '@service/bridge';
 import { components } from '@env/decorators/initial';
-import { Base } from '../../state';
+import { State as Base } from '../../state';
 
 import * as Dlt from '@platform/types/observe/parser/dlt';
 
-export class State extends Base<Dlt.IConfiguration> {
+export class State extends Base {
     public readonly LOG_LEVELS: { value: Dlt.LogLevel; caption: string }[] = [
         { value: Dlt.LogLevel.Fatal, caption: 'Fatal' },
         { value: Dlt.LogLevel.Error, caption: 'Error' },
@@ -18,10 +18,6 @@ export class State extends Base<Dlt.IConfiguration> {
     public fibex: File[] = [];
     public timezone: Timezone | undefined;
     public logLevel: Dlt.LogLevel = Dlt.LogLevel.Verbose;
-
-    public from(configuration: Dlt.IConfiguration) {
-        this.configuration = configuration;
-    }
 
     public addFibexFile() {
         bridge

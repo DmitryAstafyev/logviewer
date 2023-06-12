@@ -2,7 +2,7 @@ import { Component, ChangeDetectorRef, Input, AfterContentInit } from '@angular/
 import { Ilc, IlcInterface } from '@env/decorators/component';
 import { Initial } from '@env/decorators/initial';
 import { ChangesDetector } from '@ui/env/extentions/changes';
-import { State } from './state';
+import { State } from '../state';
 
 @Component({
     selector: 'app-el-parser-general',

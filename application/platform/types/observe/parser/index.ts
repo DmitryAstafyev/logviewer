@@ -2,6 +2,7 @@ import { Configuration as Base, ConfigurationStatic, ReferenceDesc } from '../co
 import { Statics } from '../../../env/decorators';
 import { List, IList } from '../description';
 import { Mutable } from '../../unity/mutable';
+import { Alias } from '../../env/types';
 
 import * as Dlt from './dlt';
 import * as SomeIp from './someip';
@@ -137,5 +138,9 @@ export class Configuration
 
     public getSupportedFileType(): Files.FileType[] {
         return this.instance.getSupportedFileType();
+    }
+
+    public as<T>(Ref: { new (...args: any[]): Declaration } & Alias<unknown>): T | undefined {
+        return this.instance.alias() === Ref.alias() ? (this.instance as T) : undefined;
     }
 }

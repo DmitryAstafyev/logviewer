@@ -4,8 +4,7 @@ import { Initial } from '@env/decorators/initial';
 import { ChangesDetector } from '@ui/env/extentions/changes';
 import { bytesToStr } from '@env/str';
 import { State } from './state';
-
-import * as SomeIp from '@platform/types/observe/parser/someip';
+import { Observe } from '@platform/types/observe/index';
 
 @Component({
     selector: 'app-el-someip-static',
@@ -15,7 +14,7 @@ import * as SomeIp from '@platform/types/observe/parser/someip';
 @Initial()
 @Ilc()
 export class SomeIpStaticConfiguration extends ChangesDetector implements AfterContentInit {
-    @Input() configuration!: SomeIp.IConfiguration;
+    @Input() observe!: Observe;
 
     protected state!: State;
 
@@ -26,7 +25,7 @@ export class SomeIpStaticConfiguration extends ChangesDetector implements AfterC
     }
 
     public ngAfterContentInit(): void {
-        this.state = new State(this.configuration);
+        this.state = new State(this.observe);
         this.state.bind(this);
     }
 }

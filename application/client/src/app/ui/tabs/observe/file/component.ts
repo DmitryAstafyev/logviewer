@@ -9,7 +9,7 @@ import { Ilc, IlcInterface } from '@env/decorators/component';
 import { Initial } from '@env/decorators/initial';
 import { ChangesDetector } from '@ui/env/extentions/changes';
 import { State } from '../state';
-import { State as ParserState } from '@elements/parsers/general/state';
+import { State as ParserState } from '@elements/parsers/state';
 
 import * as Origins from '@platform/types/observe/origin/index';
 import * as Parsers from '@platform/types/observe/parser/index';
@@ -36,18 +36,16 @@ export class TabObserveFile extends ChangesDetector implements AfterViewInit, Af
         if (origin === undefined) {
             throw new Error(`Current origin isn't a stream`);
         }
-        this.parser = new ParserState(this.state.observe.parser);
+        this.parser = new ParserState(this.state.observe);
         this.env().subscriber.register(
             this.state.updates.get().parser.subscribe(() => {
                 const parser = this.state.parser;
                 if (parser === undefined) {
                     return;
                 }
-                this.parser.change(
-                    new Parsers.Configuration({
-                        [parser]: Parsers.getByAlias(parser).configuration,
-                    }),
-                );
+                this.state.observe.parser.overwrite({
+                    [parser]: Parsers.getByAlias(parser).configuration,
+                });
             }),
         );
     }

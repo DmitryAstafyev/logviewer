@@ -107,6 +107,16 @@ export class Configuration
         this.setInstance();
     }
 
+    public files(): string[] | string | undefined {
+        if (this.instance instanceof File.Configuration) {
+            return this.instance.filename();
+        } else if (this.instance instanceof Concat.Configuration) {
+            return this.instance.files();
+        } else {
+            return undefined;
+        }
+    }
+
     public change(origin: Declaration): void {
         this.overwrite({ [origin.alias()]: origin.configuration });
         this.setInstance();

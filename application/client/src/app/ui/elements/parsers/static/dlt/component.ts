@@ -4,8 +4,7 @@ import { Initial } from '@env/decorators/initial';
 import { ChangesDetector } from '@ui/env/extentions/changes';
 import { bytesToStr, timestampToUTC } from '@env/str';
 import { State } from './state';
-
-import * as Dlt from '@platform/types/observe/parser/dlt';
+import { Observe } from '@platform/types/observe/index';
 
 @Component({
     selector: 'app-el-dlt-static',
@@ -15,7 +14,7 @@ import * as Dlt from '@platform/types/observe/parser/dlt';
 @Initial()
 @Ilc()
 export class DltStaticConfiguration extends ChangesDetector implements AfterContentInit {
-    @Input() configuration!: Dlt.IConfiguration;
+    @Input() observe!: Observe;
 
     protected state!: State;
 
@@ -27,8 +26,122 @@ export class DltStaticConfiguration extends ChangesDetector implements AfterCont
     }
 
     public ngAfterContentInit(): void {
-        this.state = new State(this.configuration);
+        this.state = new State(this.observe);
         this.state.bind(this);
+        this.state.struct().load();
+    }
+
+    public ngOnEntitySelect() {
+        this.state.buildSummary().selected();
+        this.detectChanges();
+    }
+
+    public ngContextMenu(event: MouseEvent) {
+        const after = () => {
+            this.state.buildSummary().selected();
+            this.detectChanges();
+        };
+        this.ilc().emitter.ui.contextmenu.open({
+            items: [
+                {
+                    caption: 'Select all',
+                    handler: () => {
+                        this.state.structure.forEach((section) => {
+                            section.entities.forEach((e) => e.select());
+                        });
+                        after();
+                    },
+                },
+                {
+                    caption: 'Unselect all',
+                    handler: () => {
+                        this.state.structure.forEach((section) => {
+                            section.entities.forEach((e) => e.unselect());
+                        });
+                        after();
+                    },
+                },
+                {
+                    caption: 'Reverse selection',
+                    handler: () => {
+                        this.state.structure.forEach((section) => {
+                            section.entities.forEach((e) => e.toggle());
+                        });
+                        after();
+                    },
+                },
+                {},
+                {
+                    caption: 'Select with fotal',
+                    handler: () => {
+                        this.state.structure.forEach((section) => {
+                            section.entities.forEach((e) => {
+                                e.log_fatal > 0 && e.select();
+                            });
+                        });
+                        after();
+                    },
+                },
+                {
+                    caption: 'Select with errors',
+                    handler: () => {
+                        this.state.structure.forEach((section) => {
+                            section.entities.forEach((e) => {
+                                e.log_error > 0 && e.select();
+                            });
+                        });
+                        after();
+                    },
+                },
+                {
+                    caption: 'Select with warnings',
+                    handler: () => {
+                        this.state.structure.forEach((section) => {
+                            section.entities.forEach((e) => {
+                                e.log_warning > 0 && e.select();
+                            });
+                        });
+                        after();
+                    },
+                },
+                {},
+                {
+                    caption: 'Unselect without fotal',
+                    handler: () => {
+                        this.state.structure.forEach((section) => {
+                            section.entities.forEach((e) => {
+                                e.log_fatal === 0 && e.unselect();
+                            });
+                        });
+                        after();
+                    },
+                },
+                {
+                    caption: 'Unselect without errors',
+                    handler: () => {
+                        this.state.structure.forEach((section) => {
+                            section.entities.forEach((e) => {
+                                e.log_error === 0 && e.unselect();
+                            });
+                        });
+                        after();
+                    },
+                },
+                {
+                    caption: 'Unselect without warnings',
+                    handler: () => {
+                        this.state.structure.forEach((section) => {
+                            section.entities.forEach((e) => {
+                                e.log_warning === 0 && e.unselect();
+                            });
+                        });
+                        after();
+                    },
+                },
+            ],
+            x: event.x,
+            y: event.y,
+        });
     }
 }
 export interface DltStaticConfiguration extends IlcInterface {}

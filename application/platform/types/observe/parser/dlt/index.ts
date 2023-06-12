@@ -8,6 +8,24 @@ import * as Stream from '../../origin/stream/index';
 import * as Files from '../../types/file';
 import * as obj from '../../../../env/obj';
 
+export interface LevelDistribution {
+    non_log: number;
+    log_fatal: number;
+    log_error: number;
+    log_warning: number;
+    log_info: number;
+    log_debug: number;
+    log_verbose: number;
+    log_invalid: number;
+}
+
+export interface StatisticInfo {
+    app_ids: [string, LevelDistribution][];
+    context_ids: [string, LevelDistribution][];
+    ecu_ids: [string, LevelDistribution][];
+    contained_non_verbose: boolean;
+}
+
 export enum LogLevel {
     Fatal = 0x1 << 4,
     Error = 0x2 << 4,

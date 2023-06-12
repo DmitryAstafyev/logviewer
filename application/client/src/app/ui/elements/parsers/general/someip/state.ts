@@ -1,16 +1,11 @@
 import { File } from '@platform/types/files';
 import { bridge } from '@service/bridge';
-import { Base } from '../../state';
+import { State as Base } from '../../state';
 
-import * as SomeIp from '@platform/types/observe/parser/someip';
+// import * as SomeIp from '@platform/types/observe/parser/someip';
 
-export class State extends Base<SomeIp.IConfiguration> {
-
+export class State extends Base {
     public fibex: File[] = [];
-
-    public from(configuration: SomeIp.IConfiguration) {
-        this.configuration = configuration;
-    }
 
     public addFibexFile() {
         bridge
@@ -32,5 +27,4 @@ export class State extends Base<SomeIp.IConfiguration> {
     public removeFibex(file: File) {
         this.fibex = this.fibex.filter((f) => f.filename !== file.filename);
     }
-
 }

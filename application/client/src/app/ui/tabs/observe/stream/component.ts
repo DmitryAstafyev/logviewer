@@ -4,7 +4,7 @@ import { Initial } from '@env/decorators/initial';
 import { ChangesDetector } from '@ui/env/extentions/changes';
 import { State } from '../state';
 import { State as StreamState } from './transport/setup/state';
-import { State as ParserState } from '@elements/parsers/general/state';
+import { State as ParserState } from '@elements/parsers/state';
 import { Action } from '@ui/tabs/sources/common/actions/action';
 
 import * as Streams from '@platform/types/observe/origin/stream/index';
@@ -37,7 +37,7 @@ export class TabObserveStream extends ChangesDetector implements AfterContentIni
             throw new Error(`Current origin isn't a stream`);
         }
         this.stream = new StreamState(origin.getStreamConfiguration());
-        this.parser = new ParserState(this.state.observe.parser);
+        this.parser = new ParserState(this.state.observe);
         this.env().subscriber.register(
             this.state.updates.get().stream.subscribe(() => {
                 const stream = this.state.stream;
@@ -51,11 +51,9 @@ export class TabObserveStream extends ChangesDetector implements AfterContentIni
                 if (parser === undefined) {
                     return;
                 }
-                this.parser.change(
-                    new Parsers.Configuration({
-                        [parser]: Parsers.getByAlias(parser).configuration,
-                    }),
-                );
+                this.state.observe.parser.overwrite({
+                    [parser]: Parsers.getByAlias(parser).configuration,
+                });
             }),
         );
     }

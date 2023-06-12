@@ -1,16 +1,10 @@
 import { File } from '@platform/types/files';
 import { bridge } from '@service/bridge';
-import { Base } from '../../state';
+import { State as Base } from '../../state';
 
-import * as SomeIp from '@platform/types/observe/parser/someip';
-
-export class State extends Base<SomeIp.IConfiguration> {
+export class State extends Base {
 
     public fibex: File[] = [];
-
-    public from(configuration: SomeIp.IConfiguration) {
-        this.configuration = configuration;
-    }
 
     public addFibexFile() {
         bridge
