@@ -4,9 +4,9 @@
           <mat-progress-bar mode="indeterminate"></mat-progress-bar>
           <p class="t-medium color-scheme-2">Scanning DLT structure...</p>
       </div>
-      <app-el-dlt-static-structure *ngFor="let section of state.structure"
+      <app-el-dlt-extra-structure *ngFor="let section of state.structure"
         (contextmenu)="ngContextMenu($event)"
         (select)="ngOnEntitySelect()"
-        [section]="section"></app-el-dlt-static-structure>
+        [section]="section"></app-el-dlt-extra-structure>
     </mat-card-content>
 </mat-card>

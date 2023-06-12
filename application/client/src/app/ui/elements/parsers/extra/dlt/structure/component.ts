@@ -31,13 +31,13 @@ export const COLUMNS = {
 };
 
 @Component({
-    selector: 'app-el-dlt-static-structure',
+    selector: 'app-el-dlt-extra-structure',
     templateUrl: './template.html',
     styleUrls: ['./styles.less'],
     encapsulation: ViewEncapsulation.None,
 })
 @Ilc()
-export class DltStaticConfigurationStructure
+export class DltExtraConfigurationStructure
     extends ChangesDetector
     implements AfterContentInit, AfterViewInit
 {
@@ -94,4 +94,4 @@ export class DltStaticConfigurationStructure
         return this._sanitizer.bypassSecurityTrustHtml(html);
     }
 }
-export interface DltStaticConfigurationStructure extends IlcInterface {}
+export interface DltExtraConfigurationStructure extends IlcInterface {}

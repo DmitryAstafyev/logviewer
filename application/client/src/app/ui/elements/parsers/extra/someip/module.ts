@@ -10,11 +10,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatListModule } from '@angular/material/list';
-import { MatTableModule } from '@angular/material/table';
-import { MatSortModule } from '@angular/material/sort';
 
-import { DltStaticConfiguration } from './component';
-import { DltStaticConfigurationStructure } from './structure/component';
+import { SomeIpExtraConfiguration } from './component';
 
 @NgModule({
     imports: [
@@ -30,11 +27,9 @@ import { DltStaticConfigurationStructure } from './structure/component';
         MatFormFieldModule,
         MatSelectModule,
         MatListModule,
-        MatTableModule,
-        MatSortModule,
     ],
-    declarations: [DltStaticConfiguration, DltStaticConfigurationStructure],
-    exports: [DltStaticConfiguration],
-    bootstrap: [DltStaticConfiguration, DltStaticConfigurationStructure],
+    declarations: [SomeIpExtraConfiguration],
+    exports: [SomeIpExtraConfiguration],
+    bootstrap: [SomeIpExtraConfiguration],
 })
-export class DltStaticConfigurationModule {}
+export class SomeIpExtraConfigurationModule {}

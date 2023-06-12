@@ -7,13 +7,13 @@ import { State } from './state';
 import { Observe } from '@platform/types/observe/index';
 
 @Component({
-    selector: 'app-el-dlt-static',
+    selector: 'app-el-dlt-extra',
     templateUrl: './template.html',
     styleUrls: ['./styles.less'],
 })
 @Initial()
 @Ilc()
-export class DltStaticConfiguration extends ChangesDetector implements AfterContentInit {
+export class DltExtraConfiguration extends ChangesDetector implements AfterContentInit {
     @Input() observe!: Observe;
 
     protected state!: State;
@@ -144,4 +144,4 @@ export class DltStaticConfiguration extends ChangesDetector implements AfterCont
         });
     }
 }
-export interface DltStaticConfiguration extends IlcInterface {}
+export interface DltExtraConfiguration extends IlcInterface {}

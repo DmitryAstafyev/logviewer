@@ -5,13 +5,13 @@ import { ChangesDetector } from '@ui/env/extentions/changes';
 import { State } from '../state';
 
 @Component({
-    selector: 'app-el-parser-static',
+    selector: 'app-el-parser-extra',
     templateUrl: './template.html',
     styleUrls: ['./styles.less'],
 })
 @Initial()
 @Ilc()
-export class ParserStaticConfiguration extends ChangesDetector implements AfterContentInit {
+export class ParserExtraConfiguration extends ChangesDetector implements AfterContentInit {
     @Input() state!: State;
 
     constructor(cdRef: ChangeDetectorRef) {
@@ -22,4 +22,4 @@ export class ParserStaticConfiguration extends ChangesDetector implements AfterC
         this.state.bind(this);
     }
 }
-export interface ParserStaticConfiguration extends IlcInterface {}
+export interface ParserExtraConfiguration extends IlcInterface {}

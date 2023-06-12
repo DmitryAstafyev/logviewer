@@ -2,23 +2,20 @@ import { Component, ChangeDetectorRef, Input, AfterContentInit } from '@angular/
 import { Ilc, IlcInterface } from '@env/decorators/component';
 import { Initial } from '@env/decorators/initial';
 import { ChangesDetector } from '@ui/env/extentions/changes';
-import { bytesToStr } from '@env/str';
 import { State } from './state';
 import { Observe } from '@platform/types/observe/index';
 
 @Component({
-    selector: 'app-el-someip-static',
+    selector: 'app-el-someip-extra',
     templateUrl: './template.html',
     styleUrls: ['./styles.less'],
 })
 @Initial()
 @Ilc()
-export class SomeIpStaticConfiguration extends ChangesDetector implements AfterContentInit {
+export class SomeIpExtraConfiguration extends ChangesDetector implements AfterContentInit {
     @Input() observe!: Observe;
 
     protected state!: State;
-
-    public bytesToStr = bytesToStr;
 
     constructor(cdRef: ChangeDetectorRef) {
         super(cdRef);
@@ -29,4 +26,4 @@ export class SomeIpStaticConfiguration extends ChangesDetector implements AfterC
         this.state.bind(this);
     }
 }
-export interface SomeIpStaticConfiguration extends IlcInterface {}
+export interface SomeIpExtraConfiguration extends IlcInterface {}
