@@ -8,6 +8,8 @@ import { isRenderMatch } from '@schema/render/tools';
 import { lockers, Locker, Level } from '@ui/service/lockers';
 import { Session } from '@service/session';
 
+import * as $ from '@platform/types/observe/factory';
+
 export abstract class FileOpener<Options, NamedOptions> extends Base<
     FileOpener<Options, NamedOptions>
 > {
@@ -125,6 +127,11 @@ export abstract class FileOpener<Options, NamedOptions> extends Base<
                         factory: components.get(settings.component),
                         inputs: {
                             getTabApi: () => api,
+                            observe: new $.Concat()
+                                .files(targets.map((f) => f.filename))
+                                .type($.File.FileType.Binary)
+                                .parser()
+                                .dlt().observe,
                             files: targets,
                             done: (opt?: Options) => {
                                 open(opt)
