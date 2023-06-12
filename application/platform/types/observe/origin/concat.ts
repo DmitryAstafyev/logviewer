@@ -5,6 +5,7 @@ import { Configuration as ConfigurationFile } from './file';
 import { Context, SourceUuid } from './index';
 import { basefolder } from '../../../env/str';
 import { Statics } from '../../../env/decorators';
+import { unique } from '../../../env/sequence';
 
 import * as Types from '../types';
 import * as Parser from '../parser';
@@ -50,6 +51,41 @@ export class Configuration
     // Gives initial settings. Not necessarily valid.
     static initial(): IConfiguration {
         return [];
+    }
+
+    protected defaultFileType: Types.File.FileType = Types.File.FileType.Text;
+
+    public set(): {
+        files(files: string[]): Configuration;
+        defaults(type: Types.File.FileType): Configuration;
+        push(filename: string, type: Types.File.FileType): Configuration;
+        remove(filename: string): Configuration;
+    } {
+        return {
+            files: (files: string[]): Configuration => {
+                this.configuration.push(
+                    ...(files.map((filename: string) => {
+                        return [unique(), this.defaultFileType, filename];
+                    }) as IConfiguration),
+                );
+                return this;
+            },
+            defaults: (type: Types.File.FileType): Configuration => {
+                this.defaultFileType = type;
+                return this;
+            },
+            push: (filename: string, type: Types.File.FileType): Configuration => {
+                this.configuration.push([unique(), type, filename]);
+                return this;
+            },
+            remove: (filename: string): Configuration => {
+                const index = this.configuration.findIndex((def) => def[2] === filename);
+                if (index !== -1) {
+                    this.configuration.splice(index, 1);
+                }
+                return this;
+            },
+        };
     }
 
     public desc(): IOriginDetails {

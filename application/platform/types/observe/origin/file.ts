@@ -60,6 +60,22 @@ export class Configuration
         return [unique(), Types.File.FileType.Text, ''];
     }
 
+    public set(): {
+        filename(filename: string): Configuration;
+        type(type: Types.File.FileType): Configuration;
+    } {
+        return {
+            filename: (filename: string): Configuration => {
+                this.configuration[2] = filename;
+                return this;
+            },
+            type: (type: Types.File.FileType): Configuration => {
+                this.configuration[1] = type;
+                return this;
+            },
+        };
+    }
+
     public desc(): IOriginDetails {
         return {
             major: filename(this.configuration[2]),

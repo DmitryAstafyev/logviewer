@@ -7,6 +7,7 @@ import * as Sde from './sde';
 
 export * as Parser from './parser';
 export * as Origin from './origin';
+export * as Types from './types';
 
 export { IList, IOriginDetails } from './description';
 
