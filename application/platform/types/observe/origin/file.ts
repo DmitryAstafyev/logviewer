@@ -76,6 +76,14 @@ export class Configuration
         };
     }
 
+    public filename(): string {
+        return this.configuration[2];
+    }
+
+    public filetype(): Types.File.FileType {
+        return this.configuration[1];
+    }
+
     public desc(): IOriginDetails {
         return {
             major: filename(this.configuration[2]),

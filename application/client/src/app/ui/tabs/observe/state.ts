@@ -3,16 +3,22 @@ import { IlcInterface } from '@env/decorators/component';
 import { ChangesDetector } from '@ui/env/extentions/changes';
 import { Subjects, Subject } from '@platform/env/subscription';
 // import { error } from '@platform/log/utils';
-// import { File } from '@platform/types/files';
+import { File } from '@platform/types/files';
+import { bytesToStr } from '@env/str';
 
-import * as Streams from '@platform/types/observe/origin/stream/index';
+import * as StreamOrigin from '@platform/types/observe/origin/stream/index';
 import * as Origin from '@platform/types/observe/origin/index';
+import * as FileOrigin from '@platform/types/observe/origin/file';
+import * as ConcatOrigin from '@platform/types/observe/origin/concat';
 
 export class State {
     public parsers: Parser.Reference[] = [];
     public parser: Parser.Protocol | undefined;
-    public streams: Streams.Reference[] = [];
-    public stream: Streams.Source | undefined;
+    public streams: StreamOrigin.Reference[] = [];
+    public file: File | undefined;
+    public concat: File[] | undefined;
+    public stream: StreamOrigin.Source | undefined;
+    public size: string | undefined;
     public updates: Subjects<{
         parser: Subject<void>;
         stream: Subject<void>;
@@ -26,6 +32,7 @@ export class State {
         public readonly observe: Observe,
     ) {
         this.update().stream();
+        this.update().files();
         this.update().parser();
     }
 
@@ -35,6 +42,7 @@ export class State {
 
     public update(): {
         stream(): void;
+        files(): void;
         parser(): void;
     } {
         return {
@@ -54,6 +62,52 @@ export class State {
                 }
                 this.ref.markChangesForCheck();
                 prev !== this.stream && this.updates.get().stream.emit();
+            },
+            files: (): void => {
+                const instance = this.observe.origin.instance;
+                const files: string[] | undefined =
+                    instance instanceof FileOrigin.Configuration
+                        ? [instance.filename()]
+                        : instance instanceof ConcatOrigin.Configuration
+                        ? instance.files()
+                        : undefined;
+                if (files === undefined) {
+                    return;
+                }
+                this.ref
+                    .ilc()
+                    .services.system.bridge.files()
+                    .getByPath(files)
+                    .then((files: File[]) => {
+                        this.size = bytesToStr(
+                            files
+                                .map((f) => f.stat.size)
+                                .reduce((partialSum, a) => partialSum + a, 0),
+                        );
+                        if (instance instanceof FileOrigin.Configuration) {
+                            if (files.length !== 1) {
+                                this.ref
+                                    .log()
+                                    .error(
+                                        `Expecting only 1 file stats. Has been gotten: ${files.length}`,
+                                    );
+                                return;
+                            }
+                            this.file = files[0];
+                        } else if (instance instanceof ConcatOrigin.Configuration) {
+                            this.concat = files;
+                        }
+                    })
+                    .catch((err: Error) => {
+                        this.ref
+                            .log()
+                            .error(
+                                `Fail to get stats for files: ${files.join(', ')}: ${err.message}`,
+                            );
+                    })
+                    .finally(() => {
+                        this.ref.markChangesForCheck();
+                    });
             },
             parser: (): void => {
                 const current = this.parser;
@@ -84,7 +138,7 @@ export class State {
                     this.ref.log().error(`Stream cannot be changed, because origin isn't Stream`);
                     return;
                 }
-                instance.change(Streams.getByAlias(this.stream));
+                instance.change(StreamOrigin.getByAlias(this.stream));
                 this.updates.get().stream.emit();
                 this.update().parser();
             },

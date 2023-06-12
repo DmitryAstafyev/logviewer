@@ -1,19 +1,12 @@
 <div class="title">
-    <span class="filler"></span>
-    <!-- <div class="container" *ngIf="state.transport !== undefined">
-        <p class="t-normal info">Stream From:</p>
-        <mat-form-field class="material-mofication-normal black">
-            <mat-select [(ngModel)]="state.transport" (ngModelChange)="state.change().transport()">
-                <mat-option *ngFor="let transport of state.transports" [value]="transport.ref">
-                    {{transport.name}}
-                </mat-option>
-            </mat-select>
-        </mat-form-field>    
+    <span class="filler"></span>    
+    <div class="entity" *ngIf="state.file !== undefined">
+        <p class="t-normal info"><span class="limited color-scheme-0">{{state.file.name}}</span><span>({{state.size}})</span></p>
     </div>
-    <div class="container" *ngIf="state.file !== undefined">
-        <p class="t-normal info">Open:</p>
-        <p class="t-normal info">{{state.file.name}}<span>{{bytesToStr(state.file.stat.size)}}</span></p>
-    </div> -->
+    <div class="entity" *ngIf="state.concat !== undefined">
+        <p class="t-normal info">Concating:</p>
+        <p class="t-normal info"><span class="limited color-scheme-0">{{state.concat.length}}files</span><span>({{state.size}})</span></p>
+    </div>
     <div class="entity" *ngIf="state.stream !== undefined">
         <p class="t-normal info">Stream From:</p>
         <mat-form-field class="material-mofication-normal black">

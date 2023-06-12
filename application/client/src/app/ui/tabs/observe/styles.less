@@ -27,6 +27,24 @@
             p.info {
                 color: @scheme-color-2;
                 white-space: nowrap;
+                display: flex;
+                align-items: center;
+                justify-content: end;
+                & * {
+                    position: relative;
+                    display: inline-block;
+                }
+                & span {
+                    margin-left: 8px;
+                }
+                & span.limited  {
+                    position: relative;
+                    display: inline-block;
+                    max-width: 400px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
             }
         }
         position: absolute;

@@ -88,6 +88,10 @@ export class Configuration
         };
     }
 
+    public files(): string[] {
+        return this.configuration.map((c) => c[2]);
+    }
+
     public desc(): IOriginDetails {
         const first = this.configuration[0];
         return {

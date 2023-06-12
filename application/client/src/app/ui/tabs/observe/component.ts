@@ -13,7 +13,6 @@ import { ChangesDetector } from '@ui/env/extentions/changes';
 import { TabControls } from '@service/session';
 import { State } from './state';
 import { Observe } from '@platform/types/observe/index';
-import { bytesToStr } from '@env/str';
 
 @Component({
     selector: 'app-tabs-observe',
@@ -35,8 +34,6 @@ export class TabObserve
     constructor(cdRef: ChangeDetectorRef) {
         super(cdRef);
     }
-
-    public bytesToStr = bytesToStr;
 
     public ngOnDestroy(): void {
         this.state.destroy();
