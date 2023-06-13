@@ -6,6 +6,9 @@ import { Mutable } from '../unity/mutable';
 import { scope } from '../../env/scope';
 import { Subject } from '../../env/subscription';
 
+import * as Stream from './origin/stream/index';
+import * as File from './types/file';
+
 export interface ConfigurationStatic<T, A> extends Validate<T>, Alias<A> {
     initial(): T;
 }
@@ -61,6 +64,26 @@ function observe<T>(entry: T, subject: Subject<void>): T {
     logger().error(`Type "${typeof entry}" cannot be observed`);
     return undefined as T;
 }
+
+// To prevent circle dependency we are loading compatibility table in async way
+let compatibility:
+    | {
+          Streams: {
+              [key: string]: Stream.Reference[];
+          };
+          Files: {
+              [key: string]: File.FileType[];
+          };
+      }
+    | undefined;
+import('./compatibility')
+    .then((mod) => {
+        compatibility = mod;
+    })
+    .catch((err: Error) => {
+        console.error(err.message);
+    });
+
 export abstract class Configuration<T, C, A>
     implements JsonConvertor<Configuration<T, C, A>>, SelfValidate
 {
@@ -115,5 +138,29 @@ export abstract class Configuration<T, C, A>
                 }
             },
         };
+    }
+
+    public getSupportedStream(): Stream.Reference[] {
+        if (compatibility === undefined) {
+            throw new Error(`Moudle "compatibility" isn't loaded yet`);
+        }
+        if (compatibility.Streams[this.ref.alias() as string] === undefined) {
+            throw new Error(
+                `Entity "${this.ref.alias()}" isn't registred in compatibility.Streams list`,
+            );
+        }
+        return compatibility.Streams[this.ref.alias() as string];
+    }
+
+    public getSupportedFileType(): File.FileType[] {
+        if (compatibility === undefined) {
+            throw new Error(`Moudle "compatibility" isn't loaded yet`);
+        }
+        if (compatibility.Files[this.ref.alias() as string] === undefined) {
+            throw new Error(
+                `Entity "${this.ref.alias()}" isn't registred in compatibility.Files list`,
+            );
+        }
+        return compatibility.Files[this.ref.alias() as string];
     }
 }

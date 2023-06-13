@@ -10,43 +10,11 @@
     height: 100%;
     overflow: hidden;
     & div.preset-container {
-        top: 32px;
+        top: 48px;
         bottom: 0px;
         height: auto;
     }
     & div.title {
-        & div.entity {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            left:0;
-            right: 0;
-            padding: 0 8px;
-            background: @scheme-color-5;
-            height: 32px;
-            p.info {
-                color: @scheme-color-2;
-                white-space: nowrap;
-                display: flex;
-                align-items: center;
-                justify-content: end;
-                & * {
-                    position: relative;
-                    display: inline-block;
-                }
-                & span {
-                    margin-left: 8px;
-                }
-                & span.limited  {
-                    position: relative;
-                    display: inline-block;
-                    max-width: 400px;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                }
-            }
-        }
         position: absolute;
         display: flex;
         flex-direction: row;
@@ -56,15 +24,51 @@
         padding: 0 8px;
         background: @scheme-color-5;
         box-shadow: 0 3px 3px @scheme-color-7;
-        height: 32px;
+        height: 48px;
         overflow: hidden;
+        & *.entity {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            left:0;
+            right: 0;
+            padding: 0 8px;
+            background: @scheme-color-5;
+            height: 48px;
+            &.filler {
+                flex: auto;
+                width: 100%;
+                margin: 0;
+                justify-content: end;
+            }
+            &.info {
+                color: @scheme-color-2;
+                white-space: nowrap;
+                align-items: center;
+                flex: auto;
+                width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                & span {
+                    margin-left: 8px;
+                }
+            }
+            & button {
+                position: relative;
+                display: inline-block;
+                margin: 0 16px 0 0;
+                margin-bottom: 0!important;
+                &:last-child {
+                    margin-right: 0;
+                }
+            }
+            & p.info {
+                color: @scheme-color-2;
+                white-space: nowrap;
+            }
+        }
         & > * {
             margin: 0 8px;
-        }
-        span.filler {
-            flex:auto;
-            width: 100%;
-            margin: 0;
         }
     }
 }

@@ -23,37 +23,27 @@ class Factory<T> {
         return this as unknown as T;
     }
 
-    public parser(): {
-        dlt(configuration?: $.Parser.Dlt.IConfiguration): T;
-        someip(configuration?: $.Parser.SomeIp.IConfiguration): T;
-        text(): T;
-    } {
-        return {
-            dlt: (configuration?: $.Parser.Dlt.IConfiguration): T => {
-                this.observe.parser.change(
-                    new $.Parser.Dlt.Configuration(
-                        configuration === undefined
-                            ? $.Parser.Dlt.Configuration.initial()
-                            : configuration,
-                    ),
-                );
-                return this as unknown as T;
-            },
-            someip: (configuration?: $.Parser.SomeIp.IConfiguration): T => {
-                this.observe.parser.change(
-                    new $.Parser.SomeIp.Configuration(
-                        configuration === undefined
-                            ? $.Parser.SomeIp.Configuration.initial()
-                            : configuration,
-                    ),
-                );
-                return this as unknown as T;
-            },
-            text: (): T => {
-                this.observe.parser.change(new $.Parser.Text.Configuration(null));
-                return this as unknown as T;
-            },
-        };
+    public asDlt(configuration?: $.Parser.Dlt.IConfiguration): T {
+        this.observe.parser.change(
+            new $.Parser.Dlt.Configuration(
+                configuration === undefined ? $.Parser.Dlt.Configuration.initial() : configuration,
+            ),
+        );
+        return this as unknown as T;
+    }
+    public asSomeip(configuration?: $.Parser.SomeIp.IConfiguration): T {
+        this.observe.parser.change(
+            new $.Parser.SomeIp.Configuration(
+                configuration === undefined
+                    ? $.Parser.SomeIp.Configuration.initial()
+                    : configuration,
+            ),
+        );
+        return this as unknown as T;
+    }
+    public asText(): T {
+        this.observe.parser.change(new $.Parser.Text.Configuration(null));
+        return this as unknown as T;
     }
 }
 

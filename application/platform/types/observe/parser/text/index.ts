@@ -45,12 +45,4 @@ export class Configuration
     public desc(): IList {
         return Configuration.desc();
     }
-
-    public getSupportedStream(): Stream.Reference[] {
-        return [Stream.Serial.Configuration, Stream.Process.Configuration];
-    }
-
-    public getSupportedFileType(): Files.FileType[] {
-        return [Files.FileType.Text];
-    }
 }

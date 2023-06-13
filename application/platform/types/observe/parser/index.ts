@@ -132,11 +132,11 @@ export class Configuration
         return this.instance.desc();
     }
 
-    public getSupportedStream(): Stream.Reference[] {
+    public override getSupportedStream(): Stream.Reference[] {
         return this.instance.getSupportedStream();
     }
 
-    public getSupportedFileType(): Files.FileType[] {
+    public override getSupportedFileType(): Files.FileType[] {
         return this.instance.getSupportedFileType();
     }
 

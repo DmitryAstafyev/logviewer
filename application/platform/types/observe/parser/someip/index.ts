@@ -49,11 +49,4 @@ export class Configuration
         return Configuration.desc();
     }
 
-    public getSupportedStream(): Stream.Reference[] {
-        return [Stream.Udp.Configuration];
-    }
-
-    public getSupportedFileType(): Files.FileType[] {
-        return [Files.FileType.PcapNG];
-    }
 }

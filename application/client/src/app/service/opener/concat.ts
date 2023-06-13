@@ -130,8 +130,7 @@ export abstract class FileOpener<Options, NamedOptions> extends Base<
                             observe: new $.Concat()
                                 .files(targets.map((f) => f.filename))
                                 .type($.File.FileType.Binary)
-                                .parser()
-                                .dlt().observe,
+                                .asDlt().observe,
                             files: targets,
                             done: (opt?: Options) => {
                                 open(opt)

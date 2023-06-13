@@ -6,6 +6,7 @@ import { File } from '@platform/types/files';
 import { Base } from './base';
 import { isRenderMatch } from '@schema/render/tools';
 import { Session } from '@service/session';
+import { Observe } from '@platform/types/observe/index';
 
 import * as $ from '@platform/types/observe/factory';
 
@@ -115,11 +116,11 @@ export abstract class FileOpener<Options, NamedOptions> extends Base<
                         factory: components.get(settings.component),
                         inputs: {
                             getTabApi: () => api,
-                            observe: new $.File()
-                                .file(target.filename)
-                                .type($.File.FileType.Binary)
-                                .parser()
-                                .dlt().observe,
+                            observe: new $.Stream().udp().asDlt().observe,
+                            // observe: new $.File()
+                            //     .file(target.filename)
+                            //     .type($.File.FileType.Binary)
+                            //     .asDlt().observe,
                             files: [target],
                             done: (opt?: Options) => {
                                 open(opt)
