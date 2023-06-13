@@ -74,6 +74,9 @@ let compatibility:
           Files: {
               [key: string]: File.FileType[];
           };
+          SDESupport: {
+              [key: string]: boolean;
+          };
       }
     | undefined;
 import('./compatibility')
@@ -162,5 +165,17 @@ export abstract class Configuration<T, C, A>
             );
         }
         return compatibility.Files[this.ref.alias() as string];
+    }
+
+    public isSdeSupported(): boolean {
+        if (compatibility === undefined) {
+            throw new Error(`Moudle "compatibility" isn't loaded yet`);
+        }
+        if (compatibility.SDESupport[this.ref.alias() as string] === undefined) {
+            throw new Error(
+                `Entity "${this.ref.alias()}" isn't registred in compatibility.SDESupport list`,
+            );
+        }
+        return compatibility.SDESupport[this.ref.alias() as string];
     }
 }

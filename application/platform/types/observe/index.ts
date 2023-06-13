@@ -63,7 +63,7 @@ export class Observe
         this.parser = new Parser.Configuration(observe.parser);
     }
 
-    public isSdeSupported(): boolean {
+    public override isSdeSupported(): boolean {
         return this.origin.isSdeSupported();
     }
 

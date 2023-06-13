@@ -1,5 +1,5 @@
 import { Configuration as Base, ConfigurationStatic, ReferenceDesc } from '../../configuration';
-import { OriginDetails, IOriginDetails } from '../../description';
+import { OriginDetails, IOriginDetails, Job, IJob } from '../../description';
 import { Statics } from '../../../../env/decorators';
 import { Mutable } from '../../../unity/mutable';
 
@@ -89,7 +89,7 @@ export function getAliasByConfiguration(configuration: IConfiguration): Source {
 @Statics<ConfigurationStatic<IConfiguration, Origin.Context>>()
 export class Configuration
     extends Base<IConfiguration, Configuration, Origin.Context>
-    implements OriginDetails, Sde.Support, Parser.Support
+    implements OriginDetails, Sde.Support, Parser.Support, Job
 {
     static alias(): Origin.Context {
         return Origin.Context.Stream;
@@ -176,7 +176,11 @@ export class Configuration
         return this.instance.desc();
     }
 
-    public isSdeSupported(): boolean {
+    public asJob(): IJob {
+        return this.instance.asJob();
+    }
+
+    public override isSdeSupported(): boolean {
         return this.instance.isSdeSupported();
     }
 

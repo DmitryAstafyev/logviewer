@@ -1,7 +1,7 @@
 import { error } from '../../../../../log/utils';
 import { Source } from '../index';
 import { Configuration as Base, ConfigurationStaticDesc } from '../../../configuration';
-import { OriginDetails, IOriginDetails, IList } from '../../../description';
+import { OriginDetails, IOriginDetails, IList, Job, IJob } from '../../../description';
 import { Statics } from '../../../../../env/decorators';
 
 import * as obj from '../../../../../env/obj';
@@ -21,7 +21,7 @@ export interface IConfiguration {
 @Statics<ConfigurationStaticDesc<IConfiguration, Source>>()
 export class Configuration
     extends Base<IConfiguration, Configuration, Source>
-    implements OriginDetails, Sde.Support
+    implements OriginDetails, Sde.Support, Job
 {
     static desc(): IList {
         return {
@@ -72,8 +72,15 @@ export class Configuration
         };
     }
 
-    public isSdeSupported(): boolean {
-        return false;
+    public asJob(): IJob {
+        return {
+            name: `UDP: ${this.configuration.bind_addr}`,
+            desc:
+                this.configuration.multicast.length === 0
+                    ? `Connecting to ${this.configuration.bind_addr} via UDP (no multicasts)`
+                    : this.configuration.multicast.map((m) => m.multiaddr).join(', '),
+            icon: 'network_wifi_3_bar',
+        };
     }
 
     public getSupportedParsers(): Parser.Reference[] {

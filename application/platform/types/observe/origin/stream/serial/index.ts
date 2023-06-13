@@ -1,7 +1,7 @@
 import { error } from '../../../../../log/utils';
 import { Source } from '../index';
 import { Configuration as Base, ConfigurationStaticDesc } from '../../../configuration';
-import { OriginDetails, IOriginDetails, IList } from '../../../description';
+import { OriginDetails, IOriginDetails, IList, Job, IJob } from '../../../description';
 import { Statics } from '../../../../../env/decorators';
 
 import * as obj from '../../../../../env/obj';
@@ -20,7 +20,7 @@ export interface IConfiguration {
 @Statics<ConfigurationStaticDesc<IConfiguration, Source>>()
 export class Configuration
     extends Base<IConfiguration, Configuration, Source>
-    implements OriginDetails, Sde.Support
+    implements OriginDetails, Sde.Support, Job
 {
     static desc(): IList {
         return {
@@ -72,8 +72,12 @@ export class Configuration
         };
     }
 
-    public isSdeSupported(): boolean {
-        return true;
+    public asJob(): IJob {
+        return {
+            name: `Serial: ${this.configuration.path}`,
+            desc: `Baud Rate: ${this.configuration.baud_rate}`,
+            icon: 'import_export',
+        };
     }
 
     public getSupportedParsers(): Parser.Reference[] {

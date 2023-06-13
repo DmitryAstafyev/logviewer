@@ -1,7 +1,7 @@
 import { error } from '../../../log/utils';
 import { Configuration as Base, ConfigurationStatic } from '../configuration';
 import { Context, SourceUuid } from './index';
-import { OriginDetails, IOriginDetails } from '../description';
+import { OriginDetails, IOriginDetails, Job, IJob } from '../description';
 import { Statics } from '../../../env/decorators';
 import { unique } from '../../../env/sequence';
 import { Mutable } from '../../unity/mutable';
@@ -21,7 +21,7 @@ export type IConfiguration = [SourceUuid, Stream.IConfiguration];
 @Statics<ConfigurationStatic<IConfiguration, Context>>()
 export class Configuration
     extends Base<IConfiguration, Configuration, Context>
-    implements OriginDetails, Sde.Support, Parser.Support
+    implements OriginDetails, Sde.Support, Parser.Support, Job
 {
     static alias(): Context {
         return Context.Stream;
@@ -74,7 +74,11 @@ export class Configuration
         return this.instance.desc();
     }
 
-    public isSdeSupported(): boolean {
+    public asJob(): IJob {
+        return this.instance.asJob();
+    }
+
+    public override isSdeSupported(): boolean {
         return this.instance.isSdeSupported();
     }
 

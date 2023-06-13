@@ -1,7 +1,7 @@
 import { error } from '../../../log/utils';
 import { Configuration as Base, ConfigurationStaticDesc } from '../configuration';
 import { Context, SourceUuid } from './index';
-import { OriginDetails, IOriginDetails, IList } from '../description';
+import { OriginDetails, IOriginDetails, IList, Job, IJob } from '../description';
 import { filename, basefolder } from '../../../env/str';
 import { Statics } from '../../../env/decorators';
 import { unique } from '../../../env/sequence';
@@ -16,7 +16,7 @@ export type IConfiguration = [SourceUuid, Types.File.FileType, Types.File.FileNa
 @Statics<ConfigurationStaticDesc<IConfiguration, Context>>()
 export class Configuration
     extends Base<IConfiguration, Configuration, Context>
-    implements OriginDetails, Sde.Support, Parser.Support
+    implements OriginDetails, Sde.Support, Parser.Support, Job
 {
     static desc(): IList {
         return {
@@ -96,8 +96,12 @@ export class Configuration
         };
     }
 
-    public isSdeSupported(): boolean {
-        return false;
+    public asJob(): IJob {
+        return {
+            name: 'tail',
+            desc: filename(this.filename()),
+            icon: 'insert_drive_file',
+        };
     }
 
     public getSupportedParsers(): Parser.Reference[] {

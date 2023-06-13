@@ -2,6 +2,7 @@ import { Configuration as Base, ConfigurationStatic } from '../configuration';
 import { Statics } from '../../../env/decorators';
 import { Mutable } from '../../unity/mutable';
 import { Alias } from '../../env/types';
+import { OriginDetails, IOriginDetails, Job, IJob } from '../description';
 
 export * as File from './file';
 export * as Concat from './concat';
@@ -40,7 +41,7 @@ export type Declaration = File.Configuration | Concat.Configuration | Stream.Con
 @Statics<ConfigurationStatic<IConfiguration, undefined>>()
 export class Configuration
     extends Base<IConfiguration, Configuration, undefined>
-    implements Parser.Support, Sde.Support
+    implements Parser.Support, Sde.Support, Job, OriginDetails
 {
     static alias(): undefined {
         return undefined;
@@ -122,7 +123,15 @@ export class Configuration
         this.setInstance();
     }
 
-    public isSdeSupported(): boolean {
+    public desc(): IOriginDetails {
+        return this.instance.desc();
+    }
+
+    public asJob(): IJob {
+        return this.instance.asJob();
+    }
+
+    public override isSdeSupported(): boolean {
         return this.instance.isSdeSupported();
     }
 

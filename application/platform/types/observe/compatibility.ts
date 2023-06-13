@@ -1,5 +1,6 @@
 import * as Parser from './parser';
 import * as Stream from './origin/stream/index';
+import * as Origin from './origin/index';
 import * as File from './types/file';
 
 export const Streams: {
@@ -37,4 +38,15 @@ export const Files: {
         // Supported file types
         File.FileType.Text,
     ],
+};
+
+export const SDESupport: {
+    [key: string]: boolean;
+} = {
+    [Origin.Context.File]: false,
+    [Origin.Context.Concat]: false,
+    [Stream.Source.Process]: true,
+    [Stream.Source.Serial]: true,
+    [Stream.Source.Tcp]: false,
+    [Stream.Source.Udp]: false,
 };
