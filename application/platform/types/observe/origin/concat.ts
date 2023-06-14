@@ -1,6 +1,6 @@
 import { error } from '../../../log/utils';
 import { Configuration as Base, ConfigurationStaticDesc } from '../configuration';
-import { OriginDetails, IOriginDetails, IList, Job, IJob } from '../description';
+import { OriginDetails, IOriginDetails, IList, Job, IJob, OriginType } from '../description';
 import { Configuration as ConfigurationFile } from './file';
 import { Context, SourceUuid } from './index';
 import { basefolder } from '../../../env/str';
@@ -98,6 +98,7 @@ export class Configuration
             major: `Concating ${this.configuration.length} files`,
             minor: first !== undefined ? basefolder(first[2]) : '',
             icon: 'insert_drive_file',
+            type: OriginType.file,
             state: {
                 running: 'processing',
                 stopped: '',

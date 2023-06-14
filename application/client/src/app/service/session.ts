@@ -13,11 +13,13 @@ import { Session } from './session/session';
 import { UnboundTab } from './session/unbound';
 import { LockToken } from '@platform/env/lock.token';
 import { components } from '@env/decorators/initial';
-import { TargetFile } from '@platform/types/files';
 import { TabControls } from './session/tab';
 import { unique } from '@platform/env/sequence';
 import { history } from '@service/history';
 import { Render } from '@schema/render';
+import { File } from '@platform/types/files';
+import { Observe } from '@platform/types/observe/index';
+import { getRender } from '@schema/render/tools';
 
 export { Session, TabControls, UnboundTab, Base };
 
@@ -92,8 +94,6 @@ export class Service extends Implementation {
 
     public add(bind = true): {
         empty: (render: Render<unknown>) => Promise<Session>;
-        file: (file: TargetFile, render: Render<unknown>) => Promise<Session>;
-        concat: (files: TargetFile[], render: Render<unknown>) => Promise<Session>;
         unbound: (opts: {
             tab: ITab;
             sidebar?: boolean;
@@ -132,68 +132,68 @@ export class Service extends Implementation {
                         });
                 });
             },
-            file: (file: TargetFile, render: Render<unknown>): Promise<Session> => {
-                if (this._locker.isLocked()) {
-                    return Promise.reject(new Error(`Sessions aren't available yet`));
-                }
-                return new Promise((resolve, reject) => {
-                    this.create(render)
-                        .then((session: Session) => {
-                            session.stream
-                                .file(file)
-                                .then(() => {
-                                    binding(session.uuid(), session, file.name);
-                                    resolve(session);
-                                })
-                                .catch((err: Error) => {
-                                    this.log().error(`Fail to open file; error: ${err.message}`);
-                                    reject(err);
-                                });
-                        })
-                        .catch((err: Error) => {
-                            this.log().error(`Fail to add session; error: ${err.message}`);
-                            session
-                                .destroy()
-                                .catch((err) =>
-                                    this.log().warn(`Fail to destroy session: ${err.message}`),
-                                );
-                            reject(err);
-                        });
-                });
-            },
-            concat: (files: TargetFile[], render: Render<unknown>): Promise<Session> => {
-                if (this._locker.isLocked()) {
-                    return Promise.reject(new Error(`Sessions aren't available yet`));
-                }
-                return new Promise((resolve, reject) => {
-                    this.create(render)
-                        .then((session: Session) => {
-                            session.stream
-                                .concat(files)
-                                .then(() => {
-                                    binding(
-                                        session.uuid(),
-                                        session,
-                                        `Concat ${files.length} files`,
-                                    );
-                                    resolve(session);
-                                })
-                                .catch((err: Error) => {
-                                    this.log().error(`Fail to open file; error: ${err.message}`);
-                                    reject(err);
-                                });
-                        })
-                        .catch((err: Error) => {
-                            this.log().error(`Fail to add session; error: ${err.message}`);
-                            session
-                                .destroy()
-                                .catch((err) =>
-                                    this.log().warn(`Fail to destroy session: ${err.message}`),
-                                );
-                            reject(err);
-                        });
-                });
-            },
+            // file: (file: TargetFile, render: Render<unknown>): Promise<Session> => {
+            //     if (this._locker.isLocked()) {
+            //         return Promise.reject(new Error(`Sessions aren't available yet`));
+            //     }
+            //     return new Promise((resolve, reject) => {
+            //         this.create(render)
+            //             .then((session: Session) => {
+            //                 session.stream
+            //                     .file(file)
+            //                     .then(() => {
+            //                         binding(session.uuid(), session, file.name);
+            //                         resolve(session);
+            //                     })
+            //                     .catch((err: Error) => {
+            //                         this.log().error(`Fail to open file; error: ${err.message}`);
+            //                         reject(err);
+            //                     });
+            //             })
+            //             .catch((err: Error) => {
+            //                 this.log().error(`Fail to add session; error: ${err.message}`);
+            //                 session
+            //                     .destroy()
+            //                     .catch((err) =>
+            //                         this.log().warn(`Fail to destroy session: ${err.message}`),
+            //                     );
+            //                 reject(err);
+            //             });
+            //     });
+            // },
+            // concat: (files: TargetFile[], render: Render<unknown>): Promise<Session> => {
+            //     if (this._locker.isLocked()) {
+            //         return Promise.reject(new Error(`Sessions aren't available yet`));
+            //     }
+            //     return new Promise((resolve, reject) => {
+            //         this.create(render)
+            //             .then((session: Session) => {
+            //                 session.stream
+            //                     .concat(files)
+            //                     .then(() => {
+            //                         binding(
+            //                             session.uuid(),
+            //                             session,
+            //                             `Concat ${files.length} files`,
+            //                         );
+            //                         resolve(session);
+            //                     })
+            //                     .catch((err: Error) => {
+            //                         this.log().error(`Fail to open file; error: ${err.message}`);
+            //                         reject(err);
+            //                     });
+            //             })
+            //             .catch((err: Error) => {
+            //                 this.log().error(`Fail to add session; error: ${err.message}`);
+            //                 session
+            //                     .destroy()
+            //                     .catch((err) =>
+            //                         this.log().warn(`Fail to destroy session: ${err.message}`),
+            //                     );
+            //                 reject(err);
+            //             });
+            //     });
+            // },
             tab: (tab: ITab): ITabAPI | undefined => {
                 if (tab.uuid !== undefined && this._tabs.has(tab.uuid)) {
                     this._tabs.setActive(tab.uuid);
@@ -279,6 +279,64 @@ export class Service extends Implementation {
     public get(uuid: string): Session | undefined {
         const smth = this._sessions.get(uuid);
         return smth instanceof Session ? smth : undefined;
+    }
+
+    public initialize(): {
+        configure(observe: Observe): void;
+        observe(observe: Observe, session?: Session): Promise<void>;
+        multiple(files: File[]): void;
+    } {
+        return {
+            configure: (observe: Observe): void => {
+                const api = this.add().tab({
+                    name: observe.origin.desc().major,
+                    content: {
+                        factory: components.get('app-tabs-observe'),
+                        inputs: {
+                            getTabApi: () => api,
+                            observe,
+                            done: (observe: Observe) => {
+                                this.initialize()
+                                    .observe(observe)
+                                    .catch((err: Error) => {
+                                        this.log().error(`Fail to setup observe: ${err.message}`);
+                                    });
+                            },
+                        },
+                    },
+                    active: true,
+                });
+            },
+            observe: async (observe: Observe, session?: Session): Promise<void> => {
+                const render = getRender(observe);
+                if (render instanceof Error) {
+                    throw render;
+                }
+                session = session !== undefined ? session : await this.add(true).empty(render);
+                await session.stream.observe().start(observe);
+            },
+            multiple: (files: File[]): void => {
+                const api = this.add().tab({
+                    name: 'Multiple Files',
+                    content: {
+                        factory: components.get('app-tabs-source-multiple-files'),
+                        inputs: {
+                            getTabApi: () => api,
+                            files,
+                            done: (observe: Observe) => {
+                                this.initialize()
+                                    .observe(observe)
+                                    .catch((err: Error) => {
+                                        this.log().error(`Fail to setup observe: ${err.message}`);
+                                    });
+                            },
+                        },
+                    },
+                    active: true,
+                    closable: true,
+                });
+            },
+        };
     }
 
     protected create(render: Render<unknown>): Promise<Session> {

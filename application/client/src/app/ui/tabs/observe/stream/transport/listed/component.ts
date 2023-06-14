@@ -1,11 +1,12 @@
 import { Component, ChangeDetectorRef, Input, AfterContentInit, HostListener } from '@angular/core';
 import { Ilc, IlcInterface } from '@env/decorators/component';
 import { ChangesDetector } from '@ui/env/extentions/changes';
-import { DataSource, SourceDescription } from '@platform/types/observe';
 import { Session } from '@service/session/session';
 import { IMenuItem, contextmenu } from '@ui/service/contextmenu';
 import { ObserveOperation } from '@service/session/dependencies/observing/operation';
 import { stop } from '@ui/env/dom';
+
+import * as $ from '@platform/types/observe/index';
 
 @Component({
     selector: 'app-transport-review',
@@ -14,22 +15,23 @@ import { stop } from '@ui/env/dom';
 })
 @Ilc()
 export class Transport extends ChangesDetector implements AfterContentInit {
-    @Input() public source!: DataSource;
+    @Input() public observe!: $.Observe;
     @Input() public observer!: ObserveOperation | undefined;
     @Input() public session!: Session;
     @Input() public finished!: boolean;
 
     @HostListener('contextmenu', ['$event']) onContextMenu(event: MouseEvent) {
         const items: IMenuItem[] = [];
-        const source = this.source;
         const observer = this.observer;
-        const sourceDef = source.asSourceDefinition();
-        if (source.asFile() !== undefined) {
-            if (source.parser.Text !== undefined) {
+        if (this.observe.origin.files() !== undefined) {
+            if (this.observe.parser.instance instanceof $.Parser.Text.Configuration) {
                 // Text file can be opened just once per session
                 return;
             }
         }
+        const stream = this.observe.origin.as<$.Origin.Stream.Configuration>(
+            $.Origin.Stream.Configuration,
+        );
         if (observer !== undefined) {
             items.push(
                 ...[
@@ -66,7 +68,7 @@ export class Transport extends ChangesDetector implements AfterContentInit {
                 ],
             );
         } else if (observer === undefined) {
-            !(sourceDef instanceof Error) &&
+            stream !== undefined &&
                 items.push(
                     ...[
                         {
@@ -88,7 +90,7 @@ export class Transport extends ChangesDetector implements AfterContentInit {
                     ],
                 );
         }
-        !(sourceDef instanceof Error) &&
+        stream !== undefined &&
             items.push(
                 ...[
                     {},
@@ -114,16 +116,14 @@ export class Transport extends ChangesDetector implements AfterContentInit {
         });
         stop(event);
     }
-    public description!: SourceDescription | undefined;
+    public description!: $.IOriginDetails | undefined;
 
     constructor(cdRef: ChangeDetectorRef) {
         super(cdRef);
     }
 
     public ngAfterContentInit(): void {
-        const description = (
-            this.source instanceof ObserveOperation ? this.source.asSource() : this.source
-        ).desc();
+        const description = this.observe.origin.desc();
         if (description instanceof Error) {
             this.log().error(`Invalid description: ${description.message}`);
             return;

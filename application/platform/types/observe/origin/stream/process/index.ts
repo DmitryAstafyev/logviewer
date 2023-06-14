@@ -1,7 +1,7 @@
 import { error } from '../../../../../log/utils';
 import { Source } from '../index';
 import { Configuration as Base, ConfigurationStaticDesc } from '../../../configuration';
-import { OriginDetails, IOriginDetails, IList, Job, IJob } from '../../../description';
+import { OriginDetails, IOriginDetails, IList, Job, IJob, OriginType } from '../../../description';
 import { Statics } from '../../../../../env/decorators';
 
 import * as obj from '../../../../../env/obj';
@@ -56,6 +56,7 @@ export class Configuration
             major: `${this.configuration.command}`,
             minor: this.configuration.cwd === '' ? 'no defined cwd' : this.configuration.cwd,
             icon: 'web_asset',
+            type: OriginType.command,
             state: {
                 running: 'spawning',
                 stopped: '',

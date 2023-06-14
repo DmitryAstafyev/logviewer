@@ -10,7 +10,14 @@ export interface IJob {
     icon: string | undefined;
 }
 
+export enum OriginType {
+    net = 'net',
+    serial = 'serial',
+    command = 'command',
+    file = 'file',
+}
 export interface IOriginDetails extends IList {
+    type: OriginType;
     state: {
         running: string;
         stopped: string;

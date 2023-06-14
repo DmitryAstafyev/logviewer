@@ -2,7 +2,7 @@ import { Base } from './action';
 import { bridge } from '@service/bridge';
 import { opener } from '@service/opener';
 import { session } from '@service/session';
-import { TabSourceMultipleFiles } from '@tabs/sources/multiplefiles/component';
+import { TabSourceMultipleFiles } from '@ui/tabs/multiplefiles/component';
 import { FileType, File } from '@platform/types/files';
 
 export const ACTION_UUID = 'open_any_file';

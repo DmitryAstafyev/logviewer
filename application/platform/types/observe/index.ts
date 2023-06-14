@@ -9,7 +9,7 @@ export * as Parser from './parser';
 export * as Origin from './origin';
 export * as Types from './types';
 
-export { IList, IOriginDetails } from './description';
+export { IList, IOriginDetails, IJob } from './description';
 
 export interface IObserve {
     origin: Origin.IConfiguration;
@@ -29,6 +29,19 @@ export class Observe
                 Stream: Origin.Stream.Configuration.initial(),
             },
         });
+    }
+
+    static from(json: string): Observe | Error {
+        const observe = new Observe({
+            parser: {
+                Dlt: Parser.Dlt.Configuration.initial(),
+            },
+            origin: {
+                Stream: Origin.Stream.Configuration.initial(),
+            },
+        });
+        const error = observe.json().from(json);
+        return error instanceof Error ? error : observe;
     }
 
     static alias(): undefined {

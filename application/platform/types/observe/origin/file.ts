@@ -1,7 +1,7 @@
 import { error } from '../../../log/utils';
 import { Configuration as Base, ConfigurationStaticDesc } from '../configuration';
 import { Context, SourceUuid } from './index';
-import { OriginDetails, IOriginDetails, IList, Job, IJob } from '../description';
+import { OriginDetails, IOriginDetails, IList, Job, IJob, OriginType } from '../description';
 import { filename, basefolder } from '../../../env/str';
 import { Statics } from '../../../env/decorators';
 import { unique } from '../../../env/sequence';
@@ -89,6 +89,7 @@ export class Configuration
             major: filename(this.configuration[2]),
             minor: basefolder(this.configuration[2]),
             icon: 'insert_drive_file',
+            type: OriginType.file,
             state: {
                 running: 'tail',
                 stopped: '',

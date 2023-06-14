@@ -1,7 +1,7 @@
 import { error } from '../../../../../log/utils';
 import { Source } from '../index';
 import { Configuration as Base, ConfigurationStaticDesc } from '../../../configuration';
-import { OriginDetails, IOriginDetails, IList, Job, IJob } from '../../../description';
+import { OriginDetails, IOriginDetails, IList, Job, IJob, OriginType } from '../../../description';
 import { Statics } from '../../../../../env/decorators';
 
 import * as obj from '../../../../../env/obj';
@@ -65,6 +65,7 @@ export class Configuration
                     ? ''
                     : this.configuration.multicast.map((m) => m.multiaddr).join(', '),
             icon: 'network_wifi_3_bar',
+            type: OriginType.net,
             state: {
                 running: 'listening',
                 stopped: '',

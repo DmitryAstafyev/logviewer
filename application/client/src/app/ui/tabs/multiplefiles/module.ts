@@ -26,6 +26,6 @@ const imports = [
 @NgModule({
     imports: [...imports],
     declarations: [...components],
-    exports: [...components]
+    exports: [...components],
 })
-export class TabSourceMultipleFilesModule {}
+export class MultipleFilesModule {}
