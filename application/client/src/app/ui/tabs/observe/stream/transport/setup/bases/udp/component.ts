@@ -2,7 +2,8 @@ import { Component, ChangeDetectorRef, Input, OnDestroy, AfterContentInit } from
 import { Ilc, IlcInterface } from '@env/decorators/component';
 import { ChangesDetector } from '@ui/env/extentions/changes';
 import { State } from '../../states/udp';
-// import { Action } from '@ui/tabs/sources/common/actions/action';
+import { Action } from '@ui/tabs/observe/action';
+import { Session } from '@service/session';
 
 import * as Stream from '@platform/types/observe/origin/stream/index';
 
@@ -13,8 +14,10 @@ import * as Stream from '@platform/types/observe/origin/stream/index';
 @Ilc()
 export class SetupBase extends ChangesDetector implements OnDestroy, AfterContentInit {
     @Input() public configuration!: Stream.Udp.IConfiguration;
+    @Input() public action!: Action;
+    @Input() public session: Session | undefined;
+
     public state!: State;
-    // @Input() public action!: Action;
 
     constructor(cdRef: ChangeDetectorRef) {
         super(cdRef);
@@ -25,7 +28,7 @@ export class SetupBase extends ChangesDetector implements OnDestroy, AfterConten
     }
 
     public ngAfterContentInit(): void {
-        this.state = new State(this.configuration);
+        this.state = new State(this.action, this.configuration);
         // this.env().subscriber.register(
         //     this.state.subjects.get().updated.subscribe(this.verify.bind(this)),
         // );

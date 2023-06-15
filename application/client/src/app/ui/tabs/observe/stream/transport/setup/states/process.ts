@@ -1,5 +1,7 @@
 import { ShellProfile } from '@platform/types/shells';
 import { bridge } from '@service/bridge';
+import { Destroy } from '@platform/types/env/types';
+import {Action } from '../../../../action';
 
 import * as obj from '@platform/env/obj';
 import * as Stream from '@platform/types/observe/origin/stream/index';
@@ -7,7 +9,8 @@ import * as Stream from '@platform/types/observe/origin/stream/index';
 const ROOTS_STORAGE_KEY = 'user_selected_profile';
 const ENTRY_KEY = 'selected_profile_path';
 
-export class State extends Stream.Process.Configuration {
+export class State extends Stream.Process.Configuration implements Destroy {
+    public action: Action;
     public profiles: {
         all: ShellProfile[] | undefined;
         valid: ShellProfile[] | undefined;
@@ -19,8 +22,15 @@ export class State extends Stream.Process.Configuration {
     public envvars: Map<string, string> = new Map();
     public current: ShellProfile | undefined;
 
-    constructor(configuration: Stream.Process.IConfiguration) {
+    constructor(action: Action, 
+        configuration: Stream.Process.IConfiguration = Stream.Process.Configuration.initial(),
+    ) {
         super(configuration);
+        this.action = action;
+    }
+
+    public destroy(): void {
+        // Having method "destroy()" is requirement of session's storage
     }
 
     public from(opt: Stream.Process.IConfiguration) {

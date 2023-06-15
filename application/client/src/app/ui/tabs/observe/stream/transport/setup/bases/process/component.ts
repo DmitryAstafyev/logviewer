@@ -17,6 +17,8 @@ import { Ilc, IlcInterface } from '@env/decorators/component';
 import { State } from '../../states/process';
 import { components } from '@env/decorators/initial';
 import { ShellProfile } from '@platform/types/shells';
+import { Action } from '@ui/tabs/observe/action';
+import { Session } from '@service/session';
 
 import * as Stream from '@platform/types/observe/origin/stream/index';
 
@@ -30,6 +32,8 @@ export class SetupBase
     implements AfterContentInit, AfterViewInit, OnDestroy
 {
     @Input() public configuration!: Stream.Process.IConfiguration;
+    @Input() public action!: Action;
+    @Input() public session: Session | undefined;
 
     public state!: State;
 
@@ -50,11 +54,11 @@ export class SetupBase
     }
 
     public ngOnDestroy(): void {
-        // this.state.destroy();
+        this.state.destroy();
     }
 
     public ngAfterContentInit(): void {
-        this.state = new State(this.configuration);
+        this.state = new State(this.action, this.configuration);
         this._inputs.cmd.defaults = this.state.configuration.command;
         this._inputs.cwd.defaults = this.state.configuration.cwd;
         // this.action.subjects.get().applied.subscribe(() => {

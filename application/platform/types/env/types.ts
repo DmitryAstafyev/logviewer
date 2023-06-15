@@ -21,3 +21,7 @@ export abstract class Alias<T> {
 export abstract class Signature<T> {
     public abstract signature(): T;
 }
+
+export abstract class Destroy {
+    public abstract destroy(): void;
+}

@@ -18,7 +18,7 @@ import { unique } from '@platform/env/sequence';
 import { history } from '@service/history';
 import { Render } from '@schema/render';
 import { File } from '@platform/types/files';
-import { Observe } from '@platform/types/observe/index';
+import { Observe } from '@platform/types/observe';
 import { getRender } from '@schema/render/tools';
 
 export { Session, TabControls, UnboundTab, Base };
@@ -282,12 +282,12 @@ export class Service extends Implementation {
     }
 
     public initialize(): {
-        configure(observe: Observe): void;
+        configure(observe: Observe, session?: Session): void;
         observe(observe: Observe, session?: Session): Promise<void>;
         multiple(files: File[]): void;
     } {
         return {
-            configure: (observe: Observe): void => {
+            configure: (observe: Observe, session?: Session): void => {
                 const api = this.add().tab({
                     name: observe.origin.desc().major,
                     content: {
@@ -297,7 +297,7 @@ export class Service extends Implementation {
                             observe,
                             done: (observe: Observe) => {
                                 this.initialize()
-                                    .observe(observe)
+                                    .observe(observe, session)
                                     .catch((err: Error) => {
                                         this.log().error(`Fail to setup observe: ${err.message}`);
                                     });

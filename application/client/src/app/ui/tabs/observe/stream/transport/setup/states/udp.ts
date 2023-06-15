@@ -1,3 +1,6 @@
+import { Destroy } from '@platform/types/env/types';
+import {Action } from '../../../../action';
+
 import * as Errors from '../bases/udp/error';
 import * as Stream from '@platform/types/observe/origin/stream/index';
 
@@ -12,13 +15,16 @@ export interface IMulticastInfo {
     };
 }
 
-export class State extends Stream.Udp.Configuration {
+export class State extends Stream.Udp.Configuration implements Destroy {
+    public action: Action;
+
     public errors: {
         address: Errors.ErrorState;
     };
 
-    constructor(configuration: Stream.Udp.IConfiguration) {
+    constructor(action: Action, configuration: Stream.Udp.IConfiguration = Stream.Udp.Configuration.initial()) {
         super(configuration);
+        this.action = action;
         this.errors = {
             address: new Errors.ErrorState(Errors.Field.bindingAddress, () => {
                 // this.update();
@@ -27,6 +33,10 @@ export class State extends Stream.Udp.Configuration {
         this.watcher.subscribe(() => {
             console.log(`>>>>>>>>>>>>>>> UPDATED`);
         });
+    }
+
+    public destroy(): void {
+        // Having method "destroy()" is requirement of session's storage
     }
 
     public drop() {

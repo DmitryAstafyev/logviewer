@@ -5,7 +5,6 @@ import { ChangesDetector } from '@ui/env/extentions/changes';
 import { State } from '../state';
 import { State as StreamState } from './transport/setup/state';
 import { State as ParserState } from '@elements/parsers/state';
-import { Action } from '@ui/tabs/sources/common/actions/action';
 
 import * as Streams from '@platform/types/observe/origin/stream/index';
 import * as Origins from '@platform/types/observe/origin/index';
@@ -23,7 +22,6 @@ export class TabObserveStream extends ChangesDetector implements AfterContentIni
 
     public stream!: StreamState;
     public parser!: ParserState;
-    public action: Action = new Action();
 
     constructor(cdRef: ChangeDetectorRef) {
         super(cdRef);
@@ -36,7 +34,7 @@ export class TabObserveStream extends ChangesDetector implements AfterContentIni
         if (origin === undefined) {
             throw new Error(`Current origin isn't a stream`);
         }
-        this.stream = new StreamState(origin.getStreamConfiguration());
+        this.stream = new StreamState(origin.getStreamConfiguration(), this.state.action);
         this.parser = new ParserState(this.state.observe);
         this.env().subscriber.register(
             this.state.updates.get().stream.subscribe(() => {

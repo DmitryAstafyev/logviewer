@@ -1,7 +1,7 @@
-import { Observe } from '@platform/types/observe/index';
+import { Observe } from '@platform/types/observe';
 import { SdeRequest, SdeResponse } from '@platform/types/sde';
 
-import * as $ from '@platform/types/observe/index';
+import * as $ from '@platform/types/observe';
 
 export class ObserveOperation {
     private _sdeTasksCount: number = 0;

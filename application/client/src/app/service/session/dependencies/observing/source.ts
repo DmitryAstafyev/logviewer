@@ -1,5 +1,5 @@
 import { ObserveOperation } from './operation';
-import { Observe } from '@platform/types/observe/index';
+import { Observe } from '@platform/types/observe';
 
 export class ObserveSource {
     public readonly observe: Observe;

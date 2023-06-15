@@ -1,6 +1,6 @@
 import { IlcInterface } from '@env/decorators/component';
 import { ChangesDetector } from '@ui/env/extentions/changes';
-import { Observe } from '@platform/types/observe/index';
+import { Observe } from '@platform/types/observe';
 import { Holder } from '@module/matcher';
 
 export class State extends Holder {

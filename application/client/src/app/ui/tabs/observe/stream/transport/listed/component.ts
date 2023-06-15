@@ -6,7 +6,7 @@ import { IMenuItem, contextmenu } from '@ui/service/contextmenu';
 import { ObserveOperation } from '@service/session/dependencies/observing/operation';
 import { stop } from '@ui/env/dom';
 
-import * as $ from '@platform/types/observe/index';
+import * as $ from '@platform/types/observe';
 
 @Component({
     selector: 'app-transport-review',
@@ -74,9 +74,9 @@ export class Transport extends ChangesDetector implements AfterContentInit {
                         {
                             caption: 'Restart',
                             handler: () => {
-                                this.session.stream
-                                    .connect(sourceDef)
-                                    .source(source)
+                                this.ilc()
+                                    .services.system.session.initialize()
+                                    .observe(this.observe, this.session)
                                     .catch((err: Error) => {
                                         this.log().error(
                                             `Fail to restart observe operation: ${err.message}`,
@@ -98,13 +98,8 @@ export class Transport extends ChangesDetector implements AfterContentInit {
                         caption: 'Parameters',
                         handler: () => {
                             this.ilc()
-                                .services.system.opener.stream(sourceDef, undefined, undefined)
-                                .assign(this.session)
-                                .source(
-                                    this.source instanceof ObserveOperation
-                                        ? this.source.asSource()
-                                        : this.source,
-                                );
+                                .services.system.session.initialize()
+                                .configure(this.observe, this.session);
                         },
                     },
                 ],

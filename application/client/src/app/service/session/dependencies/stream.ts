@@ -4,7 +4,7 @@ import { Range, IRange } from '@platform/types/range';
 import { cutUuid } from '@log/index';
 import { Rank } from './rank';
 import { IGrabbedElement } from '@platform/types/content';
-import { Observe } from '@platform/types/observe/index';
+import { Observe } from '@platform/types/observe';
 import { ObserveOperation } from './observing/operation';
 import { ObserveSource } from './observing/source';
 
@@ -13,7 +13,7 @@ import { Sde } from './observing/sde';
 
 import * as Requests from '@platform/ipc/request';
 import * as Events from '@platform/ipc/event';
-import * as $ from '@platform/types/observe/index';
+import * as $ from '@platform/types/observe';
 
 export { ObserveOperation };
 

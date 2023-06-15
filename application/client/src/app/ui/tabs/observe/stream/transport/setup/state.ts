@@ -1,17 +1,19 @@
 import { Subject } from '@platform/env/subscription';
+import { Action } from '@ui/tabs/observe/action';
 
 import * as Stream from '@platform/types/observe/origin/stream/index';
 
 export class State extends Stream.Configuration {
-    public SOURCE = Stream.Source;
     protected readonly history: Map<Stream.Source, Stream.IDeclaration> = new Map();
 
     public source: Stream.Source;
     public updated: Subject<void> = new Subject();
+    public action: Action;
 
-    constructor(configuration: Stream.IConfiguration) {
+    constructor(configuration: Stream.IConfiguration, action: Action) {
         super(configuration);
         this.source = Stream.getAliasByConfiguration(configuration);
+        this.action = action;
     }
 
     public destroy() {

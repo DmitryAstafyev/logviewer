@@ -38,6 +38,8 @@ export const DEFAULT = File.Configuration;
 
 export type Declaration = File.Configuration | Concat.Configuration | Stream.Configuration;
 
+export type OriginNature = File.Configuration | Concat.Configuration | Stream.Stream.Declaration;
+
 @Statics<ConfigurationStatic<IConfiguration, undefined>>()
 export class Configuration
     extends Base<IConfiguration, Configuration, undefined>
@@ -141,5 +143,13 @@ export class Configuration
 
     public as<T>(Ref: { new (...args: any[]): Declaration } & Alias<unknown>): T | undefined {
         return this.instance.alias() === Ref.alias() ? (this.instance as T) : undefined;
+    }
+
+    public nature(): OriginNature {
+        if (this.instance instanceof Stream.Configuration) {
+            return this.instance.instance.instance;
+        } else {
+            return this.instance;
+        }
     }
 }

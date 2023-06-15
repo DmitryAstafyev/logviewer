@@ -2,6 +2,8 @@ import { bridge } from '@service/bridge';
 import { scope } from '@platform/env/scope';
 import { Subject } from '@platform/env/subscription';
 import { error } from '@platform/log/utils';
+import { Destroy } from '@platform/types/env/types';
+import {Action } from '../../../../action';
 
 import * as Errors from '../bases/serial/error';
 import * as Stream from '@platform/types/observe/origin/stream/index';
@@ -57,7 +59,8 @@ const PARITY = [
 ];
 const STOP_BITS = [1, 2];
 
-export class State extends Stream.Serial.Configuration {
+export class State extends Stream.Serial.Configuration implements Destroy  {
+    public action: Action;
     public errors: {
         baudRate: Errors.ErrorState;
     };
@@ -76,14 +79,19 @@ export class State extends Stream.Serial.Configuration {
     protected states: Map<string, Stream.Serial.IConfiguration> = new Map();
     protected prev: string = '';
 
-    constructor(configuration: Stream.Serial.IConfiguration) {
+    constructor(action: Action, configuration: Stream.Serial.IConfiguration = Stream.Serial.Configuration.initial()) {
         super(configuration);
+        this.action = action;
         this.errors = {
             baudRate: new Errors.ErrorState(Errors.Field.baudRate, () => {
                 // this.update();
             }),
         };
         this.history().load();
+    }
+
+    public destroy(): void {
+        // Having method "destroy()" is requirement of session's storage
     }
 
     public from(opt: Stream.Serial.IConfiguration) {

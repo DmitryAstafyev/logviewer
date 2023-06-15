@@ -2,9 +2,8 @@ import { Implementation as Dlt } from './dlt';
 import { Implementation as SomeIp } from './someip';
 import { Implementation as Text } from './text';
 import { Render, RenderReference } from './index';
-import { Columns } from './columns';
 import { Session } from '@service/session/session';
-import { Observe } from '@platform/types/observe/index';
+import { Observe } from '@platform/types/observe';
 
 import * as Parsers from '@platform/types/observe/parser/index';
 

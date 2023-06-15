@@ -159,3 +159,79 @@ export class Stream extends Factory<Stream> {
         return this;
     }
 }
+
+export function map(observe: $.Observe): {
+    file(): boolean;
+    concat(): boolean;
+    process(): boolean;
+    serial(): boolean;
+    udp(): boolean;
+    tcp(): boolean;
+} {
+    return {
+        file: (): boolean => {
+            return (
+                observe.origin.as<$.Origin.File.Configuration>($.Origin.File.Configuration) !==
+                undefined
+            );
+        },
+        concat: (): boolean => {
+            return (
+                observe.origin.as<$.Origin.Concat.Configuration>($.Origin.Concat.Configuration) !==
+                undefined
+            );
+        },
+        process: (): boolean => {
+            const stream = observe.origin.as<$.Origin.Stream.Configuration>(
+                $.Origin.Stream.Configuration,
+            );
+            if (stream === undefined) {
+                return false;
+            }
+            return (
+                stream.as<$.Origin.Stream.Stream.Process.Configuration>(
+                    $.Origin.Stream.Stream.Process.Configuration,
+                ) !== undefined
+            );
+        },
+        serial: (): boolean => {
+            const stream = observe.origin.as<$.Origin.Stream.Configuration>(
+                $.Origin.Stream.Configuration,
+            );
+            if (stream === undefined) {
+                return false;
+            }
+            return (
+                stream.as<$.Origin.Stream.Stream.Serial.Configuration>(
+                    $.Origin.Stream.Stream.Serial.Configuration,
+                ) !== undefined
+            );
+        },
+        udp: (): boolean => {
+            const stream = observe.origin.as<$.Origin.Stream.Configuration>(
+                $.Origin.Stream.Configuration,
+            );
+            if (stream === undefined) {
+                return false;
+            }
+            return (
+                stream.as<$.Origin.Stream.Stream.Udp.Configuration>(
+                    $.Origin.Stream.Stream.Udp.Configuration,
+                ) !== undefined
+            );
+        },
+        tcp: (): boolean => {
+            const stream = observe.origin.as<$.Origin.Stream.Configuration>(
+                $.Origin.Stream.Configuration,
+            );
+            if (stream === undefined) {
+                return false;
+            }
+            return (
+                stream.as<$.Origin.Stream.Stream.Tcp.Configuration>(
+                    $.Origin.Stream.Stream.Tcp.Configuration,
+                ) !== undefined
+            );
+        },
+    };
+}

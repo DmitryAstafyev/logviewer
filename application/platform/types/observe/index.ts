@@ -83,4 +83,8 @@ export class Observe
     public getSupportedParsers(): Parser.Reference[] {
         return this.origin.getSupportedParsers();
     }
+
+    public clone(): Observe {
+        return new Observe(this.configuration);
+    }
 }

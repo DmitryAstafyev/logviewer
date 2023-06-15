@@ -12,7 +12,7 @@ import { Initial } from '@env/decorators/initial';
 import { ChangesDetector } from '@ui/env/extentions/changes';
 import { TabControls } from '@service/session';
 import { State } from './state';
-import { Observe } from '@platform/types/observe/index';
+import { Observe } from '@platform/types/observe';
 
 @Component({
     selector: 'app-tabs-observe',

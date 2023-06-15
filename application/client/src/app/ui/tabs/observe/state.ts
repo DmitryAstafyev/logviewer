@@ -1,10 +1,10 @@
-import { Observe, Parser } from '@platform/types/observe/index';
+import { Observe, Parser } from '@platform/types/observe';
 import { IlcInterface } from '@env/decorators/component';
 import { ChangesDetector } from '@ui/env/extentions/changes';
 import { Subjects, Subject } from '@platform/env/subscription';
-// import { error } from '@platform/log/utils';
 import { File } from '@platform/types/files';
 import { bytesToStr } from '@env/str';
+import { Action } from './action';
 
 import * as StreamOrigin from '@platform/types/observe/origin/stream/index';
 import * as Origin from '@platform/types/observe/origin/index';
@@ -19,6 +19,7 @@ export class State {
     public concat: File[] | undefined;
     public stream: StreamOrigin.Source | undefined;
     public size: string | undefined;
+    public action: Action = new Action();
     public updates: Subjects<{
         parser: Subject<void>;
         stream: Subject<void>;

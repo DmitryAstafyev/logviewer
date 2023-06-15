@@ -5,6 +5,7 @@ import { OriginDetails, IOriginDetails, Job, IJob } from '../description';
 import { Statics } from '../../../env/decorators';
 import { unique } from '../../../env/sequence';
 import { Mutable } from '../../unity/mutable';
+import { Alias } from '../../env/types';
 
 import * as str from '../../../env/str';
 import * as Stream from './stream/index';
@@ -88,5 +89,11 @@ export class Configuration
 
     public getStreamConfiguration(): Stream.IConfiguration {
         return this.configuration[1];
+    }
+
+    public as<T>(
+        Ref: { new (...args: any[]): Stream.Declaration } & Alias<unknown>,
+    ): T | undefined {
+        return this.instance.instance.alias() === Ref.alias() ? (this.instance as T) : undefined;
     }
 }
