@@ -283,6 +283,8 @@ export class Service extends Implementation {
 
     public initialize(): {
         configure(observe: Observe, session?: Session): void;
+        // Will suggest to choose a parser
+        suggest(observe: Observe): void;
         observe(observe: Observe, session?: Session): Promise<void>;
         multiple(files: File[]): void;
     } {
@@ -314,6 +316,10 @@ export class Service extends Implementation {
                 }
                 session = session !== undefined ? session : await this.add(true).empty(render);
                 await session.stream.observe().start(observe);
+            },
+            suggest: (observe: Observe): void => {
+                // TODO: implement
+                this.initialize().configure(observe);
             },
             multiple: (files: File[]): void => {
                 const api = this.add().tab({

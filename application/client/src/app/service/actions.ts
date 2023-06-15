@@ -3,8 +3,8 @@ import { services } from '@register/services';
 import { api } from '@service/api';
 import { CancelablePromise } from '@platform/env/promise';
 import { FileType } from '@platform/types/files';
-import { ParserName } from '@platform/types/observe';
-import { Source } from '@platform/types/transport';
+import { Protocol } from '@platform/types/observe/parser';
+import { Source } from '@platform/types/observe/origin/stream/index';
 
 import * as Requests from '@platform/ipc/request';
 import * as handlers from '@service/actions/index';
@@ -107,8 +107,8 @@ export class Service extends Implementation {
                     ): CancelablePromise<Requests.Actions.Stream.Response> => {
                         return new CancelablePromise((resolve, _reject) => {
                             (() => {
-                                switch (request.type) {
-                                    case ParserName.Text:
+                                switch (request.protocol) {
+                                    case Protocol.Text:
                                         switch (request.source) {
                                             case undefined:
                                                 return new handlers.StreamTextOnCustom.Action().apply();
@@ -123,7 +123,7 @@ export class Service extends Implementation {
                                                     ),
                                                 );
                                         }
-                                    case ParserName.Dlt:
+                                    case Protocol.Dlt:
                                         switch (request.source) {
                                             case undefined:
                                                 return new handlers.StreamDltOnCustom.Action().apply();
@@ -142,7 +142,7 @@ export class Service extends Implementation {
                                         }
                                     default:
                                         return Promise.reject(
-                                            new Error(`Unsupported format: ${request.type}`),
+                                            new Error(`Unsupported format: ${request.protocol}`),
                                         );
                                 }
                             })()
