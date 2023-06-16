@@ -1,25 +1,67 @@
 import * as $ from './index';
 
 class Factory<T> {
+    protected changes: { parser: boolean; origin: boolean } = { parser: false, origin: false };
+
+    protected updated(): {
+        parser(): void;
+        origin(): void;
+    } {
+        const update = () => {
+            if (this.changes.origin === this.changes.parser) {
+                // No needs to update if and parser and origin were changed or weren't changed both
+                return;
+            }
+            if (this.changes.origin) {
+                const parsers = this.observe.origin.getSupportedParsers();
+                if (parsers.length === 0) {
+                    throw new Error(
+                        `No supported parser for ${this.observe.origin.instance.alias()}`,
+                    );
+                }
+                this.protocol(parsers[0].alias());
+            } else if (this.changes.parser) {
+                const streams = this.observe.parser.getSupportedStream();
+                if (streams.length > 0) {
+                    this.observe.origin.change(
+                        new $.Origin.Stream.Configuration($.Origin.Stream.Configuration.initial()),
+                    );
+                    (this.observe.origin.instance as $.Origin.Stream.Configuration).instance
+                        .change()
+                        .byReference(streams[0]);
+                    return;
+                }
+                const filetypes = this.observe.parser.getSupportedFileType();
+                if (filetypes.length === 0) {
+                    throw new Error(
+                        `Cannot find any supported origins for parser: ${this.observe.parser.alias()}`,
+                    );
+                }
+                this.observe.origin.change(
+                    new $.Origin.File.Configuration($.Origin.File.Configuration.initial()),
+                );
+                (this.observe.origin.instance as $.Origin.File.Configuration)
+                    .set()
+                    .type(filetypes[0]);
+            }
+        };
+        return {
+            parser: (): void => {
+                this.changes.parser = true;
+                update();
+            },
+            origin: (): void => {
+                this.changes.origin = true;
+                update();
+            },
+        };
+    }
+
     public observe: $.Observe = $.Observe.new();
 
     public protocol(protocol: $.Parser.Protocol): T {
-        this.observe.parser.change(
-            (() => {
-                switch (protocol) {
-                    case $.Parser.Protocol.Dlt:
-                        return new $.Parser.Dlt.Configuration($.Parser.Dlt.Configuration.initial());
-                    case $.Parser.Protocol.SomeIp:
-                        return new $.Parser.SomeIp.Configuration(
-                            $.Parser.SomeIp.Configuration.initial(),
-                        );
-                    case $.Parser.Protocol.Text:
-                        return new $.Parser.Text.Configuration(
-                            $.Parser.Text.Configuration.initial(),
-                        );
-                }
-            })(),
-        );
+        this.observe.parser.change($.Parser.getByAlias(protocol));
+        this.updated().parser();
         return this as unknown as T;
     }
 
@@ -29,8 +71,10 @@ class Factory<T> {
                 configuration === undefined ? $.Parser.Dlt.Configuration.initial() : configuration,
             ),
         );
+        this.updated().parser();
         return this as unknown as T;
     }
+
     public asSomeip(configuration?: $.Parser.SomeIp.IConfiguration): T {
         this.observe.parser.change(
             new $.Parser.SomeIp.Configuration(
@@ -39,10 +83,13 @@ class Factory<T> {
                     : configuration,
             ),
         );
+        this.updated().parser();
         return this as unknown as T;
     }
+
     public asText(): T {
         this.observe.parser.change(new $.Parser.Text.Configuration(null));
+        this.updated().parser();
         return this as unknown as T;
     }
 }
@@ -56,6 +103,7 @@ export class File extends Factory<File> {
                 .set()
                 .filename(filename),
         );
+        this.updated().origin();
         return this;
     }
 
@@ -64,6 +112,7 @@ export class File extends Factory<File> {
             throw new Error(`Given observe object doesn't have File origin`);
         }
         this.observe.origin.instance.set().type(type);
+        this.updated().origin();
         return this;
     }
 }
@@ -77,6 +126,7 @@ export class Concat extends Factory<Concat> {
                 .set()
                 .files(files),
         );
+        this.updated().origin();
         return this;
     }
 
@@ -85,6 +135,7 @@ export class Concat extends Factory<Concat> {
             throw new Error(`Given observe object doesn't have Concat origin`);
         }
         this.observe.origin.instance.set().defaults(type);
+        this.updated().origin();
         return this;
     }
 
@@ -93,6 +144,7 @@ export class Concat extends Factory<Concat> {
             throw new Error(`Given observe object doesn't have Concat origin`);
         }
         this.observe.origin.instance.set().push(filename, type);
+        this.updated().origin();
         return this;
     }
 
@@ -101,6 +153,7 @@ export class Concat extends Factory<Concat> {
             throw new Error(`Given observe object doesn't have Concat origin`);
         }
         this.observe.origin.instance.set().remove(filename);
+        this.updated().origin();
         return this;
     }
 }
@@ -117,8 +170,10 @@ export class Stream extends Factory<Stream> {
                     : $.Origin.Stream.Stream.Process.Configuration.initial(),
             ),
         );
+        this.updated().origin();
         return this;
     }
+
     public serial(configuration?: $.Origin.Stream.Stream.Serial.IConfiguration): Stream {
         if (!(this.observe.origin.instance instanceof $.Origin.Stream.Configuration)) {
             throw new Error(`Given observe object doesn't have Stream origin`);
@@ -130,8 +185,10 @@ export class Stream extends Factory<Stream> {
                     : $.Origin.Stream.Stream.Serial.Configuration.initial(),
             ),
         );
+        this.updated().origin();
         return this;
     }
+
     public tcp(configuration?: $.Origin.Stream.Stream.Tcp.IConfiguration): Stream {
         if (!(this.observe.origin.instance instanceof $.Origin.Stream.Configuration)) {
             throw new Error(`Given observe object doesn't have Stream origin`);
@@ -143,8 +200,10 @@ export class Stream extends Factory<Stream> {
                     : $.Origin.Stream.Stream.Tcp.Configuration.initial(),
             ),
         );
+        this.updated().origin();
         return this;
     }
+
     public udp(configuration?: $.Origin.Stream.Stream.Udp.IConfiguration): Stream {
         if (!(this.observe.origin.instance instanceof $.Origin.Stream.Configuration)) {
             throw new Error(`Given observe object doesn't have Stream origin`);
@@ -156,6 +215,7 @@ export class Stream extends Factory<Stream> {
                     : $.Origin.Stream.Stream.Udp.Configuration.initial(),
             ),
         );
+        this.updated().origin();
         return this;
     }
 }

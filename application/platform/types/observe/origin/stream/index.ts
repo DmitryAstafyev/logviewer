@@ -159,6 +159,7 @@ export class Configuration
     public change(): {
         byConfiguration(configuration: IConfiguration): void;
         byDeclaration(declaration: Declaration): void;
+        byReference(reference: Reference): void;
     } {
         return {
             byConfiguration: (configuration: IConfiguration): void => {
@@ -167,6 +168,10 @@ export class Configuration
             },
             byDeclaration: (stream: Declaration): void => {
                 this.overwrite({ [stream.alias()]: stream.configuration });
+                this.setInstance();
+            },
+            byReference: (Ref: Reference): void => {
+                this.overwrite({ [Ref.alias()]: new Ref(Ref.initial()) });
                 this.setInstance();
             },
         };
