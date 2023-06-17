@@ -49,6 +49,7 @@ function observe<T>(entry: T, subject: Subject<void>): T {
         return new Proxy(entry as object, { set }) as T;
     } else if (entry instanceof Object) {
         Object.keys(entry).forEach((key: string | number) => {
+            // eslint-disable-next-line no-prototype-builtins
             if (!entry.hasOwnProperty(key)) {
                 return;
             }
@@ -65,20 +66,26 @@ function observe<T>(entry: T, subject: Subject<void>): T {
     return undefined as T;
 }
 
+export interface ICompatibilityMod {
+    Streams: {
+        [key: string]: Stream.Reference[];
+    };
+    Files: {
+        [key: string]: File.FileType[];
+    };
+    SDESupport: {
+        [key: string]: boolean;
+    };
+    Configurable: {
+        [key: string]:
+            | {
+                  [key: string]: boolean;
+              }
+            | boolean;
+    };
+}
 // To prevent circle dependency we are loading compatibility table in async way
-let compatibility:
-    | {
-          Streams: {
-              [key: string]: Stream.Reference[];
-          };
-          Files: {
-              [key: string]: File.FileType[];
-          };
-          SDESupport: {
-              [key: string]: boolean;
-          };
-      }
-    | undefined;
+let compatibility: ICompatibilityMod | undefined;
 import('./compatibility')
     .then((mod) => {
         compatibility = mod;
@@ -86,6 +93,13 @@ import('./compatibility')
     .catch((err: Error) => {
         console.error(err.message);
     });
+
+export function getCompatibilityMod(): ICompatibilityMod {
+    if (compatibility === undefined) {
+        throw new Error(`Moudle "compatibility" isn't loaded yet`);
+    }
+    return compatibility;
+}
 
 export abstract class Configuration<T, C, A>
     implements JsonConvertor<Configuration<T, C, A>>, SelfValidate
@@ -144,38 +158,29 @@ export abstract class Configuration<T, C, A>
     }
 
     public getSupportedStream(): Stream.Reference[] {
-        if (compatibility === undefined) {
-            throw new Error(`Moudle "compatibility" isn't loaded yet`);
-        }
-        if (compatibility.Streams[this.ref.alias() as string] === undefined) {
+        if (getCompatibilityMod().Streams[this.ref.alias() as string] === undefined) {
             throw new Error(
                 `Entity "${this.ref.alias()}" isn't registred in compatibility.Streams list`,
             );
         }
-        return compatibility.Streams[this.ref.alias() as string];
+        return getCompatibilityMod().Streams[this.ref.alias() as string];
     }
 
     public getSupportedFileType(): File.FileType[] {
-        if (compatibility === undefined) {
-            throw new Error(`Moudle "compatibility" isn't loaded yet`);
-        }
-        if (compatibility.Files[this.ref.alias() as string] === undefined) {
+        if (getCompatibilityMod().Files[this.ref.alias() as string] === undefined) {
             throw new Error(
                 `Entity "${this.ref.alias()}" isn't registred in compatibility.Files list`,
             );
         }
-        return compatibility.Files[this.ref.alias() as string];
+        return getCompatibilityMod().Files[this.ref.alias() as string];
     }
 
     public isSdeSupported(): boolean {
-        if (compatibility === undefined) {
-            throw new Error(`Moudle "compatibility" isn't loaded yet`);
-        }
-        if (compatibility.SDESupport[this.ref.alias() as string] === undefined) {
+        if (getCompatibilityMod().SDESupport[this.ref.alias() as string] === undefined) {
             throw new Error(
                 `Entity "${this.ref.alias()}" isn't registred in compatibility.SDESupport list`,
             );
         }
-        return compatibility.SDESupport[this.ref.alias() as string];
+        return getCompatibilityMod().SDESupport[this.ref.alias() as string];
     }
 }

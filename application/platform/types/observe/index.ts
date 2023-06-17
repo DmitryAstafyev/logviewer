@@ -1,5 +1,5 @@
 import { unique } from '../../env/sequence';
-import { Configuration as Base } from './configuration';
+import { Configuration as Base, getCompatibilityMod } from './configuration';
 
 import * as Parser from './parser';
 import * as Origin from './origin';
@@ -8,6 +8,7 @@ import * as Sde from './sde';
 export * as Parser from './parser';
 export * as Origin from './origin';
 export * as Types from './types';
+export * as Description from './description';
 
 export { IList, IOriginDetails, IJob } from './description';
 
@@ -86,5 +87,19 @@ export class Observe
 
     public clone(): Observe {
         return new Observe(this.configuration);
+    }
+
+    public isConfigurable(): boolean {
+        const map: any = getCompatibilityMod().Configurable;
+        const nature = this.origin.nature().alias();
+        const parser = this.parser.alias();
+        if (typeof map[nature] === 'boolean') {
+            return map[nature];
+        } else if (typeof map[nature][parser] === 'boolean') {
+            return map[nature][parser];
+        }
+        throw new Error(
+            `Parser "${parser}" and origin "${nature}" don't have description in Compatibility.Configurable table`,
+        );
     }
 }

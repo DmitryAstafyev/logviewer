@@ -52,13 +52,13 @@ export function getByAlias(alias: Protocol): Declaration {
     return new Ref(Ref.initial(), Ref);
 }
 
-@Statics<ConfigurationStatic<IConfiguration, undefined>>()
+@Statics<ConfigurationStatic<IConfiguration, Protocol>>()
 export class Configuration
-    extends Base<IConfiguration, Configuration, undefined>
+    extends Base<IConfiguration, Configuration, Protocol>
     implements List, Stream.Support, Files.Support
 {
-    static alias(): undefined {
-        return undefined;
+    static alias(): Protocol {
+        throw new Error(`Alias of parsers holder should be used`);
     }
 
     static validate(configuration: IConfiguration): Error | IConfiguration {
@@ -134,6 +134,10 @@ export class Configuration
 
     public override getSupportedStream(): Stream.Reference[] {
         return this.instance.getSupportedStream();
+    }
+
+    public override alias(): Protocol {
+        return this.instance.alias();
     }
 
     public override getSupportedFileType(): Files.FileType[] {

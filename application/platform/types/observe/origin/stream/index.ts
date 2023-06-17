@@ -92,6 +92,7 @@ export class Configuration
     implements OriginDetails, Sde.Support, Parser.Support, Job
 {
     static alias(): Origin.Context {
+        //TODO: alias should be defined for holders. Same for Parser as holder of parsers
         return Origin.Context.Stream;
     }
 

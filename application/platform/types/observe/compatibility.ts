@@ -6,16 +6,16 @@ import * as File from './types/file';
 export const Streams: {
     [key: string]: Stream.Reference[];
 } = {
-    [Parser.Dlt.Configuration.alias()]: [
+    [Parser.Protocol.Dlt]: [
         // Supported streams
         Stream.Tcp.Configuration,
         Stream.Udp.Configuration,
     ],
-    [Parser.SomeIp.Configuration.alias()]: [
+    [Parser.Protocol.SomeIp]: [
         // Supported streams
         Stream.Udp.Configuration,
     ],
-    [Parser.Text.Configuration.alias()]: [
+    [Parser.Protocol.Text]: [
         // Supported streams
         Stream.Serial.Configuration,
         Stream.Process.Configuration,
@@ -25,16 +25,16 @@ export const Streams: {
 export const Files: {
     [key: string]: File.FileType[];
 } = {
-    [Parser.Dlt.Configuration.alias()]: [
+    [Parser.Protocol.Dlt]: [
         // Supported file types
         File.FileType.Binary,
         File.FileType.PcapNG,
     ],
-    [Parser.SomeIp.Configuration.alias()]: [
+    [Parser.Protocol.SomeIp]: [
         // Supported file types
         File.FileType.PcapNG,
     ],
-    [Parser.Text.Configuration.alias()]: [
+    [Parser.Protocol.Text]: [
         // Supported file types
         File.FileType.Text,
     ],
@@ -49,4 +49,23 @@ export const SDESupport: {
     [Stream.Source.Serial]: true,
     [Stream.Source.Tcp]: false,
     [Stream.Source.Udp]: false,
+};
+
+export const Configurable: {
+    [key: string]:
+        | {
+              [key: string]: boolean;
+          }
+        | boolean;
+} = {
+    [Origin.Context.File]: {
+        [Parser.Protocol.Text]: false,
+        [Parser.Protocol.Dlt]: true,
+        [Parser.Protocol.SomeIp]: true,
+    },
+    [Origin.Context.Concat]: true,
+    [Stream.Source.Process]: true,
+    [Stream.Source.Serial]: true,
+    [Stream.Source.Tcp]: true,
+    [Stream.Source.Udp]: true,
 };
