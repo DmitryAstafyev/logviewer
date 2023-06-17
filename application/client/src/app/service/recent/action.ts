@@ -8,8 +8,6 @@ import { Stat, IStat } from './stat';
 
 import * as $ from '@platform/types/observe';
 
-export type AfterHandler = () => void;
-
 interface IActionContent {
     stat: IStat;
     observe: $.IObserve;
@@ -22,23 +20,15 @@ export class Action {
         return error instanceof Error ? error : action;
     }
 
-    protected readonly handlers: {
-        after: AfterHandler | undefined;
-    } = {
-        after: undefined,
-    };
-
     public stat: Stat = Stat.defaults();
     public uuid: string = unique();
 
     constructor(public readonly observe: $.Observe) {}
 
-    public after(handler: AfterHandler | undefined): Action {
-        this.handlers.after = handler;
-        return this;
-    }
-
-    public isSuitable(observe: $.Observe): boolean {
+    public isSuitable(observe?: $.Observe): boolean {
+        if (observe === undefined) {
+            return true;
+        }
         if (observe.origin.nature().alias() !== this.observe.origin.nature().alias()) {
             return false;
         }
@@ -81,9 +71,7 @@ export class Action {
         };
     }
 
-    public getActions(
-        remove: (uuid: string[]) => void,
-    ): { caption?: string; handler?: () => void }[] {
+    public getActions(): { caption?: string; handler?: () => void }[] {
         const observe = this.observe;
         const configurable = observe.isConfigurable();
         const nature = observe.origin.nature().desc();
@@ -100,7 +88,7 @@ export class Action {
                             return 'Execute';
                     }
                 })(),
-                handler: this.apply.bind(this, remove),
+                handler: this.apply.bind(this),
             },
             ...(configurable
                 ? [
@@ -122,7 +110,12 @@ export class Action {
         ];
     }
 
-    public apply(_remove: (uuid: string[]) => void): void {
+    public remove(): Promise<void> {
+        // TODO: removing of action should be defined here
+        return Promise.resolve();
+    }
+
+    public apply(): Promise<void> {
         throw new Error(`TODO: Implement!`);
         // (() => {
         //     if (this.file !== undefined) {

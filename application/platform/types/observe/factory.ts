@@ -1,5 +1,7 @@
 import * as $ from './index';
 
+export { FileType } from './types/file/index';
+
 class Factory<T> {
     protected changes: { parser: boolean; origin: boolean } = { parser: false, origin: false };
 

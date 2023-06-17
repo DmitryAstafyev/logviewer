@@ -1,4 +1,4 @@
-import { LevelDistribution } from '@platform/types/parsers/dlt';
+import { LevelDistribution } from '@platform/types/observe/parser/dlt';
 import { Matchee } from '@module/matcher';
 
 import * as wasm from '@loader/wasm';

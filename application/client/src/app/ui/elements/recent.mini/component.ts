@@ -38,7 +38,7 @@ export class RecentActionsMini extends ChangesDetector implements AfterViewInit,
     }
 
     public ngAfterContentInit(): void {
-        this.state = new State(this, this.origin, this.parser);
+        this.state = new State(this, this.observe);
         this.env().subscriber.register(
             this.state.update.subscribe(() => {
                 this.detectChanges();
@@ -54,13 +54,13 @@ export class RecentActionsMini extends ChangesDetector implements AfterViewInit,
     }
 
     public onDefaultAction(action: Action) {
-        action.apply(this.state.remove.bind(this.state));
+        action.apply();
         this.close !== undefined && this.close();
     }
 
     public onAllActions(event: MouseEvent, action: Action) {
         const items = [
-            ...action.getActions(this.state.remove.bind(this.state)),
+            ...action.getActions(),
             {},
             {
                 caption: 'Remove recent',

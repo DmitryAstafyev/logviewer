@@ -10,6 +10,8 @@ import { Level, Locker } from '@ui/service/lockers';
 import { getUniqueColorTo } from '@ui/styles/colors';
 import { Sort } from '@angular/material/sort';
 
+import * as Factory from '@platform/types/observe/factory';
+
 export interface IMultifile {
     usedColors: string[];
     files: FileHolder[];
@@ -132,9 +134,23 @@ export class State extends Holder {
                     switch (fileType) {
                         case FileType.Text:
                         case FileType.Any:
-                            return this._ilc.services.system.opener.concat(files).text();
+                            return this._ilc.services.system.session
+                                .initialize()
+                                .observe(
+                                    new Factory.Concat()
+                                        .asText()
+                                        .type(Factory.FileType.Text)
+                                        .files(files).observe,
+                                );
                         case FileType.Dlt:
-                            return this._ilc.services.system.opener.concat(files).dlt();
+                            return this._ilc.services.system.session
+                                .initialize()
+                                .configure(
+                                    new Factory.Concat()
+                                        .asDlt()
+                                        .type(Factory.FileType.Binary)
+                                        .files(files).observe,
+                                );
                         default:
                             return Promise.reject(
                                 new Error(`Unsupported type ${this.files[0].type}`),
@@ -163,9 +179,14 @@ export class State extends Holder {
                     switch (file.type) {
                         case FileType.Any:
                         case FileType.Text:
-                            this._ilc.services.system.opener
-                                .text(file.filename)
-                                .text()
+                            this._ilc.services.system.session
+                                .initialize()
+                                .observe(
+                                    new Factory.File()
+                                        .asText()
+                                        .type(Factory.FileType.Text)
+                                        .file(file.filename).observe,
+                                )
                                 .catch((err: Error) => {
                                     this._ilc.logger.error(
                                         `Fail to open text file; error: ${err.message}`,
@@ -173,9 +194,14 @@ export class State extends Holder {
                                 });
                             break;
                         case FileType.Dlt:
-                            this._ilc.services.system.opener
-                                .binary(file.filename)
-                                .dlt()
+                            this._ilc.services.system.session
+                                .initialize()
+                                .configure(
+                                    new Factory.File()
+                                        .asDlt()
+                                        .type(Factory.FileType.Binary)
+                                        .file(file.filename).observe,
+                                )
                                 .catch((err: Error) => {
                                     this._ilc.logger.error(
                                         `Fail to open dlt file; error: ${err.message}`,
@@ -183,16 +209,7 @@ export class State extends Holder {
                                 });
                             break;
                         case FileType.PcapNG:
-                            // TODO: Ask parser >>>>>>>>>>>>>>>>>>>>>>>>
-                            this._ilc.services.system.opener
-                                .pcapng(file.filename)
-                                .dlt()
-                                .catch((err: Error) => {
-                                    this._ilc.logger.error(
-                                        `Fail to open pcapng file; error: ${err.message}`,
-                                    );
-                                });
-                            break;
+                            throw new Error(`Not implemented!`);
                     }
                 });
                 this._tab.close();

@@ -3,6 +3,8 @@ import { File } from '@platform/types/files';
 import { Mutable } from '@platform/types/unity/mutable';
 import { Provider } from '@service/session/dependencies/observing/provider';
 
+import * as $ from '@platform/types/observe';
+
 export class Element {
     public readonly source: ObserveSource;
     public readonly provider: Provider;
@@ -30,5 +32,9 @@ export class Element {
                 return this;
             },
         };
+    }
+
+    public nature(): $.Origin.Context | $.Origin.Stream.Stream.Source {
+        return this.source.observe.origin.getNatureAlias();
     }
 }

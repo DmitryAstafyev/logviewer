@@ -6,10 +6,23 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { HiddenFilterModule } from '@elements/filter.hidden/module';
 
-import { RecentActions } from './component';
-import { RecentNatureModule } from './nature/module';
+import { RecentNature } from './component';
+import { RecentNatureConcat } from './concat/component';
+import { RecentNatureFile } from './file/component';
+import { RecentNatureUdp } from './udp/component';
+import { RecentNatureTcp } from './tcp/component';
+import { RecentNatureSerial } from './serial/component';
+import { RecentNatureProcess } from './process/component';
 
-const components = [RecentActions];
+const components = [
+    RecentNature,
+    RecentNatureConcat,
+    RecentNatureFile,
+    RecentNatureUdp,
+    RecentNatureTcp,
+    RecentNatureSerial,
+    RecentNatureProcess,
+];
 @NgModule({
     imports: [
         CommonModule,
@@ -18,9 +31,8 @@ const components = [RecentActions];
         MatIconModule,
         MatMenuModule,
         HiddenFilterModule,
-        RecentNatureModule,
     ],
     declarations: [...components],
     exports: [...components],
 })
-export class RecentActionsModule {}
+export class RecentNatureModule {}

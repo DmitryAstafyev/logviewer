@@ -160,4 +160,12 @@ export class Configuration
             return this.instance;
         }
     }
+
+    public getNatureAlias(): Context | Stream.Stream.Source {
+        if (this.instance instanceof Stream.Configuration) {
+            return this.instance.instance.instance.alias();
+        } else {
+            return this.instance.alias();
+        }
+    }
 }
