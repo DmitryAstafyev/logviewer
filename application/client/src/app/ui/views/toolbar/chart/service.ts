@@ -1,5 +1,5 @@
 import { Subscriber, Subject, Subscription } from '@platform/env/subscription';
-import { Destroy } from '@env/declarations';
+import { Destroy } from '@platform/types/env/types';
 import { Session } from '@service/session';
 
 const CHART_SERVICE = 'workspace_chart_service';

@@ -10,7 +10,7 @@ export class ObserveOperation {
         public readonly uuid: string,
         protected readonly observe: Observe,
         protected readonly sde: (msg: SdeRequest) => Promise<SdeResponse>,
-        protected readonly restarting: (observe: Observe) => Promise<void>,
+        protected readonly restarting: (observe: Observe) => Promise<string>,
         protected readonly cancel: () => Promise<void>,
     ) {}
 
@@ -18,7 +18,7 @@ export class ObserveOperation {
         return this.cancel();
     }
 
-    public restart(): Promise<void> {
+    public restart(): Promise<string> {
         return this.restarting(this.observe);
     }
 

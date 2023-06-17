@@ -83,7 +83,7 @@ export abstract class Provider {
         });
     }
 
-    public clone(observe: Observe): Promise<void> {
+    public clone(observe: Observe): Promise<string> {
         if (!(observe.origin.instance instanceof $.Origin.Stream.Configuration)) {
             return Promise.reject(new Error(`Only Origin.Stream can be repeated`));
         }
@@ -91,16 +91,13 @@ export abstract class Provider {
         if (last !== undefined) {
             observe.parser.change(last.parser.instance);
         }
-        return this.session.stream
-            .observe()
-            .start(observe.clone())
-            .catch((err: Error) => {
-                this.logger.error(`Fail to restart process: ${err.message}`);
-            });
+        return this.session.stream.observe().start(observe.clone());
     }
 
-    public openAsNew(source: ObserveSource | Observe): void {
-        session.initialize().configure(source instanceof ObserveSource ? source.observe : source);
+    public openAsNew(source: ObserveSource | Observe): Promise<string | undefined> {
+        return session
+            .initialize()
+            .configure(source instanceof ObserveSource ? source.observe : source);
     }
 
     public setPanels(): Provider {

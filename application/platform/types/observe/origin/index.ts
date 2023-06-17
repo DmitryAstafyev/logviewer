@@ -141,8 +141,16 @@ export class Configuration
         return this.instance.getSupportedParsers();
     }
 
-    public as<T>(Ref: { new (...args: any[]): Declaration } & Alias<unknown>): T | undefined {
-        return this.instance.alias() === Ref.alias() ? (this.instance as T) : undefined;
+    public as<T>(
+        Ref: { new (...args: any[]): Declaration | Stream.Stream.Declaration } & Alias<unknown>,
+    ): T | undefined {
+        if (this.instance.alias() === Ref.alias()) {
+            return this.instance as T;
+        }
+        if (typeof (this.instance as any).as === 'function') {
+            return (this.instance as any).as(Ref);
+        }
+        return undefined;
     }
 
     public nature(): OriginNature {

@@ -133,9 +133,9 @@ export class Stream extends Subscriber {
     }
 
     public observe(): {
-        start(observe: Observe): Promise<void>;
+        start(observe: Observe): Promise<string>;
         abort(uuid: string): Promise<void>;
-        restart(uuid: string, source: Observe): Promise<void>;
+        restart(uuid: string, source: Observe): Promise<string>;
         list(): Promise<Map<string, Observe>>;
         sources(): ObserveSource[];
         descriptions: {
@@ -146,7 +146,7 @@ export class Stream extends Subscriber {
         };
     } {
         return {
-            start: (observe: Observe): Promise<void> => {
+            start: (observe: Observe): Promise<string> => {
                 return Requests.IpcRequest.send<Requests.Observe.Start.Response>(
                     Requests.Observe.Start.Response,
                     new Requests.Observe.Start.Request({
@@ -158,7 +158,7 @@ export class Stream extends Subscriber {
                         if (typeof response.error === 'string' && response.error !== '') {
                             return Promise.reject(new Error(response.error));
                         }
-                        return undefined;
+                        return response.session;
                     })
                     .finally(lockers.progress(`Creating session...`));
             },
@@ -184,16 +184,11 @@ export class Stream extends Subscriber {
                         });
                 });
             },
-            restart: (uuid: string, observe: Observe): Promise<void> => {
+            restart: (uuid: string, observe: Observe): Promise<string> => {
                 return this.observe()
                     .abort(uuid)
                     .then(() => {
                         return this.observe().start(observe);
-                    })
-                    .catch((error: Error) => {
-                        this.log().error(
-                            `Fail to restart observe operation sources: ${error.message}`,
-                        );
                     });
             },
             list: (): Promise<Map<string, Observe>> => {
