@@ -45,7 +45,7 @@ export class Provider extends Base {
     public update(sources: ObserveSource[]): Provider {
         this._sources = sources.filter(
             (source) =>
-                source.observe.origin.nature() instanceof $.Origin.Stream.Stream.Udp.Configuration,
+                source.observe.origin.nature() instanceof $.Origin.Stream.Stream.UDP.Configuration,
         );
         return this;
     }

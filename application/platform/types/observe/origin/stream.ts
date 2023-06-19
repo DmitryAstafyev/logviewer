@@ -69,6 +69,7 @@ export class Configuration
 
     public change(stream: Stream.Declaration): void {
         this.instance.change().byDeclaration(stream);
+        this.configuration[1] = this.instance.configuration;
     }
 
     public desc(): IOriginDetails {

@@ -16,7 +16,7 @@ import * as $ from '@platform/types/observe';
 export class Item extends ChangesDetector implements AfterContentInit {
     @Input() element!: Element;
 
-    public readonly connection: $.Origin.Stream.Stream.Tcp.IConfiguration | undefined;
+    public readonly connection: $.Origin.Stream.Stream.TCP.IConfiguration | undefined;
 
     constructor(cdRef: ChangeDetectorRef, private _self: ElementRef) {
         super(cdRef);
@@ -24,8 +24,8 @@ export class Item extends ChangesDetector implements AfterContentInit {
 
     public ngAfterContentInit(): void {
         const conf =
-            this.element.source.observe.origin.as<$.Origin.Stream.Stream.Tcp.Configuration>(
-                $.Origin.Stream.Stream.Tcp.Configuration,
+            this.element.source.observe.origin.as<$.Origin.Stream.Stream.TCP.Configuration>(
+                $.Origin.Stream.Stream.TCP.Configuration,
             );
         if (conf === undefined) {
             this.log().error(`Expected origin Source would be TCP`);

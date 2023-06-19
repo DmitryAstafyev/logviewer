@@ -16,7 +16,7 @@ import * as $ from '@platform/types/observe';
 export class Item extends ChangesDetector implements AfterContentInit {
     @Input() element!: Element;
 
-    public readonly connection: $.Origin.Stream.Stream.Udp.IConfiguration | undefined;
+    public readonly connection: $.Origin.Stream.Stream.UDP.IConfiguration | undefined;
 
     constructor(cdRef: ChangeDetectorRef, private _self: ElementRef) {
         super(cdRef);
@@ -24,8 +24,8 @@ export class Item extends ChangesDetector implements AfterContentInit {
 
     public ngAfterContentInit(): void {
         const conf =
-            this.element.source.observe.origin.as<$.Origin.Stream.Stream.Udp.Configuration>(
-                $.Origin.Stream.Stream.Udp.Configuration,
+            this.element.source.observe.origin.as<$.Origin.Stream.Stream.UDP.Configuration>(
+                $.Origin.Stream.Stream.UDP.Configuration,
             );
         if (conf === undefined) {
             this.log().error(`Expected origin Source would be UDP`);

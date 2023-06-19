@@ -12,7 +12,7 @@ import * as $ from '@platform/types/observe';
 @Initial()
 @Ilc()
 export class RecentNatureUdp implements AfterContentInit {
-    @Input() public origin!: $.Origin.Stream.Stream.Udp.Configuration;
+    @Input() public origin!: $.Origin.Stream.Stream.UDP.Configuration;
 
     public name!: string;
     public path!: string;

@@ -32,7 +32,7 @@ export class Configuration
     }
 
     static alias(): Source {
-        return Source.Udp;
+        return Source.UDP;
     }
 
     static validate(configuration: IConfiguration): Error | IConfiguration {

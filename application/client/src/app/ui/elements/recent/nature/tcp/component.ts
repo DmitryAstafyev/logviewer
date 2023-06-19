@@ -12,7 +12,7 @@ import * as $ from '@platform/types/observe';
 @Initial()
 @Ilc()
 export class RecentNatureTcp implements AfterContentInit {
-    @Input() public origin!: $.Origin.Stream.Stream.Tcp.Configuration;
+    @Input() public origin!: $.Origin.Stream.Stream.TCP.Configuration;
 
     public name!: string;
     public path!: string;

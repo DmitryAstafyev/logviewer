@@ -1,5 +1,5 @@
 import { Destroy } from '@platform/types/env/types';
-import {Action } from '../../../../action';
+import { Action } from '../../../../action';
 
 import * as Errors from '../bases/udp/error';
 import * as Stream from '@platform/types/observe/origin/stream/index';
@@ -8,21 +8,24 @@ const MULTICAST_ADDR = '255.255.255.255';
 const MULTUCAST_INTERFACE = '0.0.0.0';
 
 export interface IMulticastInfo {
-    fields: Stream.Udp.Multicast;
+    fields: Stream.UDP.Multicast;
     errors: {
         multiaddr: Errors.ErrorState;
         interface: Errors.ErrorState;
     };
 }
 
-export class State extends Stream.Udp.Configuration implements Destroy {
+export class State extends Stream.UDP.Configuration implements Destroy {
     public action: Action;
 
     public errors: {
         address: Errors.ErrorState;
     };
 
-    constructor(action: Action, configuration: Stream.Udp.IConfiguration = Stream.Udp.Configuration.initial()) {
+    constructor(
+        action: Action,
+        configuration: Stream.UDP.IConfiguration = Stream.UDP.Configuration.initial(),
+    ) {
         super(configuration);
         this.action = action;
         this.errors = {
@@ -40,11 +43,11 @@ export class State extends Stream.Udp.Configuration implements Destroy {
     }
 
     public drop() {
-        this.configuration.bind_addr = Stream.Udp.Configuration.initial().bind_addr;
-        this.configuration.multicast = Stream.Udp.Configuration.initial().multicast;
+        this.configuration.bind_addr = Stream.UDP.Configuration.initial().bind_addr;
+        this.configuration.multicast = Stream.UDP.Configuration.initial().multicast;
     }
 
-    public from(opt: Stream.Udp.IConfiguration) {
+    public from(opt: Stream.UDP.IConfiguration) {
         this.overwrite(opt);
         const pair = opt.bind_addr.split(':');
         if (pair.length !== 2) {

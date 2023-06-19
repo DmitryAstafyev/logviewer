@@ -8,12 +8,12 @@ export const Streams: {
 } = {
     [Parser.Protocol.Dlt]: [
         // Supported streams
-        Stream.Tcp.Configuration,
-        Stream.Udp.Configuration,
+        Stream.TCP.Configuration,
+        Stream.UDP.Configuration,
     ],
     [Parser.Protocol.SomeIp]: [
         // Supported streams
-        Stream.Udp.Configuration,
+        Stream.UDP.Configuration,
     ],
     [Parser.Protocol.Text]: [
         // Supported streams
@@ -47,8 +47,8 @@ export const SDESupport: {
     [Origin.Context.Concat]: false,
     [Stream.Source.Process]: true,
     [Stream.Source.Serial]: true,
-    [Stream.Source.Tcp]: false,
-    [Stream.Source.Udp]: false,
+    [Stream.Source.TCP]: false,
+    [Stream.Source.UDP]: false,
 };
 
 export const Configurable: {
@@ -66,6 +66,6 @@ export const Configurable: {
     [Origin.Context.Concat]: true,
     [Stream.Source.Process]: true,
     [Stream.Source.Serial]: true,
-    [Stream.Source.Tcp]: true,
-    [Stream.Source.Udp]: true,
+    [Stream.Source.TCP]: true,
+    [Stream.Source.UDP]: true,
 };

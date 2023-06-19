@@ -116,7 +116,12 @@ export class Configuration
 
     public getSupportedParsers(): Parser.Reference[] {
         if (this.configuration.length === 0) {
-            throw new Error(`No available files for concat operation; fail to get list of parsers`);
+            // Returns default
+            return [
+                Parser.Dlt.Configuration,
+                Parser.SomeIp.Configuration,
+                Parser.Text.Configuration,
+            ];
         }
         switch (this.configuration[0][1]) {
             case Types.File.FileType.Binary:

@@ -26,7 +26,7 @@ export class Configuration
     }
 
     static alias(): Source {
-        return Source.Tcp;
+        return Source.TCP;
     }
 
     static validate(configuration: IConfiguration): Error | IConfiguration {

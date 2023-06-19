@@ -411,7 +411,15 @@ describe('Exporting', function () {
                             finish(session, done, events);
                             return;
                         }
-
+                        const configuration = new Factory.File()
+                            .type(Factory.FileType.Binary)
+                            .asDlt({
+                                fibex_file_paths: [],
+                                filter_config: undefined,
+                                with_storage_header: true,
+                            })
+                            .file(config.regular.files['dlt'][0]).observe.configuration;
+                        console.log(configuration);
                         stream
                             .observe(
                                 new Factory.File()

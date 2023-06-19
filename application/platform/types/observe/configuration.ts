@@ -4,7 +4,7 @@ import { Validate, SelfValidate, Alias } from '../env/types';
 import { List } from './description';
 import { Mutable } from '../unity/mutable';
 import { scope } from '../../env/scope';
-import { Subject } from '../../env/subscription';
+import { Subject, Subscriber } from '../../env/subscription';
 
 import * as Stream from './origin/stream/index';
 import * as File from './types/file';
@@ -25,32 +25,54 @@ export interface ReferenceDesc<T, C, A> extends ConfigurationStaticDesc<T, A> {
     new (...args: any[]): C & Configuration<T, C, A>;
 }
 
+const PROXY_SERIALIZE_METHOD = '__serialize_proxy__';
+
+export function serializeProxy<T>(entry: T): T {
+    if (typeof (entry as any)[PROXY_SERIALIZE_METHOD] === 'function') {
+        return (entry as any)[PROXY_SERIALIZE_METHOD]() as T;
+    }
+    return entry;
+}
+
 function observe<T>(entry: T, subject: Subject<void>): T {
+    function wrap(entry: T) {
+        (entry as any)[PROXY_SERIALIZE_METHOD] = () => {
+            try {
+                return JSON.parse(JSON.stringify(entry));
+            } catch (err) {
+                logger().error(`Fail to serialize proxy: ${error(err)}`);
+            }
+        };
+        return entry;
+    }
     function logger() {
         return scope.getLogger('ObserveConfig');
     }
     if (entry === null) {
-        logger().error(`Cannot observe null value`);
-        return undefined as T;
+        logger().warn(`Cannot observe null value`);
+        return null as T;
     }
     if (['function', 'symbol'].includes(typeof entry)) {
-        logger().error(`Cannot observe ${typeof entry} value`);
+        logger().warn(`Cannot observe ${typeof entry} value`);
         return undefined as T;
     }
     if (['string', 'number', 'boolean'].includes(typeof entry)) {
         return entry;
     }
     const set = (target: any, prop: string | symbol, value: any): boolean => {
-        (target as any)[prop] = observe(value, subject);
+        if (prop === PROXY_SERIALIZE_METHOD) {
+            return true;
+        }
+        (target as any)[prop] = observe(serializeProxy(value), subject);
         subject.emit();
         return true;
     };
     if (entry instanceof Array) {
-        return new Proxy(entry as object, { set }) as T;
+        return new Proxy(wrap(entry), { set }) as T;
     } else if (entry instanceof Object) {
         Object.keys(entry).forEach((key: string | number) => {
             // eslint-disable-next-line no-prototype-builtins
-            if (!entry.hasOwnProperty(key)) {
+            if (!entry.hasOwnProperty(key) || key === PROXY_SERIALIZE_METHOD) {
                 return;
             }
             const value = (entry as any)[key];
@@ -60,7 +82,7 @@ function observe<T>(entry: T, subject: Subject<void>): T {
                 (entry as any)[key] = observe(value, subject);
             }
         });
-        return new Proxy(entry as object, { set }) as T;
+        return new Proxy(wrap(entry), { set }) as T;
     }
     logger().error(`Type "${typeof entry}" cannot be observed`);
     return undefined as T;
@@ -91,7 +113,7 @@ import('./compatibility')
         compatibility = mod;
     })
     .catch((err: Error) => {
-        console.error(err.message);
+        scope.getLogger('CompatibilityModule').error(err.message);
     });
 
 export function getCompatibilityMod(): ICompatibilityMod {
@@ -102,6 +124,7 @@ export function getCompatibilityMod(): ICompatibilityMod {
 }
 
 export abstract class Configuration<T, C, A>
+    extends Subscriber
     implements JsonConvertor<Configuration<T, C, A>>, SelfValidate
 {
     protected ref: Reference<T, C, A>;
@@ -110,6 +133,7 @@ export abstract class Configuration<T, C, A>
     public readonly watcher: Subject<void> = new Subject();
 
     constructor(configuration: T) {
+        super();
         if (typeof this.constructor !== 'function') {
             throw new Error(`Fail to get reference to Constructor`);
         }
@@ -120,9 +144,10 @@ export abstract class Configuration<T, C, A>
     public overwrite(configuration: T): void {
         (this as Mutable<Configuration<unknown, unknown, unknown>>).configuration = observe<T>(
             // We should serialize object, because it can be already Proxy
-            JSON.parse(JSON.stringify(configuration)),
+            serializeProxy(configuration),
             this.watcher,
         );
+        this.watcher.emit();
     }
 
     public validate(): Error | undefined {

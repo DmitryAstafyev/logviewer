@@ -4,7 +4,7 @@ import { Action } from '@ui/tabs/observe/action';
 import * as Errors from '../bases/tcp/error';
 import * as Stream from '@platform/types/observe/origin/stream/index';
 
-export class State extends Stream.Tcp.Configuration implements Destroy {
+export class State extends Stream.TCP.Configuration implements Destroy {
     public action: Action;
     public errors: {
         address: Errors.ErrorState;
@@ -12,7 +12,7 @@ export class State extends Stream.Tcp.Configuration implements Destroy {
 
     constructor(
         action: Action,
-        configuration: Stream.Tcp.IConfiguration = Stream.Tcp.Configuration.initial(),
+        configuration: Stream.TCP.IConfiguration = Stream.TCP.Configuration.initial(),
     ) {
         super(configuration);
         this.action = action;
@@ -35,10 +35,10 @@ export class State extends Stream.Tcp.Configuration implements Destroy {
     }
 
     public drop() {
-        this.configuration.bind_addr = Stream.Tcp.Configuration.initial().bind_addr;
+        this.configuration.bind_addr = Stream.TCP.Configuration.initial().bind_addr;
     }
 
-    public from(opt: Stream.Tcp.IConfiguration) {
+    public from(opt: Stream.TCP.IConfiguration) {
         this.overwrite(opt);
     }
 }

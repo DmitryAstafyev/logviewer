@@ -99,12 +99,20 @@ class Factory<T> {
 export class File extends Factory<File> {
     static FileType = $.Types.File.FileType;
 
-    public file(filename: string): File {
+    constructor() {
+        super();
         this.observe.origin.change(
             new $.Origin.File.Configuration($.Origin.File.Configuration.initial())
                 .set()
-                .filename(filename),
+                .filename(''),
         );
+    }
+
+    public file(filename: string): File {
+        if (!(this.observe.origin.instance instanceof $.Origin.File.Configuration)) {
+            throw new Error(`Given observe object doesn't have File origin`);
+        }
+        this.observe.origin.instance.set().filename(filename);
         this.updated().origin();
         return this;
     }
@@ -122,12 +130,18 @@ export class File extends Factory<File> {
 export class Concat extends Factory<Concat> {
     static FileType = $.Types.File.FileType;
 
-    public files(files: string[]): Concat {
+    constructor() {
+        super();
         this.observe.origin.change(
-            new $.Origin.Concat.Configuration($.Origin.Concat.Configuration.initial())
-                .set()
-                .files(files),
+            new $.Origin.Concat.Configuration($.Origin.Concat.Configuration.initial()),
         );
+    }
+
+    public files(files: string[]): Concat {
+        if (!(this.observe.origin.instance instanceof $.Origin.Concat.Configuration)) {
+            throw new Error(`Given observe object doesn't have Concat origin`);
+        }
+        this.observe.origin.instance.set().files(files);
         this.updated().origin();
         return this;
     }
@@ -161,6 +175,13 @@ export class Concat extends Factory<Concat> {
 }
 
 export class Stream extends Factory<Stream> {
+    constructor() {
+        super();
+        this.observe.origin.change(
+            new $.Origin.Stream.Configuration($.Origin.Stream.Configuration.initial()),
+        );
+    }
+
     public process(configuration?: $.Origin.Stream.Stream.Process.IConfiguration): Stream {
         if (!(this.observe.origin.instance instanceof $.Origin.Stream.Configuration)) {
             throw new Error(`Given observe object doesn't have Stream origin`);
@@ -191,30 +212,30 @@ export class Stream extends Factory<Stream> {
         return this;
     }
 
-    public tcp(configuration?: $.Origin.Stream.Stream.Tcp.IConfiguration): Stream {
+    public tcp(configuration?: $.Origin.Stream.Stream.TCP.IConfiguration): Stream {
         if (!(this.observe.origin.instance instanceof $.Origin.Stream.Configuration)) {
             throw new Error(`Given observe object doesn't have Stream origin`);
         }
         this.observe.origin.instance.change(
-            new $.Origin.Stream.Stream.Tcp.Configuration(
+            new $.Origin.Stream.Stream.TCP.Configuration(
                 configuration !== undefined
                     ? configuration
-                    : $.Origin.Stream.Stream.Tcp.Configuration.initial(),
+                    : $.Origin.Stream.Stream.TCP.Configuration.initial(),
             ),
         );
         this.updated().origin();
         return this;
     }
 
-    public udp(configuration?: $.Origin.Stream.Stream.Udp.IConfiguration): Stream {
+    public udp(configuration?: $.Origin.Stream.Stream.UDP.IConfiguration): Stream {
         if (!(this.observe.origin.instance instanceof $.Origin.Stream.Configuration)) {
             throw new Error(`Given observe object doesn't have Stream origin`);
         }
         this.observe.origin.instance.change(
-            new $.Origin.Stream.Stream.Udp.Configuration(
+            new $.Origin.Stream.Stream.UDP.Configuration(
                 configuration !== undefined
                     ? configuration
-                    : $.Origin.Stream.Stream.Udp.Configuration.initial(),
+                    : $.Origin.Stream.Stream.UDP.Configuration.initial(),
             ),
         );
         this.updated().origin();
@@ -277,8 +298,8 @@ export function map(observe: $.Observe): {
                 return false;
             }
             return (
-                stream.as<$.Origin.Stream.Stream.Udp.Configuration>(
-                    $.Origin.Stream.Stream.Udp.Configuration,
+                stream.as<$.Origin.Stream.Stream.UDP.Configuration>(
+                    $.Origin.Stream.Stream.UDP.Configuration,
                 ) !== undefined
             );
         },
@@ -290,8 +311,8 @@ export function map(observe: $.Observe): {
                 return false;
             }
             return (
-                stream.as<$.Origin.Stream.Stream.Tcp.Configuration>(
-                    $.Origin.Stream.Stream.Tcp.Configuration,
+                stream.as<$.Origin.Stream.Stream.TCP.Configuration>(
+                    $.Origin.Stream.Stream.TCP.Configuration,
                 ) !== undefined
             );
         },

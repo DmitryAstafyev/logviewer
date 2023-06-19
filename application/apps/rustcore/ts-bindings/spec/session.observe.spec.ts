@@ -15,7 +15,6 @@ const config = readConfigurationFile().get().tests.observe;
 describe('Observe', function () {
     it(config.regular.list[1], function () {
         return runner(config.regular, 1, async (logger, done, collector) => {
-            console.log(`>>>>>>>>>>>>>>> started`);
             Session.create()
                 .then((session: Session) => {
                     // Set provider into debug mode
@@ -35,13 +34,10 @@ describe('Observe', function () {
                         logger,
                         (i: number) => `some line data: ${i}\n`,
                     );
-                    console.log(`>>>>>>>>>>>>>>>>>>>>>>>>>>> 1`);
                     const config = new Factory.File()
                         .asText()
                         .type(Factory.FileType.Text)
                         .file(tmpobj.name).observe.configuration;
-                    console.log(`>>>>>>>>>>>>>>>>>>>>>>>>>>> 2`);
-                    console.log(config);
                     stream
                         .observe(
                             new Factory.File()

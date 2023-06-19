@@ -127,9 +127,9 @@ export class Service extends Implementation {
                                         switch (request.source) {
                                             case undefined:
                                                 return new handlers.StreamDltOnCustom.Action().apply();
-                                            case Source.Udp:
+                                            case Source.UDP:
                                                 return new handlers.UdpDlt.Action().apply();
-                                            case Source.Tcp:
+                                            case Source.TCP:
                                                 return new handlers.TcpDlt.Action().apply();
                                             case Source.Serial:
                                                 return new handlers.SerialDlt.Action().apply();

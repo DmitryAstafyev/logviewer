@@ -7,15 +7,15 @@ import * as Origin from '../index';
 
 import * as Process from './process';
 import * as Serial from './serial';
-import * as Tcp from './tcp';
-import * as Udp from './udp';
+import * as TCP from './tcp';
+import * as UDP from './udp';
 import * as Parser from '../../parser';
 import * as Sde from '../../sde';
 
 export * as Process from './process';
 export * as Serial from './serial';
-export * as Tcp from './tcp';
-export * as Udp from './udp';
+export * as TCP from './tcp';
+export * as UDP from './udp';
 
 export type Reference = ReferenceDesc<IDeclaration, Declaration, Source>;
 
@@ -24,8 +24,8 @@ export abstract class Support {
 }
 
 export enum Source {
-    Tcp = 'Tcp',
-    Udp = 'Udp',
+    TCP = 'TCP',
+    UDP = 'UDP',
     Serial = 'Serial',
     Process = 'Process',
 }
@@ -33,30 +33,30 @@ export enum Source {
 export type IDeclaration =
     | Serial.IConfiguration
     | Process.IConfiguration
-    | Tcp.IConfiguration
-    | Udp.IConfiguration;
+    | TCP.IConfiguration
+    | UDP.IConfiguration;
 
 export type Declaration =
     | Serial.Configuration
     | Process.Configuration
-    | Tcp.Configuration
-    | Udp.Configuration;
+    | TCP.Configuration
+    | UDP.Configuration;
 
 export interface IConfiguration {
     [Source.Serial]?: Serial.IConfiguration;
     [Source.Process]?: Process.IConfiguration;
-    [Source.Tcp]?: Tcp.IConfiguration;
-    [Source.Udp]?: Udp.IConfiguration;
+    [Source.TCP]?: TCP.IConfiguration;
+    [Source.UDP]?: UDP.IConfiguration;
 }
 
 export const REGISTER = {
     [Source.Process]: Process.Configuration,
     [Source.Serial]: Serial.Configuration,
-    [Source.Tcp]: Tcp.Configuration,
-    [Source.Udp]: Udp.Configuration,
+    [Source.TCP]: TCP.Configuration,
+    [Source.UDP]: UDP.Configuration,
 };
 
-export const DEFAULT = Tcp.Configuration;
+export const DEFAULT = TCP.Configuration;
 
 export function getByAlias(alias: Source, configuration?: IDeclaration): Declaration {
     const Ref: Reference = REGISTER[alias];
@@ -148,6 +148,14 @@ export class Configuration
             throw new Error(`Configuration of stream doesn't have definition of known source.`);
         }
         (this as Mutable<Configuration>).instance = instance;
+        this.unsubscribe();
+        this.register(
+            this.instance.watcher.subscribe(() => {
+                this.overwrite({
+                    [this.instance.alias()]: this.instance.configuration,
+                });
+            }),
+        );
     }
 
     public readonly instance!: Declaration;
@@ -166,14 +174,17 @@ export class Configuration
             byConfiguration: (configuration: IConfiguration): void => {
                 this.overwrite(configuration);
                 this.setInstance();
+                this.watcher.emit();
             },
             byDeclaration: (stream: Declaration): void => {
                 this.overwrite({ [stream.alias()]: stream.configuration });
                 this.setInstance();
+                this.watcher.emit();
             },
             byReference: (Ref: Reference): void => {
                 this.overwrite({ [Ref.alias()]: new Ref(Ref.initial()) });
                 this.setInstance();
+                this.watcher.emit();
             },
         };
     }

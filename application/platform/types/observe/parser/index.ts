@@ -114,6 +114,14 @@ export class Configuration
             throw new Error(`Configuration of stream doesn't have definition of known source.`);
         }
         (this as Mutable<Configuration>).instance = instance;
+        this.unsubscribe();
+        this.register(
+            this.instance.watcher.subscribe(() => {
+                this.overwrite({
+                    [this.instance.alias()]: this.instance.configuration,
+                });
+            }),
+        );
     }
 
     public readonly instance!: Declaration;
