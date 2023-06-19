@@ -21,8 +21,10 @@ export {
     IEventIndexedMapUpdated,
     ISearchValuesUpdated,
 } from '../api/session.provider';
-export { Observe } from '../interfaces/index';
 export { EventProvider, SessionStream, SessionSearch };
+
+export * as $ from 'platform/types/observe';
+export * as Factory from 'platform/types/observe/factory';
 
 enum ESessionState {
     destroyed,

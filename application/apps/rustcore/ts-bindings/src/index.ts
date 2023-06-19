@@ -13,7 +13,6 @@ export {
 } from './api/executors/session.stream.observe.executor';
 export {
     Session,
-    Observe,
     SessionSearch,
     SessionStream,
     ISessionEvents,
@@ -24,10 +23,8 @@ export {
     IEventIndexedMapUpdated,
     ISearchValuesUpdated,
 } from './api/session';
-
 export { Jobs } from './api/jobs';
 export { Tracker } from './api/tracker';
-
 export {
     IGrabbedElement,
     IExtractDTFormatOptions,
@@ -39,7 +36,8 @@ export {
     IFilterFlags,
     IGrabbedContent,
 } from './interfaces/index';
-
 export { Units, Events, Interfaces };
+
+export * as $ from 'platform/types/observe';
 
 setUuidGenerator(v4);

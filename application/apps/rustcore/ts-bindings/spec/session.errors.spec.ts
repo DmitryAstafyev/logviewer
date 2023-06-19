@@ -5,7 +5,7 @@
 /// <reference path="../node_modules/@types/node/index.d.ts" />
 import { initLogger } from './logger';
 initLogger();
-import { Session, SessionStream, Observe } from '../src/api/session';
+import { Session, SessionStream, Factory } from '../src/api/session';
 import { IGrabbedElement } from '../src/interfaces/index';
 import { finish, createSampleFile, runner } from './common';
 import { readConfigurationFile } from './config';
@@ -60,7 +60,12 @@ describe('Errors', () => {
                         return finish(session, done, stream);
                     }
                     stream
-                        .observe(Observe.DataSource.file('/fake/path/to/fake/file').text().text())
+                        .observe(
+                            new Factory.File()
+                                .type(Factory.FileType.Text)
+                                .asText()
+                                .file('/fake/path/to/fake/file').observe.configuration,
+                        )
                         .then(
                             finish.bind(
                                 null,
@@ -107,7 +112,12 @@ describe('Errors', () => {
                         (i: number) => `some line data: ${i}\n`,
                     );
                     stream
-                        .observe(Observe.DataSource.file(tmpobj.name).text().text())
+                        .observe(
+                            new Factory.File()
+                                .type(Factory.FileType.Text)
+                                .asText()
+                                .file(tmpobj.name).observe.configuration,
+                        )
                         .catch(finish.bind(null, session, done));
                     let grabbing: boolean = false;
                     events.StreamUpdated.subscribe((rows: number) => {
@@ -173,7 +183,12 @@ describe('Errors', () => {
                             }`,
                     );
                     stream
-                        .observe(Observe.DataSource.file(tmpobj.name).text().text())
+                        .observe(
+                            new Factory.File()
+                                .type(Factory.FileType.Text)
+                                .asText()
+                                .file(tmpobj.name).observe.configuration,
+                        )
                         .on('confirmed', () => {
                             search
                                 .search([
@@ -244,7 +259,12 @@ describe('Errors', () => {
                         (i: number) => `some line data: ${i}\n`,
                     );
                     stream
-                        .observe(Observe.DataSource.file(tmpobj.name).text().text())
+                        .observe(
+                            new Factory.File()
+                                .type(Factory.FileType.Text)
+                                .asText()
+                                .file(tmpobj.name).observe.configuration,
+                        )
                         .catch((err: Error) => {
                             finish(
                                 session,
@@ -305,7 +325,12 @@ describe('Errors', () => {
                         (i: number) => `some line data: ${i}\n`,
                     );
                     stream
-                        .observe(Observe.DataSource.file(tmpobj.name).text().text())
+                        .observe(
+                            new Factory.File()
+                                .type(Factory.FileType.Text)
+                                .asText()
+                                .file(tmpobj.name).observe.configuration,
+                        )
                         .catch((err: Error) =>
                             finish(
                                 session,

@@ -5,7 +5,7 @@
 /// <reference path="../node_modules/@types/node/index.d.ts" />
 import { initLogger } from './logger';
 initLogger();
-import { Session, Observe } from '../src/api/session';
+import { Session, Factory } from '../src/api/session';
 import { finish, createSampleFile, appendToSampleFile, runner } from './common';
 import { readConfigurationFile } from './config';
 
@@ -41,7 +41,12 @@ describe('Values', function () {
                         }
                     });
                     stream
-                        .observe(Observe.DataSource.file(tmpobj.name).text().text())
+                        .observe(
+                            new Factory.File()
+                                .asText()
+                                .type(Factory.FileType.Text)
+                                .file(tmpobj.name).observe.configuration,
+                        )
                         .on('confirmed', () => {
                             search
                                 .values([`CPU=(\\d{1,})`])
@@ -113,7 +118,12 @@ describe('Values', function () {
                     });
                     let results = new Map();
                     stream
-                        .observe(Observe.DataSource.file(tmpobj.name).text().text())
+                        .observe(
+                            new Factory.File()
+                                .asText()
+                                .type(Factory.FileType.Text)
+                                .file(tmpobj.name).observe.configuration,
+                        )
                         .on('confirmed', () => {
                             search
                                 .values([`CPU=(\\d{1,})`])

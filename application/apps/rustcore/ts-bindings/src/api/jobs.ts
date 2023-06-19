@@ -4,7 +4,7 @@ import { error } from 'platform/log/utils';
 import { IFilter } from '../interfaces/index';
 import { ShellProfile } from 'platform/types/shells';
 
-import { StatisticInfo } from 'platform/types/parsers/dlt';
+import { StatisticInfo } from 'platform/types/observe/parser/dlt';
 
 export class Jobs extends Base {
     public static async create(): Promise<Jobs> {
