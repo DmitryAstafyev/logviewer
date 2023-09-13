@@ -11,10 +11,7 @@
 // from E.S.R.Labs.
 
 //! # Formatting dlt messages as text
-use chrono::{
-    prelude::{DateTime, Utc},
-    NaiveDateTime,
-};
+use chrono::NaiveDateTime;
 use chrono_tz::Tz;
 use dlt_core::{
     dlt::{
@@ -143,8 +140,7 @@ impl<'a> fmt::Display for DltDltTimeStamp<'a> {
         );
         match naive {
             Some(n) => {
-                let datetime: DateTime<Utc> = DateTime::from_utc(n, Utc);
-                let system_time: std::time::SystemTime = std::time::SystemTime::from(datetime);
+                let system_time: std::time::SystemTime = std::time::SystemTime::from(n.and_utc());
                 write!(f, "{}", humantime::format_rfc3339(system_time))
             }
             None => write!(
@@ -564,7 +560,7 @@ fn write_tz_string(
         time_stamp.microseconds * 1000,
     );
     match naive {
-        Some(n) => write!(f, "{}", DateTime::<Utc>::from_utc(n, Utc).with_timezone(tz)),
+        Some(n) => write!(f, "{}", n.and_utc().with_timezone(tz)),
         None => write!(
             f,
             "no valid timestamp for {}s/{}us",
@@ -580,8 +576,7 @@ pub fn utc_string(time_stamp: &DltTimeStamp) -> String {
     );
     match naive {
         Some(n) => {
-            let datetime: DateTime<Utc> = DateTime::from_utc(n, Utc);
-            let system_time: std::time::SystemTime = std::time::SystemTime::from(datetime);
+            let system_time: std::time::SystemTime = std::time::SystemTime::from(n.and_utc());
             humantime::format_rfc3339(system_time).to_string()
         }
         None => format!(

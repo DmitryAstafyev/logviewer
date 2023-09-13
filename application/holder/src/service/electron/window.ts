@@ -53,7 +53,13 @@ export class Window extends Implementation {
         this._ipc = new ElectronIPCTransport(this._window);
         this._window.on('resize', this._resize.bind(this));
         this._window.on('move', this._resize.bind(this));
-        this._window.once('close', (event: Event) => {
+        // this._window.once('move'... - gives error on TS compiler level.
+        // Looks like electron.d.ts has related mistake in type's descriptions.
+        (
+            this._window as unknown as {
+                once: (event: string, handler: (event: Event) => boolean) => void;
+            }
+        ).once('close', (event: Event) => {
             this.log().debug(`Closing of browser window is prevented`);
             event.preventDefault();
             event.returnValue = false;
@@ -65,6 +71,7 @@ export class Window extends Implementation {
                         `Fail to trigger closing of application; error: ${err.message}`,
                     );
                 });
+            return false;
         });
         scope.setTransport(this._ipc);
         Events.IpcEvent.subscribe(
