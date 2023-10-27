@@ -108,6 +108,11 @@ export class ScrollAreaComponent extends ChangesDetector implements OnDestroy, A
         this.service.bind(this.frame, this.elRef.nativeElement);
         this.selecting.bind(this._nodeHolder.nativeElement, this.frame, this.service);
         this.keyboard.bind(this.frame);
+        this.service.onRefresh(() => {
+            this.rows.forEach((r) => r.update());
+            this.detectChanges();
+            this.selecting.restore();
+        });
         this._subscriber.register(
             this.frame.onFrameChange((rows: Row[]) => {
                 const exists = this.rows.length;
@@ -142,6 +147,12 @@ export class ScrollAreaComponent extends ChangesDetector implements OnDestroy, A
                     this._removeGlobalStyleHandler();
                     this._removeGlobalStyleHandler = undefined;
                 }
+                this.markChangesForCheck();
+            }),
+        );
+        this._subscriber.register(
+            this.selecting.onSelectionWord((sel: string | undefined) => {
+                this.service.selectWord(sel);
                 this.markChangesForCheck();
             }),
         );

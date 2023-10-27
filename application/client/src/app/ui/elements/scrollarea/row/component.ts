@@ -289,9 +289,9 @@ export class RowComponent extends ChangesDetector implements AfterContentInit, A
             this.row.change.subscribe(this.update.bind(this)),
             this.row.session.bookmarks.subjects.get().updated.subscribe(this.update.bind(this)),
             this.row.session.cursor.subjects.get().updated.subscribe(this.update.bind(this)),
-            this.row.change.subscribe(() => {
-                this.detectChanges();
-            }),
+            // this.row.change.subscribe(() => {
+            //     this.detectChanges();
+            // }),
         );
         this.update();
     }

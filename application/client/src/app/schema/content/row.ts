@@ -63,15 +63,6 @@ export class Row extends Subscriber {
         this.source = inputs.source;
         this.delimiter = this.session.render.delimiter();
         this.update();
-        this.register(
-            this.session.search
-                .highlights()
-                .subjects.get()
-                .update.subscribe(() => {
-                    this.update();
-                    this.change.emit();
-                }),
-        );
     }
 
     public destroy() {
@@ -159,14 +150,7 @@ export class Row extends Subscriber {
         };
     }
 
-    protected isSeporator(): boolean {
-        if (this.owner !== Owner.Search) {
-            return false;
-        }
-        return this.nature.seporator;
-    }
-
-    protected update() {
+    public update() {
         const matches = (injected: { [key: string]: boolean }) => {
             this.matches.active = injected[EAlias.Active];
             this.matches.filter = injected[EAlias.Filters];
@@ -202,5 +186,13 @@ export class Row extends Subscriber {
             });
         }
         this.seporator = this.isSeporator();
+        this.change.emit();
+    }
+
+    protected isSeporator(): boolean {
+        if (this.owner !== Owner.Search) {
+            return false;
+        }
+        return this.nature.seporator;
     }
 }

@@ -30,21 +30,17 @@ export class ViewWorkspace implements AfterContentInit, OnDestroy {
     }
 
     public ngAfterContentInit(): void {
+        this.service = getScrollAreaService(this.session);
         this.env().subscriber.register(
             this.session.stream.subjects.get().updated.subscribe((len: number) => {
                 this.service.setLen(len);
             }),
-        );
-        this.env().subscriber.register(
             this.session.cursor.subjects.get().selected.subscribe((event) => {
                 if (event.initiator === Owner.Output) {
                     return;
                 }
                 this.service.scrollTo(event.row);
             }),
-        );
-        this.service = getScrollAreaService(this.session);
-        this.env().subscriber.register(
             this.service.onBound(() => {
                 this.env().subscriber.register(
                     this.ilc().services.system.hotkeys.listen('Ctrl + 1', () => {
@@ -52,27 +48,28 @@ export class ViewWorkspace implements AfterContentInit, OnDestroy {
                     }),
                 );
             }),
-        );
-        this.env().subscriber.register(
             this.ilc().services.system.hotkeys.listen('Ctrl + W', () => {
                 this.session.close();
             }),
-        );
-        this.env().subscriber.register(
             this.ilc().services.system.hotkeys.listen('Ctrl + F', () => {
                 this.session.switch().toolbar.search();
             }),
-        );
-        this.env().subscriber.register(
             this.ilc().services.system.hotkeys.listen('Shift + Ctrl + P', () => {
                 this.session.switch().toolbar.presets();
             }),
-        );
-        this.env().subscriber.register(
             this.ilc().services.system.hotkeys.listen('Ctrl + 2', () => {
                 this.session.switch().toolbar.search();
             }),
+            this.session.search
+                .highlights()
+                .subjects.get()
+                .update.subscribe(() => {
+                    this.service.refresh();
+                }),
         );
+        this.service.onWordSelected((sel: string | undefined) => {
+            this.session.search.state().word().set(sel);
+        });
         const bound = this.session.render.getBoundEntity();
         this.columns = bound instanceof Columns ? bound : undefined;
     }

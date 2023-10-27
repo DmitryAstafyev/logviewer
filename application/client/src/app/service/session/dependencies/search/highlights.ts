@@ -49,14 +49,15 @@ export class Highlights extends Subscriber {
                 .value.subscribe(() => {
                     this.subjects.get().update.emit();
                 }),
-        );
-        this.register(
             this._session
                 .state()
                 .subjects.search.get()
                 .active.subscribe(() => {
                     this.subjects.get().update.emit();
                 }),
+            this._session.state().subjects.word.subscribe(() => {
+                this.subjects.get().update.emit();
+            }),
         );
     }
 
@@ -80,6 +81,7 @@ export class Highlights extends Subscriber {
         const filtres = new Modifiers.FiltersModifier(
             this._session.store().filters().get(),
             serializeRow,
+            this._session.state().word().get(),
         );
         const charts = new Modifiers.ChartsModifier(
             this._session.store().charts().get(),

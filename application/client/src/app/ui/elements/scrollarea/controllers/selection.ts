@@ -58,9 +58,11 @@ export class Selecting {
     private _subjects: {
         from: Subject<void>;
         finish: Subject<void>;
+        word: Subject<string | undefined>;
     } = {
         from: new Subject(),
         finish: new Subject(),
+        word: new Subject<string | undefined>(),
     };
     private _delimiter: string | undefined;
 
@@ -228,6 +230,10 @@ export class Selecting {
 
     public onSelectionFinish(handler: () => void): Subscription {
         return this._subjects.finish.subscribe(handler);
+    }
+
+    public onSelectionWord(handler: (sel: string | undefined) => void): Subscription {
+        return this._subjects.word.subscribe(handler);
     }
 
     public directed(): {
@@ -441,6 +447,7 @@ export class Selecting {
         }
         this._progress = false;
         this._subjects.finish.emit();
+        this._subjects.word.emit(this._getSelectionAsSingleLine());
     }
 
     private _onSelectionChange() {
@@ -454,5 +461,18 @@ export class Selecting {
         this._selection.focus.update(selection);
         this._selection.anchor.update(selection);
         this._detectBorders(selection);
+    }
+
+    private _getSelectionAsSingleLine(): string | undefined {
+        const selection: Selection | null = document.getSelection();
+        if (selection === null) {
+            return undefined;
+        }
+        if (this._selection.anchor.row === this._selection.focus.row) {
+            const line = selection.toString();
+            return line.trim() === '' ? undefined : line;
+        } else {
+            return undefined;
+        }
     }
 }

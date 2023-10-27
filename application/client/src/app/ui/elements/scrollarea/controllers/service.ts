@@ -31,6 +31,7 @@ export class Service implements Destroy {
         bound: Subject<void>;
         focus: Subject<void>;
         blur: Subject<void>;
+        word: Subject<string | undefined>;
     } = {
         rows: new Subject(),
         refresh: new Subject(),
@@ -38,6 +39,7 @@ export class Service implements Destroy {
         bound: new Subject(),
         focus: new Subject(),
         blur: new Subject(),
+        word: new Subject<string | undefined>(),
     };
     private _cursor: number = 0;
 
@@ -95,6 +97,10 @@ export class Service implements Destroy {
         this._subjects.rows.emit(rows);
     }
 
+    public selectWord(sel: string | undefined) {
+        this._subjects.word.emit(sel);
+    }
+
     public onRows(handler: (rows: IRowsPacket) => void): Subscription {
         return this._subjects.rows.subscribe(handler);
     }
@@ -117,6 +123,10 @@ export class Service implements Destroy {
 
     public onBlur(handler: () => void): Subscription {
         return this._subjects.blur.subscribe(handler);
+    }
+
+    public onWordSelected(handler: (sel: string | undefined) => void): Subscription {
+        return this._subjects.word.subscribe(handler);
     }
 
     public getCursor(): number {

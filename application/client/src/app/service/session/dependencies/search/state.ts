@@ -16,6 +16,7 @@ export interface IChartsFinishEvent {
 
 export class State {
     public readonly subjects: {
+        word: Subject<string | undefined>;
         search: Subjects<{
             active: Subject<IFilter | undefined>;
             start: Subject<void>;
@@ -26,6 +27,7 @@ export class State {
             finish: Subject<IChartsFinishEvent>;
         }>;
     } = {
+        word: new Subject<string | undefined>(),
         search: new Subjects({
             active: new Subject<IFilter | undefined>(),
             start: new Subject<void>(),
@@ -37,6 +39,7 @@ export class State {
         }),
     };
 
+    private _word: string | undefined;
     private _controller: Search;
     private _active: IFilter | undefined;
     private _hash: {
@@ -296,6 +299,21 @@ export class State {
                 changed: (): boolean => {
                     return this.hash().charts.get() !== this._hash.charts;
                 },
+            },
+        };
+    }
+
+    public word(): {
+        set(sel: string | undefined): void;
+        get(): string | undefined;
+    } {
+        return {
+            set: (sel: string | undefined): void => {
+                this._word = sel;
+                this.subjects.word.emit(this._word);
+            },
+            get: (): string | undefined => {
+                return this._word;
             },
         };
     }

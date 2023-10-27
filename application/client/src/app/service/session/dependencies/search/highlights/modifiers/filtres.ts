@@ -10,6 +10,7 @@ import { FilterRequest } from '../../filters/request';
 
 import * as Colors from '@styles/colors';
 import * as ModifiersTools from '../tools';
+import * as regex from '@platform/env/regex';
 
 export interface IRange extends IModifierRange {
     bgcl: string;
@@ -18,9 +19,11 @@ export interface IRange extends IModifierRange {
 export class FiltersModifier extends Modifier {
     private _ranges: IRange[] = [];
     private _matched: FilterRequest | undefined;
+    private _word: string | undefined;
 
-    constructor(highlights: FilterRequest[], row: string) {
+    constructor(highlights: FilterRequest[], row: string, word: string | undefined) {
         super();
+        this._word = word;
         this._map(row, highlights);
     }
 
@@ -99,6 +102,23 @@ export class FiltersModifier extends Modifier {
                 return '';
             });
         });
+        const regWord =
+            this._word !== undefined
+                ? regex.fromStr(regex.serialize(this._word))
+                : new Error(`No selected word`);
+        !(regWord instanceof Error) &&
+            row.replace(regWord, (match: string, ...args: any[]) => {
+                const offset: number =
+                    typeof args[args.length - 2] === 'number'
+                        ? args[args.length - 2]
+                        : args[args.length - 3];
+                this._ranges.push({
+                    start: offset,
+                    end: offset + match.length,
+                    bgcl: Colors.scheme_color_4,
+                });
+                return '';
+            });
         // Remove conflicts
         this._ranges = ModifiersTools.removeCrossing(this._ranges) as IRange[];
     }
