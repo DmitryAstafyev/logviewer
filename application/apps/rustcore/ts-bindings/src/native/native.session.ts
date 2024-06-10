@@ -8,7 +8,7 @@ import { getNativeModule } from '../native/native';
 import { EFileOptionsRequirements } from '../api/executors/session.stream.observe.executor';
 import { Type, Source, NativeError } from '../interfaces/errors';
 import { v4 as uuidv4 } from 'uuid';
-import { IRange, fromTuple } from 'platform/types/range';
+import { IRange } from 'platform/types/range';
 import { ISourceLink } from 'platform/types/observe/types';
 import { IndexingMode, Attachment, IAttachment } from 'platform/types/content';
 import { Logger, utils } from 'platform/log';
@@ -294,7 +294,7 @@ export abstract class RustSessionNative {
 
     public abstract sendIntoSde(targetOperationUuid: string, jsonStrMsg: string): Promise<number>;
     public abstract getAttachments(): Promise<IAttachment[]>;
-    public abstract getIndexedRanges(): Promise<string>;
+    public abstract getIndexedRanges(): Promise<IRange[]>;
 
     public abstract abort(
         selfOperationUuid: string,
@@ -961,22 +961,7 @@ export class RustSessionWrapper extends RustSession {
         return new Promise((resolve, reject) => {
             this._native
                 .getIndexedRanges()
-                .then((str: string) => {
-                    try {
-                        const ranges: IRange[] = [];
-                        for (const unchecked of JSON.parse(str) as unknown[]) {
-                            const range = fromTuple(unchecked);
-                            if (range instanceof Error) {
-                                reject(range);
-                                return;
-                            }
-                            ranges.push(range);
-                        }
-                        resolve(ranges);
-                    } catch (e) {
-                        reject(new Error(utils.error(e)));
-                    }
-                })
+                .then(resolve)
                 .catch((err) => {
                     reject(
                         new NativeError(NativeError.from(err), Type.Other, Source.GetAttachments),

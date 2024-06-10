@@ -5,7 +5,8 @@ use crate::{
     js::{
         converting::{
             attachment::WrappedAttachmentInfo, filter::WrappedSearchFilter,
-            grabber::WrappedGrabbedElement, source::WrappedSourceDefinition,
+            grabber::WrappedGrabbedElement, range::WrappedRangeInclusive,
+            source::WrappedSourceDefinition,
         },
         session::events::ComputationErrorWrapper,
     },
@@ -764,7 +765,9 @@ impl RustSession {
     }
 
     #[node_bindgen]
-    async fn get_indexed_ranges(&self) -> Result<String, ComputationErrorWrapper> {
+    async fn get_indexed_ranges(
+        &self,
+    ) -> Result<Vec<WrappedRangeInclusive>, ComputationErrorWrapper> {
         if let Some(ref session) = self.session {
             let ranges = session
                 .state
@@ -774,10 +777,11 @@ impl RustSession {
                     <ComputationError as Into<ComputationErrorWrapper>>::into(
                         ComputationError::NativeError(e),
                     )
-                })?;
-            Ok(serde_json::to_string(&ranges).map_err(|e| {
-                ComputationErrorWrapper(ComputationError::IoOperation(e.to_string()))
-            })?)
+                })?
+                .into_iter()
+                .map(WrappedRangeInclusive)
+                .collect::<Vec<WrappedRangeInclusive>>();
+            Ok(ranges)
         } else {
             Err(ComputationErrorWrapper(
                 ComputationError::SessionUnavailable,
