@@ -23,13 +23,9 @@ pub const FLUSH_DATA_IN_MS: u128 = 500;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GrabbedElement {
-    #[serde(rename = "id")]
     pub source_id: u16,
-    #[serde(rename = "c")]
     pub content: String,
-    #[serde(rename = "p")]
     pub pos: usize,
-    #[serde(rename = "n")]
     pub nature: u8,
 }
 

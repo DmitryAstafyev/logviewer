@@ -8,10 +8,9 @@ import { getNativeModule } from '../native/native';
 import { EFileOptionsRequirements } from '../api/executors/session.stream.observe.executor';
 import { Type, Source, NativeError } from '../interfaces/errors';
 import { v4 as uuidv4 } from 'uuid';
-import { getValidNum } from '../util/numbers';
 import { IRange, fromTuple } from 'platform/types/range';
 import { ISourceLink } from 'platform/types/observe/types';
-import { IndexingMode, Attachment } from 'platform/types/content';
+import { IndexingMode, Attachment, IAttachment } from 'platform/types/content';
 import { Logger, utils } from 'platform/log';
 import { scope } from 'platform/env/scope';
 import { IObserve, Observe } from 'platform/types/observe';
@@ -166,7 +165,7 @@ export abstract class RustSession extends RustSessionRequiered {
         positionInStream: number,
     ): Promise<{ index: number; position: number } | undefined>;
 
-    public abstract sendIntoSde(targetOperationUuid: string, jsonStrMsg: string): Promise<string>;
+    public abstract sendIntoSde(targetOperationUuid: string, jsonStrMsg: string): Promise<number>;
 
     public abstract getAttachments(): Promise<Attachment[]>;
     public abstract getIndexedRanges(): Promise<IRange[]>;
@@ -293,8 +292,8 @@ export abstract class RustSessionNative {
         positionInStream: number,
     ): Promise<number[] | null>;
 
-    public abstract sendIntoSde(targetOperationUuid: string, jsonStrMsg: string): Promise<string>;
-    public abstract getAttachments(): Promise<string>;
+    public abstract sendIntoSde(targetOperationUuid: string, jsonStrMsg: string): Promise<number>;
+    public abstract getAttachments(): Promise<IAttachment[]>;
     public abstract getIndexedRanges(): Promise<string>;
 
     public abstract abort(
@@ -919,7 +918,7 @@ export class RustSessionWrapper extends RustSession {
         });
     }
 
-    public sendIntoSde(targetOperationUuid: string, jsonStrMsg: string): Promise<string> {
+    public sendIntoSde(targetOperationUuid: string, jsonStrMsg: string): Promise<number> {
         return new Promise((resolve, reject) => {
             this._native
                 .sendIntoSde(targetOperationUuid, jsonStrMsg)
@@ -934,18 +933,18 @@ export class RustSessionWrapper extends RustSession {
         return new Promise((resolve, reject) => {
             this._native
                 .getAttachments()
-                .then((str: string) => {
+                .then((attachments: IAttachment[]) => {
                     try {
-                        const attachments: Attachment[] = [];
-                        for (const unchecked of JSON.parse(str) as unknown[]) {
-                            const attachment = Attachment.from(unchecked);
-                            if (attachment instanceof Error) {
-                                reject(attachment);
+                        const converted: Attachment[] = [];
+                        for (const unchecked of attachments) {
+                            const checked = Attachment.from(unchecked);
+                            if (checked instanceof Error) {
+                                reject(checked);
                                 return;
                             }
-                            attachments.push(attachment);
+                            converted.push(checked);
                         }
-                        resolve(attachments);
+                        resolve(converted);
                     } catch (e) {
                         reject(new Error(utils.error(e)));
                     }

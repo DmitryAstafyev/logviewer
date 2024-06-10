@@ -4,8 +4,8 @@ pub mod progress_tracker;
 use crate::{
     js::{
         converting::{
-            filter::WrappedSearchFilter, grabber::WrappedGrabbedElement,
-            source::WrappedSourceDefinition,
+            attachment::WrappedAttachmentInfo, filter::WrappedSearchFilter,
+            grabber::WrappedGrabbedElement, source::WrappedSourceDefinition,
         },
         session::events::ComputationErrorWrapper,
     },
@@ -724,7 +724,7 @@ impl RustSession {
         &self,
         target: String,
         msg: String,
-    ) -> Result<String, ComputationErrorWrapper> {
+    ) -> Result<i32, ComputationErrorWrapper> {
         let request = serde_json::from_str::<sde::SdeRequest>(&msg)
             .map_err(|e| ComputationErrorWrapper(ComputationError::IoOperation(e.to_string())))?;
         if let Some(ref session) = self.session {
@@ -732,9 +732,7 @@ impl RustSession {
                 .send_into_sde(operations::uuid_from_str(&target)?, request)
                 .await
                 .map_err(ComputationErrorWrapper)?;
-            Ok(serde_json::to_string(&response).map_err(|e| {
-                ComputationErrorWrapper(ComputationError::IoOperation(e.to_string()))
-            })?)
+            Ok(response.bytes as i32)
         } else {
             Err(ComputationErrorWrapper(
                 ComputationError::SessionUnavailable,
@@ -743,7 +741,7 @@ impl RustSession {
     }
 
     #[node_bindgen]
-    async fn get_attachments(&self) -> Result<String, ComputationErrorWrapper> {
+    async fn get_attachments(&self) -> Result<Vec<WrappedAttachmentInfo>, ComputationErrorWrapper> {
         if let Some(ref session) = self.session {
             let attachments = session
                 .state
@@ -753,10 +751,11 @@ impl RustSession {
                     <ComputationError as Into<ComputationErrorWrapper>>::into(
                         ComputationError::NativeError(e),
                     )
-                })?;
-            Ok(serde_json::to_string(&attachments).map_err(|e| {
-                ComputationErrorWrapper(ComputationError::IoOperation(e.to_string()))
-            })?)
+                })?
+                .into_iter()
+                .map(WrappedAttachmentInfo)
+                .collect::<Vec<WrappedAttachmentInfo>>();
+            Ok(attachments)
         } else {
             Err(ComputationErrorWrapper(
                 ComputationError::SessionUnavailable,
