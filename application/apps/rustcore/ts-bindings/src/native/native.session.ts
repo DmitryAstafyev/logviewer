@@ -209,9 +209,9 @@ export abstract class RustSessionNative {
 
     public abstract getSourcesDefinitions(): Promise<ISourceLink[]>;
 
-    public abstract grab(start: number, len: number): Promise<string>;
+    public abstract grab(start: number, len: number): Promise<IGrabbedElement[]>;
 
-    public abstract grabIndexed(start: number, len: number): Promise<string>;
+    public abstract grabIndexed(start: number, len: number): Promise<IGrabbedElement[]>;
 
     public abstract setIndexingMode(mode: number): Promise<void>;
 
@@ -231,9 +231,9 @@ export abstract class RustSessionNative {
 
     public abstract setBookmarks(rows: number[]): Promise<void>;
 
-    public abstract grabRanges(ranges: number[][]): Promise<string>;
+    public abstract grabRanges(ranges: number[][]): Promise<IGrabbedElement[]>;
 
-    public abstract grabSearch(start: number, len: number): Promise<string>;
+    public abstract grabSearch(start: number, len: number): Promise<IGrabbedElement[]>;
 
     public abstract getSearchLen(): Promise<number>;
 
@@ -437,49 +437,8 @@ export class RustSessionWrapper extends RustSession {
             this._provider.debug().emit.operation('grab');
             this._native
                 .grab(start, len)
-                .then((grabbed: string) => {
-                    try {
-                        const result: Array<{
-                            c: string;
-                            id: number;
-                            p: number;
-                            n: number;
-                        }> = JSON.parse(grabbed);
-                        resolve(
-                            result.map(
-                                (
-                                    item: {
-                                        c: string;
-                                        id: number;
-                                        p: number;
-                                        n: number;
-                                    },
-                                    i: number,
-                                ) => {
-                                    return {
-                                        content: item.c,
-                                        source_id: item.id,
-                                        position: getValidNum(item.p),
-                                        nature: item.n,
-                                    };
-                                },
-                            ),
-                        );
-                    } catch (err) {
-                        reject(
-                            new NativeError(
-                                new Error(
-                                    this._logger.error(
-                                        `Fail to call grab(${start}, ${len}) due error: ${
-                                            err instanceof Error ? err.message : err
-                                        }`,
-                                    ),
-                                ),
-                                Type.ParsingContentChunk,
-                                Source.GrabStreamChunk,
-                            ),
-                        );
-                    }
+                .then((grabbed: IGrabbedElement[]) => {
+                    resolve(grabbed);
                 })
                 .catch((err) => {
                     reject(
@@ -498,49 +457,8 @@ export class RustSessionWrapper extends RustSession {
             this._provider.debug().emit.operation('grabIndexed');
             this._native
                 .grabIndexed(start, len)
-                .then((grabbed: string) => {
-                    try {
-                        const result: Array<{
-                            c: string;
-                            id: number;
-                            p: unknown;
-                            n: number;
-                        }> = JSON.parse(grabbed);
-                        resolve(
-                            result.map(
-                                (
-                                    item: {
-                                        c: string;
-                                        id: number;
-                                        p: unknown;
-                                        n: number;
-                                    },
-                                    i: number,
-                                ) => {
-                                    return {
-                                        content: item.c,
-                                        source_id: item.id,
-                                        position: getValidNum(item.p),
-                                        nature: item.n,
-                                    };
-                                },
-                            ),
-                        );
-                    } catch (err) {
-                        reject(
-                            new NativeError(
-                                new Error(
-                                    this._logger.error(
-                                        `Fail to call grabIndexed(${start}, ${len}) due error: ${
-                                            err instanceof Error ? err.message : err
-                                        }`,
-                                    ),
-                                ),
-                                Type.ParsingContentChunk,
-                                Source.GrabStreamChunk,
-                            ),
-                        );
-                    }
+                .then((grabbed: IGrabbedElement[]) => {
+                    resolve(grabbed);
                 })
                 .catch((err) => {
                     reject(
@@ -693,49 +611,8 @@ export class RustSessionWrapper extends RustSession {
                 this._provider.debug().emit.operation('grabRanges');
                 this._native
                     .grabRanges(ranges.map((r) => [r.from, r.to]))
-                    .then((grabbed: string) => {
-                        try {
-                            const result: Array<{
-                                c: string;
-                                id: number;
-                                p: number;
-                                n: number;
-                            }> = JSON.parse(grabbed);
-                            resolve(
-                                result.map(
-                                    (
-                                        item: {
-                                            c: string;
-                                            id: number;
-                                            p: number;
-                                            n: number;
-                                        },
-                                        i: number,
-                                    ) => {
-                                        return {
-                                            content: item.c,
-                                            source_id: item.id,
-                                            position: getValidNum(item.p),
-                                            nature: item.n,
-                                        };
-                                    },
-                                ),
-                            );
-                        } catch (err) {
-                            reject(
-                                new NativeError(
-                                    new Error(
-                                        this._logger.error(
-                                            `Fail to call grab ranges due error: ${
-                                                err instanceof Error ? err.message : err
-                                            }`,
-                                        ),
-                                    ),
-                                    Type.ParsingContentChunk,
-                                    Source.GrabStreamChunk,
-                                ),
-                            );
-                        }
+                    .then((grabbed: IGrabbedElement[]) => {
+                        resolve(grabbed);
                     })
                     .catch((err: Error) => {
                         reject(
@@ -759,49 +636,8 @@ export class RustSessionWrapper extends RustSession {
             this._provider.debug().emit.operation('grabSearch');
             this._native
                 .grabSearch(start, len)
-                .then((grabbed: string) => {
-                    try {
-                        const result: Array<{
-                            c: string;
-                            id: number;
-                            p: number;
-                            n: number;
-                        }> = JSON.parse(grabbed);
-                        resolve(
-                            result.map(
-                                (
-                                    item: {
-                                        c: string;
-                                        id: number;
-                                        p: unknown;
-                                        n: number;
-                                    },
-                                    i: number,
-                                ) => {
-                                    return {
-                                        content: item.c,
-                                        source_id: item.id,
-                                        position: getValidNum(item.p),
-                                        nature: item.n,
-                                    };
-                                },
-                            ),
-                        );
-                    } catch (err) {
-                        reject(
-                            new NativeError(
-                                new Error(
-                                    this._logger.error(
-                                        `Fail to call grab(${start}, ${len}) due error: ${
-                                            err instanceof Error ? err.message : err
-                                        }`,
-                                    ),
-                                ),
-                                Type.ParsingSearchChunk,
-                                Source.GrabSearchChunk,
-                            ),
-                        );
-                    }
+                .then((grabbed: IGrabbedElement[]) => {
+                    resolve(grabbed);
                 })
                 .catch((err) => {
                     reject(
