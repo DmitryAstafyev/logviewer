@@ -14,6 +14,7 @@ import { IndexingMode, Attachment, IAttachment } from 'platform/types/content';
 import { Logger, utils } from 'platform/log';
 import { scope } from 'platform/env/scope';
 import { IObserve, Observe } from 'platform/types/observe';
+import { SdeRequest } from 'platform/types/sde';
 
 export type RustSessionConstructorImpl<T> = new (
     uuid: string,
@@ -165,7 +166,7 @@ export abstract class RustSession extends RustSessionRequiered {
         positionInStream: number,
     ): Promise<{ index: number; position: number } | undefined>;
 
-    public abstract sendIntoSde(targetOperationUuid: string, jsonStrMsg: string): Promise<number>;
+    public abstract sendIntoSde(targetOperationUuid: string, request: SdeRequest): Promise<number>;
 
     public abstract getAttachments(): Promise<Attachment[]>;
     public abstract getIndexedRanges(): Promise<IRange[]>;
@@ -292,7 +293,7 @@ export abstract class RustSessionNative {
         positionInStream: number,
     ): Promise<number[] | null>;
 
-    public abstract sendIntoSde(targetOperationUuid: string, jsonStrMsg: string): Promise<number>;
+    public abstract sendIntoSde(targetOperationUuid: string, request: SdeRequest): Promise<number>;
     public abstract getAttachments(): Promise<IAttachment[]>;
     public abstract getIndexedRanges(): Promise<IRange[]>;
 
@@ -918,10 +919,10 @@ export class RustSessionWrapper extends RustSession {
         });
     }
 
-    public sendIntoSde(targetOperationUuid: string, jsonStrMsg: string): Promise<number> {
+    public sendIntoSde(targetOperationUuid: string, request: SdeRequest): Promise<number> {
         return new Promise((resolve, reject) => {
             this._native
-                .sendIntoSde(targetOperationUuid, jsonStrMsg)
+                .sendIntoSde(targetOperationUuid, request)
                 .then(resolve)
                 .catch((err) => {
                     reject(new NativeError(NativeError.from(err), Type.Other, Source.SendIntoSde));

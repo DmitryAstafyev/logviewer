@@ -6,7 +6,7 @@ use crate::{
         converting::{
             attachment::WrappedAttachmentInfo, filter::WrappedSearchFilter,
             grabber::WrappedGrabbedElement, range::WrappedRangeInclusive,
-            source::WrappedSourceDefinition,
+            sde_request::WrappedSdeRequest, source::WrappedSourceDefinition,
         },
         session::events::ComputationErrorWrapper,
     },
@@ -22,7 +22,6 @@ use session::{
     operations,
     session::Session,
 };
-use sources::sde;
 use std::{convert::TryFrom, ops::RangeInclusive, path::PathBuf, thread};
 use tokio::{runtime::Runtime, sync::oneshot};
 use uuid::Uuid;
@@ -724,10 +723,9 @@ impl RustSession {
     async fn send_into_sde(
         &self,
         target: String,
-        msg: String,
+        request: WrappedSdeRequest,
     ) -> Result<i32, ComputationErrorWrapper> {
-        let request = serde_json::from_str::<sde::SdeRequest>(&msg)
-            .map_err(|e| ComputationErrorWrapper(ComputationError::IoOperation(e.to_string())))?;
+        let request = request.as_sde_request();
         if let Some(ref session) = self.session {
             let response = session
                 .send_into_sde(operations::uuid_from_str(&target)?, request)

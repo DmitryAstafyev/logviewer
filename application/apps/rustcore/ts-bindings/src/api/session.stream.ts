@@ -85,11 +85,9 @@ export class SessionStream {
     }
 
     public sde(operation: string, request: SdeRequest): Promise<SdeResponse> {
-        return this._session
-            .sendIntoSde(operation, JSON.stringify(request))
-            .then((bytes: number) => {
-                return { bytes };
-            });
+        return this._session.sendIntoSde(operation, request).then((bytes: number) => {
+            return { bytes };
+        });
     }
 
     public getAttachments(): Promise<Attachment[]> {

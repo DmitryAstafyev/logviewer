@@ -5,7 +5,7 @@ use tokio::sync::oneshot;
 // Channel allows to send message into ByteSource implementaion in run-time
 pub type SdeMsg = (SdeRequest, oneshot::Sender<Result<SdeResponse, String>>);
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum SdeRequest {
     WriteText(String),
     WriteBytes(Vec<u8>),
