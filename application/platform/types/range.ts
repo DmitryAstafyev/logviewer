@@ -1,5 +1,3 @@
-import * as num from '../env/num';
-
 export interface IRange {
     from: number;
     to: number;
