@@ -16,6 +16,8 @@ import { scope } from 'platform/env/scope';
 import { IObserve, Observe } from 'platform/types/observe';
 import { SdeRequest } from 'platform/types/sde';
 
+import * as msgpack from 'msgpack-lite';
+
 export type RustSessionConstructorImpl<T> = new (
     uuid: string,
     provider: Computation<any, any, any>,
@@ -203,7 +205,7 @@ export abstract class RustSessionNative {
 
     public abstract getSessionFile(): Promise<string>;
 
-    public abstract observe(source: string, operationUuid: string): Promise<void>;
+    public abstract observe(source: number[], operationUuid: string): Promise<void>;
 
     public abstract getStreamLen(): Promise<number>;
 
@@ -697,7 +699,7 @@ export class RustSessionWrapper extends RustSession {
             try {
                 this._provider.debug().emit.operation('observe', operationUuid);
                 this._native
-                    .observe(new Observe(source).json().to(), operationUuid)
+                    .observe(Array.from(msgpack.encode(source)), operationUuid)
                     .then(resolve)
                     .catch((err: Error) => {
                         reject(new NativeError(NativeError.from(err), Type.Other, Source.Assign));

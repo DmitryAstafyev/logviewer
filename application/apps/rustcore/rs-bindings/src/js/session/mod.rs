@@ -16,6 +16,8 @@ use events::CallbackEventWrapper;
 use log::{debug, error, info, warn};
 use node_bindgen::derive::node_bindgen;
 use processor::grabber::LineRange;
+use rmp_serde::Deserializer;
+use serde::Deserialize;
 use session::{
     events::{CallbackEvent, ComputationError, NativeError},
     factory::ObserveOptions,
@@ -25,6 +27,11 @@ use session::{
 use std::{convert::TryFrom, ops::RangeInclusive, path::PathBuf, thread};
 use tokio::{runtime::Runtime, sync::oneshot};
 use uuid::Uuid;
+
+fn decode<T: for<'a> Deserialize<'a>>(buffer: &[u8]) -> Result<T, ComputationErrorWrapper> {
+    Ok(Deserialize::deserialize(&mut Deserializer::new(buffer))
+        .map_err(|e| ComputationError::Process(format!("Cannot deserialize msgpack: {e}")))?)
+}
 
 struct RustSession {
     session: Option<Session>,
@@ -496,11 +503,15 @@ impl RustSession {
     #[node_bindgen]
     async fn observe(
         &self,
-        options: String,
+        options_package: Vec<i32>,
         operation_id: String,
     ) -> Result<(), ComputationErrorWrapper> {
-        let options: ObserveOptions = serde_json::from_str(&options)
-            .map_err(|e| ComputationError::Process(format!("Cannot parse source settings: {e}")))?;
+        let options: ObserveOptions = decode::<ObserveOptions>(
+            &options_package
+                .into_iter()
+                .map(|b| b as u8)
+                .collect::<Vec<u8>>(),
+        )?;
         if let Some(ref session) = self.session {
             session
                 .observe(operations::uuid_from_str(&operation_id)?, options)
