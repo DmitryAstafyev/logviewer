@@ -12,11 +12,17 @@ use events::CallbackEventWrapper;
 use log::{debug, error, info, warn};
 use node_bindgen::derive::node_bindgen;
 use processor::grabber::LineRange;
+use protobuf::{
+    descriptor::{FileDescriptorProto, FileDescriptorSet},
+    reflect::MessageDescriptor,
+    MessageDyn,
+};
 use session::{
     events::{CallbackEvent, ComputationError, NativeError},
     factory::ObserveOptions,
     operations,
     session::Session,
+    state::GrabbedElement,
 };
 use sources::sde;
 use std::{convert::TryFrom, ops::RangeInclusive, path::PathBuf, thread};
@@ -26,6 +32,42 @@ use uuid::Uuid;
 struct RustSession {
     session: Option<Session>,
     uuid: Uuid,
+    schema: FileDescriptorSet,
+}
+
+fn get_desc() -> FileDescriptorSet {
+    protobuf::Message::parse_from_bytes(include_bytes!("path_to_precompiled.desc"))
+        .expect("Protocol descriptor is valid")
+}
+
+fn find_message_descriptor(fds: &FileDescriptorSet, name: &str) -> Option<MessageDescriptor> {
+    for file in &fds.file {
+        for message_type in &file.message_type {
+            if message_type.name() == name {
+                return Some(message_type.descriptor_dyn());
+            }
+        }
+    }
+    None
+}
+
+fn deserialization(schema: &FileDescriptorSet, bytes: &[u8]) -> Option<Box<dyn MessageDyn>> {
+    let msg_desc = find_message_descriptor(schema, "MyMessage")?;
+    let mut msg = msg_desc.new_instance();
+    msg.merge_from_bytes_dyn(bytes)
+        .expect("message is serialized");
+    Some(msg)
+}
+
+fn serialization(schema: &FileDescriptorSet) -> Vec<u8> {
+    let msg_desc = find_message_descriptor(schema, "MyMessage").expect("MyMessage not found");
+    let mut msg = msg_desc.new_instance();
+    if let Some(field) = msg_desc.field_by_name("field1") {
+        set_field(&field, "Hello, World!".into()).expect("Failed to set field value");
+    }
+
+    msg.write_to_bytes_dyn()
+        .expect("Failed to serialize MyMessage")
 }
 
 #[node_bindgen]
@@ -42,6 +84,10 @@ impl RustSession {
         Self {
             session: None,
             uuid,
+            schema: protobuf::Message::parse_from_bytes(include_bytes!(
+                "../../../../../protocol/src/binding.desc"
+            ))
+            .expect("Protocol descriptor is valid"),
         }
     }
 
