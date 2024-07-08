@@ -1,4 +1,4 @@
-use super::{bytes_to_js_value, errors::get_native_err, u8_to_i32, ToBytes};
+use super::{bytes_to_js_value, errors::get_native_err, ToBytes};
 use event::callback_event::search_values_updated;
 use event::callback_event::{self, Event};
 use node_bindgen::{
@@ -53,7 +53,7 @@ impl ToBytes for CallbackEventWrapped {
                 CallbackEvent::Progress { uuid, progress } => {
                     Event::Progress(callback_event::Progress {
                         uuid: uuid.to_string(),
-                        detail: Some(callback_event::progress::ProgressDetail {
+                        detail: callback_event::progress::ProgressDetail {
                             detail: Some(match progress {
                                 Progress::Stopped => {
                                     callback_event::progress::progress_detail::Detail::Stopped(true)
@@ -82,7 +82,7 @@ impl ToBytes for CallbackEventWrapped {
                                     )
                                 }
                             }),
-                        }),
+                        },
                     })
                 }
                 CallbackEvent::AttachmentsUpdated {
@@ -90,7 +90,7 @@ impl ToBytes for CallbackEventWrapped {
                     mut attachment,
                 } => Event::AttachmentsUpdated(callback_event::AttachmentsUpdated {
                     len,
-                    attachment: Some(attachment::AttachmentInfo {
+                    attachment: attachment::AttachmentInfo {
                         uuid: attachment.uuid.to_string(),
                         filepath: attachment.filepath.to_string_lossy().to_string(),
                         name: mem::take(&mut attachment.name),
@@ -98,7 +98,7 @@ impl ToBytes for CallbackEventWrapped {
                         size: attachment.size as u64,
                         mime: attachment.mime.take().unwrap_or_default(),
                         messages: attachment.messages.into_iter().map(|v| v as u64).collect(),
-                    }),
+                    },
                 }),
                 CallbackEvent::SearchMapUpdated(update) => {
                     Event::SearchMapUpdated(callback_event::SearchMapUpdated {
@@ -122,7 +122,7 @@ impl ToBytes for CallbackEventWrapped {
                 CallbackEvent::OperationError { uuid, error } => {
                     Event::OperationError(callback_event::OperationError {
                         uuid: uuid.to_string(),
-                        error: Some(get_native_err(error)),
+                        error: get_native_err(error),
                     })
                 }
             }),

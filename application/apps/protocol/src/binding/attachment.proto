@@ -1,14 +1,14 @@
-syntax = "proto3";
+syntax = "proto2";
 
 package attachment;
 
 message AttachmentInfo {
-  string uuid = 1;
-  string filepath = 2;
-  string name = 3;
-  string ext = 4;
-  uint64 size = 5;
-  string mime = 6;
+  required string uuid = 1;
+  required string filepath = 2;
+  required string name = 3;
+  required string ext = 4;
+  required uint64 size = 5;
+  required string mime = 6;
   repeated uint64 messages = 7;
 }
 

@@ -1,4 +1,4 @@
-syntax = "proto3";
+syntax = "proto2";
 
 package error;
 
@@ -15,22 +15,22 @@ message GrabError {
     Unsupported unsupported = 7;
   }
 
-  message Config { string message = 1; }
+  message Config { required string message = 1; }
 
-  message Communication { string message = 1; }
+  message Communication { required string message = 1; }
 
-  message IoOperation { string message = 1; }
+  message IoOperation { required string message = 1; }
 
   message InvalidRange {
-    common.RangeInclusive range = 1;
-    string context = 2;
+    required common.RangeInclusive range = 1;
+    required string context = 2;
   }
 
   message Interrupted {}
 
   message NotInitialize {}
 
-  message Unsupported { string message = 1; }
+  message Unsupported { required string message = 1; }
 }
 
 message SearchError {
@@ -44,19 +44,19 @@ message SearchError {
     Aborted aborted = 7;
   }
 
-  message Config { string message = 1; }
+  message Config { required string message = 1; }
 
-  message Communication { string message = 1; }
+  message Communication { required string message = 1; }
 
-  message IoOperation { string message = 1; }
+  message IoOperation { required string message = 1; }
 
-  message Regex { string message = 1; }
+  message Regex { required string message = 1; }
 
-  message Input { string message = 1; }
+  message Input { required string message = 1; }
 
-  message Grab { GrabError error = 1; }
+  message Grab { required GrabError error = 1; }
 
-  message Aborted { string message = 1; }
+  message Aborted { required string message = 1; }
 }
 
 enum NativeErrorKind {
@@ -73,9 +73,9 @@ enum NativeErrorKind {
 }
 
 message NativeError {
-  Severity severity = 1;
-  NativeErrorKind kind = 2;
-  string message = 3;
+  required Severity severity = 1;
+  required NativeErrorKind kind = 2;
+  required string message = 3;
 }
 
 enum Severity {
@@ -106,25 +106,25 @@ message ComputationError {
 
   message SessionCreatingFail {}
 
-  message Communication { string message = 1; }
+  message Communication { required string message = 1; }
 
-  message OperationNotSupported { string message = 1; }
+  message OperationNotSupported { required string message = 1; }
 
-  message IoOperation { string message = 1; }
+  message IoOperation { required string message = 1; }
 
   message InvalidData {}
 
-  message InvalidArgs { string message = 1; }
+  message InvalidArgs { required string message = 1; }
 
-  message Process { string message = 1; }
+  message Process { required string message = 1; }
 
-  message Protocol { string message = 1; }
+  message Protocol { required string message = 1; }
 
   message MultipleInitCall {}
 
   message SessionUnavailable {}
 
-  message Grabbing { GrabError error = 1; }
+  message Grabbing { required GrabError error = 1; }
 
-  message Sde { string message = 1; }
+  message Sde { required string message = 1; }
 }

@@ -44,7 +44,6 @@ fn get_stream_transport(opt: &observe::observe_origin::Stream) -> Result<factory
     let transport = opt
         .to_owned()
         .transport
-        .ok_or(E::MissedField(String::from("transport")))?
         .transport
         .ok_or(E::MissedField(String::from("transport")))?;
     Ok(match transport {
@@ -104,12 +103,10 @@ impl FromBytes<factory::ObserveOptions> for JsIncomeI32Vec {
         let decoded = observe::ObserveOptions::decode(&*bytes)?;
         let origin = decoded
             .origin
-            .ok_or(E::MissedField(String::from("origin")))?
             .origin
             .ok_or(E::MissedField(String::from("origin")))?;
         let parser = decoded
             .parser
-            .ok_or(E::MissedField(String::from("parser")))?
             .r#type
             .ok_or(E::MissedField(String::from("parser")))?;
         let origin = match origin {
@@ -122,32 +119,32 @@ impl FromBytes<factory::ObserveOptions> for JsIncomeI32Vec {
         let parser = match parser {
             observe::parser_type::Type::Dlt(opt) => {
                 factory::ParserType::Dlt(factory::DltParserSettings {
-                    filter_config: opt.filter_config.map(|opt| factory::DltFilterConfig {
+                    filter_config: Some(factory::DltFilterConfig {
                         min_log_level: Some(
-                            if opt.min_log_level <= u8::MAX as u32
-                                && opt.min_log_level >= u8::MIN as u32
+                            if opt.filter_config.min_log_level <= u8::MAX as u32
+                                && opt.filter_config.min_log_level >= u8::MIN as u32
                             {
-                                opt.min_log_level as u8
+                                opt.filter_config.min_log_level as u8
                             } else {
                                 0
                             },
                         ),
-                        app_id_count: opt.app_id_count,
-                        app_ids: if opt.app_ids.is_empty() {
+                        app_id_count: opt.filter_config.app_id_count,
+                        app_ids: if opt.filter_config.app_ids.is_empty() {
                             None
                         } else {
-                            Some(opt.app_ids)
+                            Some(opt.filter_config.app_ids)
                         },
-                        context_id_count: opt.context_id_count,
-                        context_ids: if opt.context_ids.is_empty() {
+                        context_id_count: opt.filter_config.context_id_count,
+                        context_ids: if opt.filter_config.context_ids.is_empty() {
                             None
                         } else {
-                            Some(opt.context_ids)
+                            Some(opt.filter_config.context_ids)
                         },
-                        ecu_ids: if opt.ecu_ids.is_empty() {
+                        ecu_ids: if opt.filter_config.ecu_ids.is_empty() {
                             None
                         } else {
-                            Some(opt.ecu_ids)
+                            Some(opt.filter_config.ecu_ids)
                         },
                     }),
                     fibex_file_paths: if opt.fibex_file_paths.is_empty() {

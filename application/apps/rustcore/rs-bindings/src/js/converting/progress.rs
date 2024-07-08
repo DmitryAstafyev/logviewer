@@ -38,11 +38,11 @@ impl ToBytes for LifecycleTransitionWrapper {
                 LifecycleTransition::Ticks { uuid, ticks } => {
                     lifecycle_transition::Transition::Ticks(progress::TicksWithUuid {
                         uuid: uuid.to_string(),
-                        ticks: Some(progress::Ticks {
+                        ticks: progress::Ticks {
                             count: ticks.count,
                             state: ticks.state.unwrap_or_default(),
                             total: ticks.total.unwrap_or_default(),
-                        }),
+                        },
                     })
                 }
             }),

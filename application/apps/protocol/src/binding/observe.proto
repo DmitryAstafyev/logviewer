@@ -1,56 +1,56 @@
-syntax = "proto3";
+syntax = "proto2";
 
 package observe;
 
 message ObserveOptions {
-  ObserveOrigin origin = 1;
-  ParserType parser = 2;
+  required ObserveOrigin origin = 1;
+  required ParserType parser = 2;
 }
 
 message DltParserSettings {
-  DltFilterConfig filter_config = 1;
+  required DltFilterConfig filter_config = 1;
   repeated string fibex_file_paths = 2;
-  bool with_storage_header = 3;
-  string tz = 4;
+  required bool with_storage_header = 3;
+  required string tz = 4;
 }
 
 message DltFilterConfig {
-  uint32 min_log_level = 1;
+  required uint32 min_log_level = 1;
   repeated string app_ids = 2;
   repeated string ecu_ids = 3;
   repeated string context_ids = 4;
-  int64 app_id_count = 5;
-  int64 context_id_count = 6;
+  required int64 app_id_count = 5;
+  required int64 context_id_count = 6;
 }
 
 message SomeIpParserSettings { repeated string fibex_file_paths = 1; }
 
 message ProcessTransportConfig {
-  string cwd = 1;
-  string command = 2;
+  required string cwd = 1;
+  required string command = 2;
   map<string, string> envs = 3;
 }
 
 message SerialTransportConfig {
-  string path = 1;
-  uint32 baud_rate = 2;
-  uint32 data_bits = 3;
-  uint32 flow_control = 4;
-  uint32 parity = 5;
-  uint32 stop_bits = 6;
-  uint32 send_data_delay = 7;
-  bool exclusive = 8;
+  required string path = 1;
+  required uint32 baud_rate = 2;
+  required uint32 data_bits = 3;
+  required uint32 flow_control = 4;
+  required uint32 parity = 5;
+  required uint32 stop_bits = 6;
+  required uint32 send_data_delay = 7;
+  required bool exclusive = 8;
 }
 
-message TCPTransportConfig { string bind_addr = 1; }
+message TCPTransportConfig { required string bind_addr = 1; }
 
 message MulticastInfo {
-  string multiaddr = 1;
-  string interface = 2;
+  required string multiaddr = 1;
+  required string interface = 2;
 }
 
 message UDPTransportConfig {
-  string bind_addr = 1;
+  required string bind_addr = 1;
   repeated MulticastInfo multicast = 2;
 }
 
@@ -88,15 +88,15 @@ message ObserveOrigin {
   }
 
   message File {
-    string name = 1;
-    FileFormat.Type format = 2;
-    string path = 3;
+    required string name = 1;
+    required FileFormat.Type format = 2;
+    required string path = 3;
   }
 
   message Concat { repeated File files = 1; }
 
   message Stream {
-    string name = 1;
-    Transport transport = 2;
+    required string name = 1;
+    required Transport transport = 2;
   }
 }

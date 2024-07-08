@@ -1,11 +1,11 @@
-syntax = "proto3";
+syntax = "proto2";
 
 package progress;
 
 message Ticks {
-  uint64 count = 1;
-  string state = 2;
-  uint64 total = 3;
+  required uint64 count = 1;
+  required string state = 2;
+  required uint64 total = 3;
 }
 
 message LifecycleTransition {
@@ -17,13 +17,13 @@ message LifecycleTransition {
 }
 
 message Started {
-  string uuid = 1;
-  string alias = 2;
+  required string uuid = 1;
+  required string alias = 2;
 }
 
 message TicksWithUuid {
-  string uuid = 1;
-  Ticks ticks = 2;
+  required string uuid = 1;
+  required Ticks ticks = 2;
 }
 
-message Stopped { string uuid = 1; }
+message Stopped { required string uuid = 1; }

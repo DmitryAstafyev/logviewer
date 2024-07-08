@@ -88,10 +88,10 @@ fn get_grab_err(err: GrabError) -> error::GrabError {
             GrabError::Interrupted => grab_error::Error::Interrupted(grab_error::Interrupted {}),
             GrabError::InvalidRange { range, context } => {
                 grab_error::Error::InvalidRange(grab_error::InvalidRange {
-                    range: Some(common::RangeInclusive {
+                    range: common::RangeInclusive {
                         start: range.start(),
                         end: range.end(),
-                    }),
+                    },
                     context,
                 })
             }
@@ -112,7 +112,7 @@ fn get_search_err(err: SearchError) -> error::SearchError {
                 search_error::Error::Config(search_error::Config { message })
             }
             SearchError::Grab(err) => search_error::Error::Grab(search_error::Grab {
-                error: Some(get_grab_err(err)),
+                error: get_grab_err(err),
             }),
             SearchError::Input(message) => {
                 search_error::Error::Input(search_error::Input { message })
@@ -150,7 +150,7 @@ impl ToBytes for ComputationErrorWapper {
                     Error::SessionUnavailable(computation_error::SessionUnavailable {})
                 }
                 ComputationError::Grabbing(err) => Error::Grabbing(computation_error::Grabbing {
-                    error: Some(get_grab_err(err)),
+                    error: get_grab_err(err),
                 }),
                 ComputationError::OperationNotSupported(message) => {
                     Error::OperationNotSupported(computation_error::OperationNotSupported {

@@ -1,12 +1,12 @@
-syntax = "proto3";
+syntax = "proto2";
 
 package grabbing;
 
 message GrabbedElement {
-  uint32 source_id = 1;
-  string content = 2;
-  uint64 pos = 3;
-  uint32 nature = 4;
+  required uint32 source_id = 1;
+  required string content = 2;
+  required uint64 pos = 3;
+  required uint32 nature = 4;
 }
 
 message GrabbedElementList { repeated GrabbedElement elements = 1; }

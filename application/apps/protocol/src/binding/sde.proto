@@ -1,4 +1,4 @@
-syntax = "proto3";
+syntax = "proto2";
 
 package sde;
 
@@ -9,4 +9,4 @@ message SdeRequest {
   }
 }
 
-message SdeResponse { uint64 bytes = 1; }
+message SdeResponse { required uint64 bytes = 1; }
