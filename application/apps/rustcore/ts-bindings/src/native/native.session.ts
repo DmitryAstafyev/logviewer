@@ -20,6 +20,7 @@ import * as $ from 'platform/types/observe';
 
 import { grabbing, observe, sde, attachment, common } from 'protocol';
 import { SdeRequest, SdeResponse } from 'platform/types/sde';
+import { LogLevel } from 'platform/types/observe/parser/dlt';
 
 export type RustSessionConstructorImpl<T> = new (
     uuid: string,
@@ -814,7 +815,12 @@ export class RustSessionWrapper extends RustSession {
                     transport.udp = new observe.UDPTransportConfig({
                         bind_addr: udpOrigin.configuration.bind_addr,
                         multicast: udpOrigin.configuration.multicast.map((ma) => {
-                            return new observe.MulticastInfo(ma);
+                            return new observe.MulticastInfo(
+                                ma as unknown as {
+                                    multiaddr: string;
+                                    interface: string;
+                                }[],
+                            );
                         }),
                     });
                 }
@@ -842,7 +848,14 @@ export class RustSessionWrapper extends RustSession {
                 }
                 if (dlt.configuration.filter_config !== undefined) {
                     parser.dlt.filter_config = new observe.DltFilterConfig(
-                        dlt.configuration.filter_config,
+                        dlt.configuration.filter_config as unknown as {
+                            min_log_level: LogLevel;
+                            app_ids: string[];
+                            ecu_ids: string[];
+                            context_ids: string[];
+                            app_id_count: number;
+                            context_id_count: number;
+                        },
                     );
                 }
             } else if (someip !== undefined) {
