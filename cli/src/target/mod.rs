@@ -250,7 +250,7 @@ impl Target {
             | Target::Wasm
             | Target::Updater
             | Target::Protocol => Vec::new(),
-            Target::Binding => vec![Target::Core, Target::Shared],
+            Target::Binding => vec![Target::Core, Target::Shared, Target::Protocol],
             Target::Wrapper => vec![
                 Target::Core,
                 Target::Protocol,
