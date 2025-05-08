@@ -506,6 +506,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "file-tools"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+]
+
+[[package]]
 name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -954,6 +961,7 @@ dependencies = [
  "chrono-tz",
  "components",
  "dlt-core",
+ "file-tools",
  "humantime",
  "lazy_static",
  "log",
@@ -1357,6 +1365,7 @@ dependencies = [
  "bytes",
  "components",
  "etherparse",
+ "file-tools",
  "futures",
  "indexer_base",
  "lazy_static",
