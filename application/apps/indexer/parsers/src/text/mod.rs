@@ -1,7 +1,6 @@
 mod options;
 use definitions::*;
 use serde::Serialize;
-use std::{fmt, io::Write};
 
 /// The most likely minimal bytes count needed to parse a text message.
 const MIN_MSG_LEN: usize = 1;
@@ -13,26 +12,26 @@ pub struct StringMessage {
     content: String,
 }
 
-impl fmt::Display for StringMessage {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.content)
-    }
-}
+// impl fmt::Display for StringMessage {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "{}", self.content)
+//     }
+// }
 
-impl LogMessage for StringMessage {
-    fn to_writer<W: Write>(&self, writer: &mut W) -> Result<usize, std::io::Error> {
-        let len = self.content.len();
-        writer.write_all(self.content.as_bytes())?;
-        Ok(len)
-    }
-}
+// impl LogMessage for StringMessage {
+//     fn to_writer<W: Write>(&self, writer: &mut W) -> Result<usize, std::io::Error> {
+//         let len = self.content.len();
+//         writer.write_all(self.content.as_bytes())?;
+//         Ok(len)
+//     }
+// }
 
 impl StringTokenizer {
     fn parse_item(
         &mut self,
         input: &[u8],
         _timestamp: Option<u64>,
-    ) -> Result<(usize, Option<ParseYield<StringMessage>>), ParserError> {
+    ) -> Result<(usize, Option<ParseYield>), ParserError> {
         // TODO: support non-utf8 encodings
         use memchr::memchr;
         if input.is_empty() {
@@ -40,16 +39,14 @@ impl StringTokenizer {
         }
         let item = if let Some(msg_size) = memchr(b'\n', input) {
             let content = String::from_utf8_lossy(&input[..msg_size]);
-            let string_msg = StringMessage {
-                content: content.to_string(),
-            };
-            (msg_size + 1, Some(string_msg.into()))
+            (
+                msg_size + 1,
+                Some(LogMessage::PlainText(content.to_string()).into()),
+            )
         } else {
             (
                 input.len(),
-                Some(ParseYield::from(StringMessage {
-                    content: String::new(),
-                })),
+                Some(LogMessage::PlainText(String::new()).into()),
             )
         };
 
@@ -57,15 +54,12 @@ impl StringTokenizer {
     }
 }
 
-impl Parser<StringMessage> for StringTokenizer
-where
-    StringMessage: LogMessage,
-{
+impl Parser for StringTokenizer {
     fn parse(
         &mut self,
         input: &[u8],
         timestamp: Option<u64>,
-    ) -> Result<Vec<(usize, Option<ParseYield<StringMessage>>)>, ParserError> {
+    ) -> Result<Vec<(usize, Option<ParseYield>)>, ParserError> {
         parse_all(input, timestamp, MIN_MSG_LEN, |input, timestamp| {
             self.parse_item(input, timestamp)
         })
