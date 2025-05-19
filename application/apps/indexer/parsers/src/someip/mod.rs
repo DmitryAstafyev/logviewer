@@ -304,6 +304,9 @@ impl Parser for SomeipParser {
             data.map(|msg| LogRecordOutput::String(msg.to_string())),
         ))
     }
+    fn min_msg_len(&self) -> usize {
+        MIN_MSG_LEN
+    }
 }
 
 fn header_string(header: &Header) -> String {
